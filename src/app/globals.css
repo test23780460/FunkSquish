@@ -1,0 +1,277 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   FunkSquish design tokens
+   Blue + white core, navy for text, small candy accents per collection.
+   ------------------------------------------------------------------ */
+@theme {
+  /* Core blues */
+  --color-ink: #0e2a5c; /* primary text, ~14:1 on white */
+  --color-ink-soft: #3a5486; /* secondary text, ~7:1 on white */
+  --color-navy: #13357a; /* button "base", deep sections */
+  --color-navy-deep: #0b2150;
+  --color-royal: #1f5fd6; /* primary action, white text passes AA */
+  --color-sky: #3d9bff; /* decorative / large text only */
+  --color-sky-300: #7cc2ff;
+  --color-sky-200: #b4deff;
+  --color-ice: #e4f3ff;
+  --color-ice-50: #f4faff;
+
+  /* Collection accents (always paired with ink text) */
+  --color-berry: #ff6fa3;
+  --color-berry-soft: #ffe1ec;
+  --color-lemon: #ffd45e;
+  --color-lemon-soft: #fff4cc;
+  --color-grape: #9b7bff;
+  --color-grape-soft: #ece5ff;
+  --color-peach: #ff9f5a;
+  --color-peach-soft: #ffe8d6;
+  --color-mint: #3fd3ae;
+  --color-mint-soft: #ddf8f0;
+
+  /* Type */
+  --font-display: var(--font-fredoka), ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
+  --font-sans: var(--font-nunito), ui-rounded, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Radii */
+  --radius-blob: 2.25rem;
+
+  /* Shadows */
+  --shadow-soft: 0 18px 40px -18px rgb(31 95 214 / 0.35);
+  --shadow-card: 0 2px 0 rgb(255 255 255 / 0.9) inset, 0 24px 48px -24px rgb(19 53 122 / 0.35);
+  --shadow-float: 0 30px 60px -30px rgb(19 53 122 / 0.45);
+
+  /* Motion */
+  --ease-squish: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-bob: bob 4.5s ease-in-out infinite;
+  --animate-wobble: wobble 5s ease-in-out infinite;
+  --animate-marquee: marquee 36s linear infinite;
+  --animate-blink: blink 5.5s ease-in-out infinite;
+  --animate-rise: rise 0.7s var(--ease-squish) both;
+  --animate-heart: heart 4s ease-in infinite;
+  --animate-twinkle: twinkle 3.2s ease-in-out infinite;
+
+  @keyframes float {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50% { transform: translate3d(0, -14px, 0); }
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0) scale(1, 1); }
+    45% { transform: translateY(-10px) scale(0.98, 1.02); }
+    55% { transform: translateY(-10px) scale(0.98, 1.02); }
+    90% { transform: translateY(0) scale(1.03, 0.97); }
+  }
+  @keyframes wobble {
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes blink {
+    0%, 92%, 100% { transform: scaleY(1); }
+    95% { transform: scaleY(0.1); }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(18px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes heart {
+    0% { opacity: 0; transform: translateY(0) scale(0.6); }
+    15% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-120px) scale(1.1); }
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.35; transform: scale(0.85) rotate(0deg); }
+    50% { opacity: 1; transform: scale(1.1) rotate(20deg); }
+  }
+}
+
+/* ------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    scroll-padding-top: 6.5rem;
+  }
+
+  body {
+    background-color: var(--color-ice-50);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    overflow-x: clip;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-royal);
+    outline-offset: 3px;
+    border-radius: 0.75rem;
+  }
+
+  ::selection {
+    background: var(--color-sky-200);
+    color: var(--color-ink);
+  }
+}
+
+/* ------------------------------------------------------------------
+   Reusable brand utilities
+   ------------------------------------------------------------------ */
+
+/* Big bubbly gradient headline text with a chunky offset shadow */
+@utility text-squish {
+  background-image: linear-gradient(180deg, #5cb4ff 0%, #2f7bff 55%, #1f5fd6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0.06em 0 var(--color-navy)) drop-shadow(0 0.14em 0.12em rgb(19 53 122 / 0.25));
+}
+
+/* Glossy "candy" surface highlight, used on cards & badges */
+@utility gloss {
+  position: relative;
+  isolation: isolate;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.55) 0%, rgb(255 255 255 / 0) 42%);
+    pointer-events: none;
+    z-index: 1;
+  }
+}
+
+/* Dotted sprinkle background texture */
+@utility dots {
+  background-image: radial-gradient(rgb(61 155 255 / 0.18) 1.5px, transparent 1.6px);
+  background-size: 22px 22px;
+}
+
+/* Soft sky backdrop used behind most page heroes */
+@utility sky-wash {
+  background:
+    radial-gradient(60% 50% at 15% 10%, rgb(180 222 255 / 0.9) 0%, transparent 70%),
+    radial-gradient(50% 45% at 90% 20%, rgb(124 194 255 / 0.55) 0%, transparent 70%),
+    radial-gradient(70% 60% at 50% 100%, rgb(228 243 255 / 1) 0%, transparent 70%),
+    linear-gradient(180deg, #eaf6ff 0%, #f4faff 100%);
+}
+
+/* Interactive squish on hover/press (honours reduced motion below) */
+@utility squishy {
+  transition: transform 0.35s var(--ease-squish), box-shadow 0.25s ease;
+  &:hover {
+    transform: translateY(-4px) scale(1.015);
+  }
+  &:active {
+    transform: translateY(1px) scale(1.02, 0.97);
+  }
+}
+
+/* ------------------------------------------------------------------
+   Page transitions (React <ViewTransition>)
+   ------------------------------------------------------------------ */
+::view-transition-old(.page-fade) {
+  animation: 140ms ease-in both vt-fade-out;
+}
+::view-transition-new(.page-fade) {
+  animation: 320ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both vt-rise-in;
+}
+::view-transition-group(site-header) {
+  animation: none;
+  z-index: 50;
+}
+@keyframes vt-fade-out {
+  to { opacity: 0; }
+}
+@keyframes vt-rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ------------------------------------------------------------------
+   Reduced motion: keep everything still and instant
+   ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+  .squishy:hover, .squishy:active {
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Long-form text (legal pages)
+   ------------------------------------------------------------------ */
+@layer components {
+  .legal-prose {
+    color: var(--color-ink-soft);
+    font-size: 1.0625rem;
+    line-height: 1.75;
+  }
+  .legal-prose h2 {
+    margin-top: 2.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--color-ink);
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .legal-prose p + p {
+    margin-top: 1rem;
+  }
+  .legal-prose ul {
+    margin-top: 0.75rem;
+    padding-left: 1.25rem;
+    list-style: disc;
+  }
+  .legal-prose li + li {
+    margin-top: 0.4rem;
+  }
+  .legal-prose li::marker {
+    color: var(--color-sky);
+  }
+  .legal-prose strong {
+    color: var(--color-ink);
+  }
+  .legal-prose a {
+    color: var(--color-royal);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+  .legal-prose .todo {
+    border-radius: 0.4rem;
+    background: var(--color-lemon-soft);
+    padding: 0 0.3rem;
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+}
