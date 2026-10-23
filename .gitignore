@@ -58,3 +58,6 @@ desktop.ini
 # PRIVATE business data — supplier costs, invoices, compliance files, internal
 # checklists. The GitHub repo is public: never commit anything in this folder.
 /private/
+
+# netlify cli local state
+.netlify
