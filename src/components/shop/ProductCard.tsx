@@ -29,7 +29,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
             alt={image.alt}
             fill
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 45vw, 90vw"
-            priority={priority}
+            preload={priority}
             className={cn("object-cover", soldOut && "grayscale")}
           />
         ) : (

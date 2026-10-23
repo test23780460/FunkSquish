@@ -11,8 +11,8 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#f4faff",
     theme_color: "#e4f3ff",
     icons: [
-      { src: "/icon.svg", sizes: "any", type: "image/svg+xml" },
-      { src: "/apple-icon", sizes: "180x180", type: "image/png" },
+      { src: "/brand/funksquish-logo-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/brand/funksquish-logo-512.png", sizes: "512x512", type: "image/png" },
     ],
   };
 }

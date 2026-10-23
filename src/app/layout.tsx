@@ -50,7 +50,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${fredoka.variable} ${nunito.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <SiteHeader />
-        <main id="main" className="-mt-[4.75rem] flex-1 sm:-mt-20">
+        <main id="main" className="flex-1">
           {children}
         </main>
         <SiteFooter />

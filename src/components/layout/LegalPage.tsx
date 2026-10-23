@@ -18,7 +18,15 @@ export function LegalPage({
 }) {
   return (
     <PageTransition>
-      <PageHero eyebrow="Draft document" title={title} lead={`Draft last updated ${lastUpdated}.`} />
+      <PageHero
+        eyebrow="Draft — not yet in effect"
+        title={
+          <>
+            {title} <span className="text-squish">(Draft)</span>
+          </>
+        }
+        lead={`Working draft, last edited ${lastUpdated}. Not a finalized policy.`}
+      />
       <section className="bg-white pb-28 pt-6 sm:pb-36">
         <Container className="max-w-3xl">
           <Notice tone="berry" title="Draft — owner review required before launch" className="mb-10">
@@ -27,6 +35,9 @@ export function LegalPage({
             information.
           </Notice>
           <div className="legal-prose">{children}</div>
+          <p className="mt-12 rounded-2xl bg-berry-soft px-4 py-3 text-center font-display font-semibold text-ink">
+            End of draft — pending owner review. Not a finalized legal policy.
+          </p>
         </Container>
       </section>
     </PageTransition>

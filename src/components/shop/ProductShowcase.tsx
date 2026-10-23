@@ -40,7 +40,7 @@ export function ProductShowcase({
           <Bubble size={36} className="left-[10%] top-[12%]" />
           <Bubble size={20} className="bottom-[14%] right-[12%]" delay={1.5} />
           {image ? (
-            <Image src={image.src} alt={image.alt} fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" priority />
+            <Image src={image.src} alt={image.alt} fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" preload />
           ) : (
             <ProductArt
               key={variant.id}

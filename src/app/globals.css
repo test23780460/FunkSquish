@@ -227,7 +227,7 @@
 }
 
 /* ------------------------------------------------------------------
-   Long-form text (legal pages)
+   Long-form text (legal pages and other prose)
    ------------------------------------------------------------------ */
 @layer components {
   .legal-prose {

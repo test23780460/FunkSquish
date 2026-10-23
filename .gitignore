@@ -39,3 +39,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# windows / onedrive
+Thumbs.db
+desktop.ini
+*.lnk
+
+# local-only editor / agent settings
+.claude/settings.local.json
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# logs
+*.log

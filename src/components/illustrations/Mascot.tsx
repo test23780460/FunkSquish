@@ -9,9 +9,10 @@ export function Mascot({
   mood = "grin",
   wave = false,
   title,
-  base = "#3d9bff",
-  light = "#b4e0ff",
-  shade = "#1f62d9",
+  // Glassy sky blue, matched to the mascot in the official logo.
+  base = "#6ab9ff",
+  light = "#e6f6ff",
+  shade = "#2f7fe0",
 }: {
   className?: string;
   mood?: FaceMood;

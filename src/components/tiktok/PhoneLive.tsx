@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Mascot } from "@/components/illustrations/Mascot";
 import { JellyArt, SlushieArt } from "@/components/illustrations/ProductArt";
 import { HeartIcon, TikTokIcon } from "@/components/icons/Icons";
@@ -19,9 +20,13 @@ export function PhoneLive({ className }: { className?: string }) {
 
           {/* top bar */}
           <div className="absolute inset-x-3 top-10 z-10 flex items-center gap-2">
-            <span className="grid size-8 place-items-center rounded-full bg-white ring-2 ring-royal">
-              <Mascot className="size-6" mood="happy" />
-            </span>
+            <Image
+              src={siteConfig.logo.src}
+              alt=""
+              width={32}
+              height={32}
+              className="size-8 rounded-full ring-2 ring-royal"
+            />
             <span className="font-display text-sm font-bold text-ink">{siteConfig.tiktok.handle}</span>
             <span className="ml-auto rounded-md bg-lemon px-2 py-0.5 font-display text-[0.7rem] font-bold uppercase tracking-wide text-ink">
               LIVE soon

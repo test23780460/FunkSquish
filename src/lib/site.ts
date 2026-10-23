@@ -14,14 +14,14 @@ export const siteConfig = {
     url: "https://www.tiktok.com/@funksquish",
   },
   /**
-   * Logo slot. Drop the official file into /public/brand/ and set `src`
-   * (plus its intrinsic width/height). Until then a typographic wordmark is shown.
+   * Official round badge logo (transparent corners).
+   * Source file: assets/brand/funksquish-logo-original.webp
    */
   logo: {
-    src: null as string | null, // e.g. "/brand/funksquish-logo.png"
-    width: 600,
-    height: 200,
-    alt: "FunkSquish",
+    src: "/brand/funksquish-logo.webp",
+    width: 1024,
+    height: 1024,
+    alt: "FunkSquish logo",
   },
 } as const;
 

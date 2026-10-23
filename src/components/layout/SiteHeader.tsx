@@ -42,7 +42,7 @@ export function SiteHeader() {
   const close = () => setOpen(false);
 
   return (
-    <header className="sticky top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-4" style={{ viewTransitionName: "site-header" }}>
+    <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-4" style={{ viewTransitionName: "site-header" }}>
       <a
         href="#main"
         className="sr-only rounded-full bg-royal px-4 py-2 font-display text-white focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60]"
@@ -51,7 +51,7 @@ export function SiteHeader() {
       </a>
 
       <div className={cn("mx-auto flex max-w-6xl items-center justify-between gap-3 rounded-full py-2 pl-4 pr-2 shadow-[0_10px_30px_-12px_rgba(19,53,122,0.35)] ring-1 ring-sky-200/80 backdrop-blur-md sm:pl-5", open ? "bg-white" : "bg-white/85")}>
-        <Link href="/" onClick={close} className="shrink-0 rounded-full" aria-label="FunkSquish home">
+        <Link href="/" onClick={close} className="group/logo shrink-0 rounded-full" aria-label="FunkSquish home">
           <Logo size="sm" priority />
         </Link>
 

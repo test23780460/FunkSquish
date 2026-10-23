@@ -4,7 +4,7 @@ import { ButtonAnchor, ButtonLink } from "@/components/ui/Button";
 import { ArrowRightIcon, TikTokIcon } from "@/components/icons/Icons";
 import { PhoneLive } from "@/components/tiktok/PhoneLive";
 import { LiveSchedule } from "@/components/tiktok/LiveSchedule";
-import { Sparkle, Wave, Bubble } from "@/components/decor/Decor";
+import { Sparkle, Wave } from "@/components/decor/Decor";
 
 export const livePlans = ["Squish tests", "Unboxings", "First looks", "Q&A with you"];
 
@@ -12,11 +12,10 @@ export function TikTokLiveSection() {
   return (
     <section aria-labelledby="live-title" className="relative">
       <Wave fill="#13357a" className="-mb-px bg-ice-50" />
-      <div className="relative overflow-hidden bg-[radial-gradient(80%_60%_at_80%_20%,#1f5fd6_0%,transparent_60%),linear-gradient(180deg,var(--color-navy)_0%,var(--color-navy-deep)_100%)] py-14 sm:py-20">
+      <div className="relative overflow-hidden bg-[radial-gradient(50%_38%_at_78%_52%,rgba(31,95,214,0.85)_0%,transparent_100%),linear-gradient(180deg,var(--color-navy)_0%,var(--color-navy-deep)_100%)] py-14 sm:py-20">
         <Sparkle className="left-[6%] top-12 size-5" />
         <Sparkle className="left-[40%] top-6 size-3" color="#b4deff" delay={1.3} />
         <Sparkle className="bottom-16 right-[8%] size-4" delay={2.1} />
-        <Bubble size={30} className="right-[44%] top-[70%] opacity-60" delay={0.6} />
 
         <Container className="relative grid items-center gap-12 lg:grid-cols-[1.15fr_1fr]">
           <div>

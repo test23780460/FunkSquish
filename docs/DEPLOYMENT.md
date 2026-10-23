@@ -10,6 +10,16 @@ The strategy is simple and low-risk:
 - **Only change the website records** (`@` A record and `www` CNAME).
 - **Leave every email record alone** (MX, SPF, DKIM, DMARC, Google verification).
 
+## Launch checklist (quick version)
+
+1. Import the GitHub repo into Vercel and deploy (section 2). No environment variables needed.
+2. Click through the `*.vercel.app` preview on a phone.
+3. Add `funksquish.com` + `www` in Vercel (section 3).
+4. Snapshot current Squarespace DNS, then change **only** the `@` A record and `www` CNAME (sections 4–5).
+5. Confirm Vercel shows "Valid Configuration" and test email still works (section 6).
+
+**Before taking real orders (not needed for the coming-soon launch):** finalize the draft Privacy Policy and Terms, publish shipping/returns/pricing, and connect a payment provider (see `ECOMMERCE-ROADMAP.md`).
+
 ---
 
 ## 1. Put the code on GitHub

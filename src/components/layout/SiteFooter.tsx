@@ -21,7 +21,7 @@ export function SiteFooter() {
 
         <Container className="relative grid gap-12 pb-10 pt-6 sm:pt-10 lg:grid-cols-[1.3fr_2fr]">
           <div>
-            <Link href="/" className="inline-block rounded-full" aria-label="FunkSquish home">
+            <Link href="/" className="group/logo inline-block rounded-full" aria-label="FunkSquish home">
               <Logo invert size="md" />
             </Link>
             <p className="mt-4 max-w-sm text-lg leading-relaxed text-sky-200">

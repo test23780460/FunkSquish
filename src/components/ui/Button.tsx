@@ -38,7 +38,7 @@ export function buttonClasses({
     "transition-[transform,box-shadow,background-color] duration-200 ease-squish",
     "hover:-translate-y-0.5 active:translate-y-1 active:scale-x-[1.03] active:scale-y-[0.97]",
     variant !== "ghost" &&
-      "before:pointer-events-none before:absolute before:inset-x-3 before:top-1 before:h-[38%] before:rounded-full before:bg-white/25",
+      "before:pointer-events-none before:absolute before:inset-x-2 before:top-0.5 before:h-1/2 before:rounded-full before:bg-gradient-to-b before:from-white/30 before:to-white/0",
     variants[variant],
     sizes[size],
     className,

@@ -3,7 +3,7 @@
 Pre-launch storefront for **FunkSquish** — colorful fruit slushies, jelly squishies, crunchy squishies and cute collectibles.
 Live domain (once connected): https://funksquish.com · TikTok: [@FunkSquish](https://www.tiktok.com/@funksquish)
 
-Built with **Next.js 16 (App Router)**, **TypeScript**, and **Tailwind CSS 4**. All illustrations are hand-coded SVG, so there are no image files to go missing.
+Built with **Next.js 16 (App Router)**, **TypeScript**, and **Tailwind CSS 4**. The official round badge logo is used in the header, footer, favicons and share image; the mascot and collection characters are hand-coded SVG.
 
 ## Run it locally
 
@@ -26,7 +26,7 @@ npm run lint
 ```
 
 ```bash
-npx tsc --noEmit
+npm run typecheck
 ```
 
 ```bash
@@ -50,7 +50,7 @@ npm run build
 
 | I want to… | Edit |
 | --- | --- |
-| Add the official logo | Put the file in `public/brand/` and set `siteConfig.logo.src` (+ width/height) in `src/lib/site.ts`. Replace `src/app/icon.svg` with a square version for the favicon. |
+| Update the logo | The original is `assets/brand/funksquish-logo-original.webp`. Site copies live in `public/brand/` (round, transparent corners), favicons in `src/app/` (`favicon.ico`, `icon.png`, `apple-icon.png`), and the share-image copy in `src/assets/brand-logo-560.png`. Path is set in `src/lib/site.ts`. |
 | Change email, TikTok link, nav links | `src/lib/site.ts` |
 | Edit FAQ answers | `src/content/faq.ts` (remove `pending: true` once decided) |
 | Announce a TikTok LIVE | `src/content/live-schedule.ts` |
