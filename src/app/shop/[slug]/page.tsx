@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { getProduct, listProducts, statusLabel } from "@/commerce/catalog";
+import { availabilityLabel, getAvailability, getProduct, listProducts } from "@/commerce/catalog";
 import { getCategory } from "@/commerce/categories";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { Container, Badge, Notice } from "@/components/ui/Primitives";
@@ -11,6 +11,7 @@ import { ProductCard } from "@/components/shop/ProductCard";
 import { ArrowLeftIcon, SparklesIcon } from "@/components/icons/Icons";
 import { themeClasses } from "@/components/theme";
 import { Wave } from "@/components/decor/Decor";
+import { jsonLdScript, pageMetadata, productJsonLd } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const products = await listProducts();
@@ -20,11 +21,15 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/shop/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProduct(slug);
-  if (!product) return { title: "Not found" };
-  return {
-    title: `${product.name} (preview)`,
-    description: `${product.shortDescription} Sample design — not yet for sale.`,
-  };
+  if (!product) return { title: "Not found", robots: { index: false } };
+  const preview = product.publication === "preview";
+  return pageMetadata({
+    title: preview ? `${product.name} (preview)` : product.name,
+    description: preview ? `${product.shortDescription} Sample design — not for sale.` : product.shortDescription,
+    path: `/shop/${product.slug}`,
+    // Illustrated samples are not real products: keep them out of search results.
+    noindex: preview,
+  });
 }
 
 export default function ProductPage({ params }: PageProps<"/shop/[slug]">) {
@@ -63,19 +68,22 @@ async function ProductContent({ slug }: { slug: string }) {
   const product = await getProduct(slug);
   if (!product) notFound();
 
+  const preview = product.publication === "preview";
   const category = getCategory(product.category);
   const theme = category ? themeClasses[category.theme] : themeClasses.berry;
-  const related = (await listProducts()).filter((p) => p.category === product.category && p.id !== product.id).slice(0, 3);
+  const availability = getAvailability(product);
 
-  const details: [string, string][] = [
-    ["Size", "To be confirmed"],
-    ["Materials", "To be confirmed"],
-    ["Age guidance", "To be confirmed"],
-    ["Shipping", "Details coming soon"],
-  ];
+  // Recommended: same collection first, then fill from other collections.
+  const others = (await listProducts()).filter((p) => p.id !== product.id);
+  const related = [
+    ...others.filter((p) => p.category === product.category),
+    ...others.filter((p) => p.category !== product.category).sort((a, b) => a.featuredRank - b.featuredRank),
+  ].slice(0, 3);
+  const jsonLd = productJsonLd(product);
 
   return (
     <>
+      {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(jsonLd)} />}
       <section className="sky-wash pb-20 pt-28 sm:pb-28 sm:pt-32">
         <Container>
           <nav aria-label="Breadcrumb" className="mb-6">
@@ -84,7 +92,7 @@ async function ProductContent({ slug }: { slug: string }) {
               className="inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 font-display font-semibold text-ink ring-1 ring-inset ring-sky-200 transition-colors hover:text-royal"
             >
               <ArrowLeftIcon className="size-4" />
-              Back to shop preview
+              {preview ? "Back to shop preview" : `Back to ${category?.name ?? "the shop"}`}
             </Link>
           </nav>
 
@@ -95,7 +103,7 @@ async function ProductContent({ slug }: { slug: string }) {
               <>
                 <div className="flex flex-wrap gap-2">
                   {category && <Badge tone={theme.badge}>{category.name}</Badge>}
-                  <Badge tone="lemon">{statusLabel[product.status]}</Badge>
+                  <Badge tone={preview ? "lemon" : "sky"}>{availabilityLabel[availability]}</Badge>
                 </div>
                 <h1 className="mt-4 font-display text-4xl font-bold leading-[1.02] tracking-tight text-ink sm:text-5xl">
                   {product.name}
@@ -104,23 +112,12 @@ async function ProductContent({ slug }: { slug: string }) {
               </>
             }
             footer={
-              <>
+              preview && (
                 <Notice tone="lemon" title="Sample design" icon={<SparklesIcon className="size-6" />} className="mt-6">
-                  This page shows how product pages will look at launch. The design, colors, and details may change once
-                  we have real squishies in hand.
+                  This page shows how product pages will look at launch. The design, colors, and details may change once we
+                  have real squishies in hand.
                 </Notice>
-                <div className="mt-6 rounded-[2rem] bg-white p-5 ring-1 ring-inset ring-sky-200">
-                  <h2 className="font-display text-xl font-bold text-ink">Details</h2>
-                  <dl className="mt-3 divide-y divide-sky-200/70">
-                    {details.map(([k, v]) => (
-                      <div key={k} className="flex justify-between gap-4 py-2.5">
-                        <dt className="font-semibold text-ink">{k}</dt>
-                        <dd className="text-right text-ink-soft">{v}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                </div>
-              </>
+              )
             }
           />
         </Container>
@@ -131,7 +128,7 @@ async function ProductContent({ slug }: { slug: string }) {
           <Wave fill="#ffffff" className="-mt-10 bg-transparent sm:-mt-16 lg:-mt-20" />
           <Container className="pt-6">
             <h2 id="related-title" className="font-display text-3xl font-bold text-ink">
-              More {category?.name ?? "samples"}
+              You might also like
             </h2>
             <ul className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
               {related.map((p) => (

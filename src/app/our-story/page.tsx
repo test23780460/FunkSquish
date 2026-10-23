@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { PageHero } from "@/components/layout/PageHero";
 import { Container, SectionHeading } from "@/components/ui/Primitives";
@@ -8,11 +7,13 @@ import { CapsuleArt, CrunchyArt, JellyArt, SlushieArt } from "@/components/illus
 import { HeartIcon, TikTokIcon, ArrowRightIcon } from "@/components/icons/Icons";
 import { previewPalettes as p } from "@/commerce/providers/preview";
 import { siteConfig } from "@/lib/site";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Our Story",
   description: "FunkSquish is a brand-new small business born from a love of fun, colorful squishies.",
-};
+  path: "/our-story",
+});
 
 const values = [
   {
@@ -105,7 +106,8 @@ export default function OurStoryPage() {
           </ul>
 
           <div className="mt-14 flex flex-col items-center gap-4 text-center min-[440px]:flex-row min-[440px]:justify-center">
-            <ButtonAnchor href={siteConfig.tiktok.url} size="lg" variant="tiktok">
+            <ButtonAnchor href={siteConfig.tiktok.url}
+              data-umami-event="tiktok-click" size="lg" variant="tiktok">
               <TikTokIcon className="size-5" />
               Follow {siteConfig.tiktok.handle}
               <span className="sr-only"> on TikTok (opens in a new tab)</span>

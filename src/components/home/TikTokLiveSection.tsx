@@ -47,7 +47,8 @@ export function TikTokLiveSection() {
             </ul>
 
             <div className="mt-8 flex flex-col gap-4 min-[440px]:flex-row min-[440px]:justify-center lg:justify-start">
-              <ButtonAnchor href={siteConfig.tiktok.url} variant="secondary" size="lg">
+              <ButtonAnchor href={siteConfig.tiktok.url}
+              data-umami-event="tiktok-click" variant="secondary" size="lg">
                 <TikTokIcon className="size-5" />
                 Follow {siteConfig.tiktok.handle}
                 <span className="sr-only"> on TikTok (opens in a new tab)</span>

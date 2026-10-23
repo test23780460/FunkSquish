@@ -51,6 +51,7 @@ export function LiveSchedule({ invert = false, className }: { invert?: boolean; 
             No LIVEs are scheduled yet. We&apos;ll announce our first stream on TikTok — follow{" "}
             <a
               href={siteConfig.tiktok.url}
+              data-umami-event="tiktok-click"
               target="_blank"
               rel="noopener noreferrer"
               className={cn("font-semibold underline decoration-2 underline-offset-4", invert ? "text-white" : "text-royal")}

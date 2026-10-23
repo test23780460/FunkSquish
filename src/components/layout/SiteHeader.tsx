@@ -7,6 +7,7 @@ import { mainNav, siteConfig } from "@/lib/site";
 import { cn } from "@/lib/cn";
 import { Logo } from "./Logo";
 import { CloseIcon, MenuIcon, TikTokIcon, ArrowRightIcon } from "@/components/icons/Icons";
+import { CartButton } from "@/components/cart/Cart";
 
 const dotColors = ["bg-sky", "bg-berry", "bg-grape", "bg-peach", "bg-mint"];
 
@@ -82,6 +83,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-2">
           <a
             href={siteConfig.tiktok.url}
+              data-umami-event="tiktok-click"
             target="_blank"
             rel="noopener noreferrer"
             className="hidden items-center gap-2 rounded-full bg-ink px-4 py-2.5 font-display text-sm font-semibold text-white transition-transform duration-200 ease-squish hover:-translate-y-0.5 hover:bg-navy sm:inline-flex"
@@ -90,6 +92,8 @@ export function SiteHeader() {
             Follow
             <span className="sr-only"> {siteConfig.tiktok.handle} on TikTok (opens in a new tab)</span>
           </a>
+
+          <CartButton />
 
           <button
             ref={buttonRef}
@@ -144,6 +148,7 @@ export function SiteHeader() {
             </nav>
             <a
               href={siteConfig.tiktok.url}
+              data-umami-event="tiktok-click"
               target="_blank"
               rel="noopener noreferrer"
               onClick={close}

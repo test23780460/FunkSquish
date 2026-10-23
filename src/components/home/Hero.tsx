@@ -47,7 +47,8 @@ export function Hero() {
               Explore collections
               <ArrowRightIcon className="size-5 transition-transform group-hover/btn:translate-x-1" />
             </ButtonLink>
-            <ButtonAnchor href={siteConfig.tiktok.url} variant="secondary" size="lg">
+            <ButtonAnchor href={siteConfig.tiktok.url}
+              data-umami-event="tiktok-click" variant="secondary" size="lg">
               <TikTokIcon className="size-5" />
               {siteConfig.tiktok.handle}
               <span className="sr-only"> on TikTok (opens in a new tab)</span>

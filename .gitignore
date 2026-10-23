@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -53,3 +54,7 @@ desktop.ini
 
 # logs
 *.log
+
+# PRIVATE business data — supplier costs, invoices, compliance files, internal
+# checklists. The GitHub repo is public: never commit anything in this folder.
+/private/

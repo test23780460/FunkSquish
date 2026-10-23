@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { PageHero } from "@/components/layout/PageHero";
@@ -9,11 +8,13 @@ import { LiveSchedule } from "@/components/tiktok/LiveSchedule";
 import { HeartIcon, PlayIcon, SparklesIcon, StoreIcon, TikTokIcon, SmileIcon } from "@/components/icons/Icons";
 import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/cn";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "TikTok LIVE",
   description: `Follow ${siteConfig.tiktok.handle} on TikTok. FunkSquish LIVEs and livestream shopping are coming soon.`,
-};
+  path: "/tiktok-live",
+});
 
 const plans: { title: string; body: string; icon: ReactNode; tone: string }[] = [
   {
@@ -60,7 +61,8 @@ export default function TikTokLivePage() {
         art={<PhoneLive className="sm:max-w-[17rem]" />}
       >
         <div className="flex justify-center lg:justify-start">
-          <ButtonAnchor href={siteConfig.tiktok.url} size="lg" variant="tiktok">
+          <ButtonAnchor href={siteConfig.tiktok.url}
+              data-umami-event="tiktok-click" size="lg" variant="tiktok">
             <TikTokIcon className="size-5" />
             Follow {siteConfig.tiktok.handle}
             <span className="sr-only"> on TikTok (opens in a new tab)</span>

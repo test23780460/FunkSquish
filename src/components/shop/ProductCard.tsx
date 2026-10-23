@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Product } from "@/commerce/types";
 import { getCategory } from "@/commerce/categories";
-import { formatMoney, startingPrice, statusLabel } from "@/commerce/catalog";
+import { availabilityLabel, canPurchase, formatMoney, getAvailability, startingPrice } from "@/commerce/availability";
 import { ProductArt } from "@/components/illustrations/ProductArt";
 import { Badge } from "@/components/ui/Primitives";
 import { PurchaseButton } from "./PurchaseButton";
@@ -14,8 +14,11 @@ export function ProductCard({ product, priority = false }: { product: Product; p
   const theme = category ? themeClasses[category.theme] : themeClasses.berry;
   const first = product.variants[0];
   const price = startingPrice(product);
-  const soldOut = product.status === "sold-out";
-  const image = product.images[0];
+  const availability = getAvailability(product);
+  const soldOut = availability === "sold-out";
+  const image = product.media.find((m) => m.type === "image");
+  const sellable = product.variants.some((v) => canPurchase(product, v));
+  const badgeTone = availability === "preview" ? "lemon" : availability === "in-stock" || availability === "low-stock" ? "mint" : "white";
 
   return (
     <article className="group squishy relative flex h-full flex-col rounded-[1.6rem] bg-white p-2 shadow-[var(--shadow-card)] ring-1 ring-inset ring-sky-200/80 sm:rounded-[2rem] sm:p-2.5">
@@ -36,12 +39,12 @@ export function ProductCard({ product, priority = false }: { product: Product; p
           <ProductArt
             kind={product.art}
             palette={first.palette}
-            title={`Illustration of the ${product.name} sample design`}
+            title={`Illustration of the ${product.name}${product.publication === "preview" ? " sample design" : ""}`}
             className="relative h-[66%] w-auto drop-shadow-[0_14px_14px_rgba(19,53,122,0.2)] transition-transform duration-500 ease-squish group-hover:-rotate-6 group-hover:scale-110"
           />
         )}
-        <Badge tone={product.status === "preview" ? "lemon" : soldOut ? "white" : "sky"} className="absolute left-2 top-2 px-2 text-[0.7rem] sm:left-3 sm:top-3 sm:px-3 sm:text-xs">
-          {statusLabel[product.status]}
+        <Badge tone={badgeTone} className="absolute left-2 top-2 px-2 text-[0.7rem] sm:left-3 sm:top-3 sm:px-3 sm:text-xs">
+          {availabilityLabel[availability]}
         </Badge>
       </div>
 
@@ -77,7 +80,13 @@ export function ProductCard({ product, priority = false }: { product: Product; p
           <p className="font-display text-base font-bold text-ink sm:text-lg">
             {price ? (product.variants.length > 1 ? `From ${formatMoney(price)}` : formatMoney(price)) : "Price TBA"}
           </p>
-          <PurchaseButton status={product.status} />
+          {sellable && product.variants.length > 1 ? (
+            <span className="inline-flex min-h-10 items-center justify-center rounded-full bg-royal px-3 font-display text-sm font-semibold text-white shadow-[0_4px_0_var(--color-navy)]">
+              Choose a color
+            </span>
+          ) : (
+            <PurchaseButton product={product} variant={product.variants[0]} />
+          )}
         </div>
       </div>
     </article>

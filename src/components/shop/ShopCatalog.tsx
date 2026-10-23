@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { CategorySlug, Product } from "@/commerce/types";
 import { categories, isCategorySlug } from "@/commerce/categories";
-import { startingPrice } from "@/commerce/catalog";
+import { startingPrice } from "@/commerce/availability";
 import { ProductCard } from "./ProductCard";
 import { Mascot } from "@/components/illustrations/Mascot";
 import { ChevronDownIcon, SearchIcon, CloseIcon } from "@/components/icons/Icons";
