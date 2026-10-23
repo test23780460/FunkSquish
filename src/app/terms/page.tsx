@@ -1,18 +1,17 @@
-import type { Metadata } from "next";
-import { LegalPage } from "@/components/layout/LegalPage";
+import { LegalPage, Todo } from "@/components/layout/LegalPage";
 import { siteConfig } from "@/lib/site";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Terms of Service (draft)",
   description: "Draft terms of service for FunkSquish. Pending owner review.",
-  robots: { index: false },
-};
-
-const Todo = ({ children }: { children: string }) => <span className="todo">[{children}]</span>;
+  path: "/terms",
+  noindex: true,
+});
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Terms of Service" lastUpdated="October 22, 2026">
+    <LegalPage title="Terms of Service" lastUpdated="October 23, 2026">
       <p>
         These Terms of Service (&ldquo;Terms&rdquo;) apply to your use of <a href={siteConfig.url}>funksquish.com</a>{" "}
         (the &ldquo;Site&rdquo;), operated by <Todo>legal business name</Todo> (&ldquo;FunkSquish,&rdquo;
@@ -48,8 +47,18 @@ export default function TermsPage() {
 
       <h2>Future purchases</h2>
       <p>
-        When our shop opens, additional terms will cover orders, pricing, payment, shipping, returns, and exchanges.{" "}
-        <Todo>Add sales terms, shipping policy, and return policy before launch.</Todo>
+        When our shop opens, additional terms will cover orders, pricing errors, payment, shipping, returns, and exchanges.
+        Our draft <a href="/shipping">Shipping Policy</a> and <a href="/returns">Returns &amp; Refunds Policy</a> will be
+        finalized before then. <Todo>Add sales terms (order acceptance, pricing errors, cancellations) before launch</Todo>
+      </p>
+      <p>
+        Purchases made through TikTok Shop or another marketplace are also subject to that marketplace&apos;s terms.
+      </p>
+
+      <h2>Product safety</h2>
+      <p>
+        Please follow the age grading, warnings, and care instructions on each product&apos;s label and product page. Never
+        heat or microwave squishy toys. See <a href="/product-care">Product care &amp; safety</a>.
       </p>
 
       <h2>Disclaimers</h2>

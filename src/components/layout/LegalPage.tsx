@@ -43,3 +43,13 @@ export function LegalPage({
     </PageTransition>
   );
 }
+
+/** Highlights a missing business fact or an owner decision inside a draft. */
+export function Todo({ children }: { children: string }) {
+  return <span className="todo">[{children}]</span>;
+}
+
+/** Highlights an owner decision that must be made before the policy can go live. */
+export function Decision({ children }: { children: string }) {
+  return <span className="todo">[Owner decision: {children}]</span>;
+}

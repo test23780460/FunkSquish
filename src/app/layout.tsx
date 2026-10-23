@@ -3,6 +3,9 @@ import { Fredoka, Nunito } from "next/font/google";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { siteConfig } from "@/lib/site";
+import { features } from "@/lib/features";
+import { Analytics } from "@/components/analytics/Analytics";
+import { CartProvider } from "@/components/cart/Cart";
 import "./globals.css";
 
 const fredoka = Fredoka({
@@ -38,7 +41,12 @@ export const metadata: Metadata = {
     title: `${siteConfig.name} — ${siteConfig.tagline}`,
     description: siteConfig.description,
   },
+  // Google Search Console HTML-tag verification (optional; set in Netlify env).
+  ...(process.env.GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } } : {}),
 };
+
+/** The cart only exists when hosted checkout is switched on (see lib/features.ts). */
+const cartEnabled = features.commerce && features.checkoutMode === "hosted-checkout";
 
 export const viewport: Viewport = {
   themeColor: "#e4f3ff",
@@ -49,11 +57,24 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${fredoka.variable} ${nunito.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
-        <SiteHeader />
-        <main id="main" className="flex-1">
-          {children}
-        </main>
-        <SiteFooter />
+        {cartEnabled ? (
+          <CartProvider>
+            <SiteHeader />
+            <main id="main" className="flex-1">
+              {children}
+            </main>
+            <SiteFooter />
+          </CartProvider>
+        ) : (
+          <>
+            <SiteHeader />
+            <main id="main" className="flex-1">
+              {children}
+            </main>
+            <SiteFooter />
+          </>
+        )}
+        <Analytics />
       </body>
     </html>
   );

@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { Fragment } from "react";
 import { siteConfig } from "@/lib/site";
 import { faqGroups } from "@/content/faq";
@@ -8,11 +7,13 @@ import { Container, Badge } from "@/components/ui/Primitives";
 import { ButtonLink } from "@/components/ui/Button";
 import { ChevronDownIcon, MailIcon, SparklesIcon } from "@/components/icons/Icons";
 import { Mascot } from "@/components/illustrations/Mascot";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "FAQ",
   description: "Answers about FunkSquish's upcoming launch, squishies, pricing, shipping, and returns.",
-};
+  path: "/faq",
+});
 
 const linkClass = "font-semibold text-royal underline decoration-2 underline-offset-4";
 
@@ -28,7 +29,8 @@ function linkify(text: string) {
       );
     if (part === siteConfig.tiktok.handle)
       return (
-        <a key={i} href={siteConfig.tiktok.url} target="_blank" rel="noopener noreferrer" className={linkClass}>
+        <a key={i} href={siteConfig.tiktok.url}
+              data-umami-event="tiktok-click" target="_blank" rel="noopener noreferrer" className={linkClass}>
           {part}
         </a>
       );

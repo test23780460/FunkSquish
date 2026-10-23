@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { PageHero } from "@/components/layout/PageHero";
@@ -7,11 +6,13 @@ import { ButtonAnchor } from "@/components/ui/Button";
 import { MailIcon, TikTokIcon, SparklesIcon } from "@/components/icons/Icons";
 import { Mascot } from "@/components/illustrations/Mascot";
 import { siteConfig } from "@/lib/site";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Contact",
   description: `Get in touch with FunkSquish at ${siteConfig.email} or on TikTok ${siteConfig.tiktok.handle}.`,
-};
+  path: "/contact",
+});
 
 export default function ContactPage() {
   return (
@@ -66,7 +67,8 @@ export default function ContactPage() {
             </p>
             <p className="mt-5 font-display text-xl font-semibold sm:text-2xl">{siteConfig.tiktok.handle}</p>
             <div className="mt-6">
-              <ButtonAnchor href={siteConfig.tiktok.url} variant="secondary">
+              <ButtonAnchor href={siteConfig.tiktok.url}
+              data-umami-event="tiktok-click" variant="secondary">
                 <TikTokIcon className="size-5" />
                 Open TikTok
                 <span className="sr-only"> (opens in a new tab)</span>

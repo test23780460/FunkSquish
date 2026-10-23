@@ -1,15 +1,36 @@
 /**
  * Launch switches. Everything here is OFF during pre-launch.
  *
- * Flip a flag only after the matching integration is actually connected
- * (see docs/ECOMMERCE-ROADMAP.md). UI that depends on a flag stays visible
- * but disabled, so turning it on later needs no redesign.
+ * Flip a switch only after the matching integration is actually connected
+ * and tested on a deploy preview (see docs/ECOMMERCE-ROADMAP.md and
+ * docs/LAUNCH-RUNBOOK.md). UI that depends on a switch stays visible but
+ * disabled, so turning it on later needs no redesign.
  */
-export const features = {
-  /** Real products + checkout via a payment provider (e.g. Shopify / Stripe). */
+
+/**
+ * How shoppers would buy, once `commerce` is on:
+ * - "disabled":        nothing can be bought (pre-launch)
+ * - "external-links":  each variant links to its listing on an external channel
+ *                      (e.g. TikTok Shop). No cart, no payments on this site.
+ * - "hosted-checkout": cart on this site, payment on the provider's hosted
+ *                      checkout (e.g. Shopify). Requires server env vars.
+ */
+export type CheckoutMode = "disabled" | "external-links" | "hosted-checkout";
+
+export const features: {
+  commerce: boolean;
+  checkoutMode: CheckoutMode;
+  newsletter: boolean;
+  accounts: boolean;
+} = {
+  /** Master switch for any purchasing. */
   commerce: false,
-  /** Email sign-up form connected to a real email service. */
+  checkoutMode: "disabled",
+  /** Launch-email sign-up. Also requires the provider env vars (see .env.example). */
   newsletter: false,
-  /** Customer accounts (only if they turn out to be genuinely useful). */
+  /** Customer accounts — not planned unless genuinely useful. */
   accounts: false,
-} as const;
+};
+
+/** True only when a real purchase path is switched on. */
+export const purchasingEnabled = features.commerce && features.checkoutMode !== "disabled";

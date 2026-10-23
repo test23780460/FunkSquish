@@ -30,6 +30,7 @@ export function SiteFooter() {
             <div className="mt-6 flex flex-wrap gap-3">
               <a
                 href={siteConfig.tiktok.url}
+              data-umami-event="tiktok-click"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-5 font-display font-semibold text-ink transition-transform duration-200 ease-squish hover:-translate-y-0.5"
@@ -48,7 +49,7 @@ export function SiteFooter() {
             </div>
           </div>
 
-          <nav aria-label="Footer" className="grid grid-cols-2 gap-8 sm:grid-cols-3">
+          <nav aria-label="Footer" className="grid grid-cols-2 gap-8 sm:grid-cols-4">
             {footerNav.map((group) => (
               <div key={group.title}>
                 <h2 className="font-display text-sm font-semibold uppercase tracking-[0.16em] text-sky-300">

@@ -64,12 +64,12 @@ export const faqGroups: FaqGroup[] = [
       },
       {
         q: "Where do you ship, and how much does shipping cost?",
-        a: "Shipping regions, rates, and delivery times are still being decided. We'll publish full shipping details before launch.",
+        a: "Shipping regions, rates, and processing times are still being decided. A draft of our shipping policy is on the Shipping page, and the final details will be published before launch. Shipping costs are always shown at checkout before you pay.",
         pending: true,
       },
       {
         q: "What is your return policy?",
-        a: "Our returns and exchanges policy will be published before the shop opens.",
+        a: "Our returns and exchanges policy is still being decided. A draft is on the Returns page, and the final policy will be published before the shop opens.",
         pending: true,
       },
       {
@@ -86,6 +86,15 @@ export const faqGroups: FaqGroup[] = [
       {
         q: "Who are your squishies for?",
         a: "We'll share product details — including sizes, materials, and age guidance — for each squishy when it's listed. Please check each product page before buying.",
+        pending: true,
+      },
+      {
+        q: "Can I heat or microwave a squishy?",
+        a: "No — never heat or microwave a squishy. Heated squishies can burst and cause serious burns. Our Product care & safety page has more tips, based on guidance from the U.S. Consumer Product Safety Commission.",
+      },
+      {
+        q: "Will your squishies be safety tested?",
+        a: "We will only sell children's toys that come with the required U.S. safety documentation, including a Children's Product Certificate based on testing by a CPSC-accepted lab. Each product page will show its age grading and warnings exactly as they appear on the label.",
         pending: true,
       },
       {

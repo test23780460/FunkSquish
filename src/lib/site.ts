@@ -53,6 +53,15 @@ export const footerNav: { title: string; items: NavItem[] }[] = [
     ],
   },
   {
+    title: "Help",
+    items: [
+      { label: "Order help", href: "/order-help" },
+      { label: "Shipping", href: "/shipping" },
+      { label: "Returns", href: "/returns" },
+      { label: "Care & safety", href: "/product-care" },
+    ],
+  },
+  {
     title: "Legal",
     items: [
       { label: "Privacy Policy", href: "/privacy" },

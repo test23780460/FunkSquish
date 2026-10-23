@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { Suspense } from "react";
 import { listProducts } from "@/commerce/catalog";
 import { PageTransition } from "@/components/layout/PageTransition";
@@ -7,12 +6,13 @@ import { Container, Notice } from "@/components/ui/Primitives";
 import { ShopCatalog, ShopCatalogFromUrl } from "@/components/shop/ShopCatalog";
 import { SparklesIcon, StoreIcon } from "@/components/icons/Icons";
 import { siteConfig } from "@/lib/site";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Shop (preview)",
-  description:
-    "Preview the FunkSquish shop: sample designs from our upcoming Fruity Slushies, Jelly Squishies, Crunchy Squishies, and Cute Collectibles. Nothing is for sale yet.",
-};
+  description: "Preview the FunkSquish shop: sample designs from our upcoming Fruity Slushies, Jelly Squishies, Crunchy Squishies, and Cute Collectibles. Nothing is for sale yet.",
+  path: "/shop",
+});
 
 export default async function ShopPage() {
   const products = await listProducts();
@@ -44,6 +44,7 @@ export default async function ShopPage() {
             prices haven&apos;t been set, and nothing can be bought yet. Follow{" "}
             <a
               href={siteConfig.tiktok.url}
+              data-umami-event="tiktok-click"
               target="_blank"
               rel="noopener noreferrer"
               className="font-semibold text-royal underline decoration-2 underline-offset-4"

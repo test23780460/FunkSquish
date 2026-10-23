@@ -1,18 +1,27 @@
-import type { Product, ProductStatus, ProductVariant } from "./types";
+import type { Product } from "./types";
 import { previewProducts } from "./providers/preview";
+import { localProducts } from "./providers/local";
 
 /**
- * Catalog access layer.
+ * Catalog access layer. Pages only call these functions.
  *
- * Pages only call these functions. At launch, swap the provider below for a
- * real one (e.g. Shopify Storefront API) that returns the same `Product` shape.
+ * Source selection:
+ *  - If the local catalog (src/commerce/data/products.json, generated from the
+ *    catalog template) contains any published products, it is used.
+ *  - Otherwise the illustrated preview samples are shown.
+ * A hosted provider (e.g. Shopify) can replace `localProvider` later with the
+ * same interface.
  */
-interface CatalogProvider {
+export interface CatalogProvider {
+  id: "preview" | "local" | "shopify";
   listProducts(): Promise<Product[]>;
   getProduct(slug: string): Promise<Product | undefined>;
 }
 
+const visible = (p: Product) => p.publication === "published" || p.publication === "preview";
+
 const previewProvider: CatalogProvider = {
+  id: "preview",
   async listProducts() {
     return previewProducts;
   },
@@ -21,10 +30,22 @@ const previewProvider: CatalogProvider = {
   },
 };
 
-const provider: CatalogProvider = previewProvider;
+const localProvider: CatalogProvider = {
+  id: "local",
+  async listProducts() {
+    return localProducts.filter(visible);
+  },
+  async getProduct(slug) {
+    return localProducts.filter(visible).find((p) => p.slug === slug);
+  },
+};
+
+const provider: CatalogProvider = localProducts.some((p) => p.publication === "published")
+  ? localProvider
+  : previewProvider;
 
 /** True while the shop only contains illustrative samples. */
-export const isPreviewCatalog = provider === previewProvider;
+export const isPreviewCatalog = provider.id === "preview";
 
 export function listProducts() {
   return provider.listProducts();
@@ -34,29 +55,5 @@ export function getProduct(slug: string) {
   return provider.getProduct(slug);
 }
 
-/* ---------- Pure helpers shared by server + client components ---------- */
-
-export function formatMoney(money: ProductVariant["price"]): string {
-  if (!money) return "Price TBA";
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: money.currency }).format(
-    money.amount / 100,
-  );
-}
-
-/** Lowest variant price, or null if no variant is priced yet. */
-export function startingPrice(product: Product) {
-  const prices = product.variants.flatMap((v) => (v.price ? [v.price] : []));
-  if (prices.length === 0) return null;
-  return prices.reduce((min, p) => (p.amount < min.amount ? p : min));
-}
-
-export function isPurchasable(status: ProductStatus) {
-  return status === "available";
-}
-
-export const statusLabel: Record<ProductStatus, string> = {
-  preview: "Preview sample",
-  "coming-soon": "Coming soon",
-  available: "In stock",
-  "sold-out": "Sold out",
-};
+// Pure helpers live in ./availability (safe for client bundles); re-exported for convenience.
+export * from "./availability";
