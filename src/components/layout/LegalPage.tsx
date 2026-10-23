@@ -53,3 +53,15 @@ export function Todo({ children }: { children: string }) {
 export function Decision({ children }: { children: string }) {
   return <span className="todo">[Owner decision: {children}]</span>;
 }
+
+/**
+ * A recommended policy term that is NOT yet approved by the owner.
+ * Rendered highlighted so nobody mistakes it for a final commitment.
+ */
+export function Proposed({ children }: { children: string }) {
+  return (
+    <span className="proposed" title="Proposed — awaiting owner approval">
+      {children} <span className="proposed-tag">proposed</span>
+    </span>
+  );
+}

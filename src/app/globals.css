@@ -275,3 +275,41 @@
     font-weight: 600;
   }
 }
+
+@layer components {
+  .legal-prose .proposed {
+    border-radius: 0.4rem;
+    background: var(--color-ice);
+    padding: 0 0.3rem;
+    color: var(--color-ink);
+    font-weight: 600;
+    box-shadow: inset 0 -2px 0 var(--color-sky-300);
+  }
+  .legal-prose .proposed-tag {
+    margin-left: 0.2rem;
+    border-radius: 999px;
+    background: var(--color-royal);
+    padding: 0 0.4rem;
+    color: #fff;
+    font-size: 0.7em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    vertical-align: 0.1em;
+  }
+}
+
+@layer components {
+  .legal-prose h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--color-ink);
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+  .legal-prose ol {
+    margin-top: 0.75rem;
+    padding-left: 1.25rem;
+    list-style: decimal;
+  }
+}

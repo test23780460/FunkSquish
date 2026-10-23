@@ -1,6 +1,7 @@
 import { LegalPage, Todo, Decision } from "@/components/layout/LegalPage";
 import { siteConfig } from "@/lib/site";
 import { pageMetadata } from "@/lib/seo";
+import { analyticsActive, newsletterActive } from "@/lib/integrations/status";
 
 export const metadata = pageMetadata({
   title: "Privacy Policy (draft)",
@@ -9,92 +10,126 @@ export const metadata = pageMetadata({
   noindex: true,
 });
 
+/**
+ * Privacy policy — DRAFT until the owner approves it. Sections for Brevo and
+ * Umami describe those services exactly as they're configured in this site.
+ * The "active / not active yet" labels are computed from the real build
+ * configuration (lib/integrations/status), so they can't drift.
+ */
+const status = {
+  newsletter: newsletterActive() ? "active" : "not active yet",
+  analytics: analyticsActive() ? "active" : "not active yet",
+};
+
 export default function PrivacyPage() {
   return (
     <LegalPage title="Privacy Policy" lastUpdated="October 23, 2026">
       <p>
         This Privacy Policy explains how FunkSquish (&ldquo;FunkSquish,&rdquo; &ldquo;we,&rdquo; &ldquo;us&rdquo;),
-        operated by <Todo>legal business name and entity type</Todo>, handles information when you visit{" "}
-        <a href={siteConfig.url}>funksquish.com</a> (the &ldquo;Site&rdquo;).
+        operated by <Todo>legal business name and entity type</Todo>, collects and uses information when you visit{" "}
+        <a href={siteConfig.url}>funksquish.com</a> (the &ldquo;Site&rdquo;) or contact us. FunkSquish is based in the United
+        States.
       </p>
 
-      <h2>What we collect right now</h2>
-      <p>FunkSquish has not launched yet. At this stage the Site has no accounts, no active sign-up forms, and no checkout.</p>
+      <h2>Summary</h2>
       <ul>
-        <li>
-          <strong>Emails you send us.</strong> If you email us, we receive your email address and anything you include in
-          your message. Our email is provided by Google Workspace.
-        </li>
-        <li>
-          <strong>Technical data.</strong> Our website host, Netlify, automatically processes technical information such as
-          IP address, browser type, and pages requested in order to deliver and secure the Site.
-        </li>
-        <li>
-          <strong>No analytics or advertising cookies.</strong> We do not currently use analytics, tracking pixels, or
-          advertising cookies.
-        </li>
+        <li>We don&apos;t sell your personal information.</li>
+        <li>We don&apos;t use advertising cookies or tracking pixels.</li>
+        <li>The Site has no accounts and, until the shop opens, no checkout.</li>
+        <li>You can ask us to delete your information at any time.</li>
       </ul>
 
-      <h2>Launch email list (not active yet)</h2>
+      <h2>Information we collect</h2>
+      <h3>When you email us</h3>
+      <p>We receive your email address and whatever you include in your message. Our email is provided by Google Workspace.</p>
+
+      <h3>When you visit the Site</h3>
       <p>
-        We plan to offer an optional email list to tell people when the shop opens. It is switched off until this policy is
-        finalized. <Decision>before enabling sign-ups, confirm the provider (planned: Brevo) and replace this section with the final wording</Decision>
+        Our website host, <strong>Netlify</strong>, automatically processes technical information such as your IP address,
+        browser type, and the pages you request, so it can deliver the Site and protect it from abuse.
       </p>
-      <p>Planned approach, for review:</p>
+
+      <h3>Launch email list ({status.newsletter})</h3>
+      <p>If you choose to join our launch email list:</p>
       <ul>
-        <li>You only join if you tick a consent box and then confirm from a confirmation email (double opt-in).</li>
-        <li>We collect your email address and the date you signed up and confirmed.</li>
-        <li>Every email includes an unsubscribe link, and you can ask us to delete your address at any time.</li>
-        <li>Your address is stored by our email provider, not on this website.</li>
+        <li>
+          You give your email address and tick a box agreeing to receive FunkSquish emails. You&apos;re only added after you
+          click the link in our confirmation email (&ldquo;double opt-in&rdquo;).
+        </li>
+        <li>
+          Your email address, and a record of when you signed up and confirmed, are stored by our email provider,{" "}
+          <strong>Brevo</strong>. The Site itself doesn&apos;t store your address.
+        </li>
+        <li>We use your address only to send FunkSquish news, such as our launch and new drops.</li>
+        <li>Every email has an unsubscribe link. You can also email us to be removed. We process opt-outs promptly.</li>
+        <li>Our emails include a postal address for FunkSquish, as U.S. law requires.</li>
       </ul>
 
-      <h2>Website analytics (not active yet)</h2>
+      <h3>Website analytics ({status.analytics})</h3>
       <p>
-        <Decision>if privacy-friendly analytics is turned on (planned: Umami Cloud — cookieless, no personal profiles), describe it here before enabling</Decision>
+        We use <strong>Umami</strong>, a privacy-focused analytics service, to count visits and see which pages are popular
+        and how people find us (for example, from TikTok). Umami doesn&apos;t use cookies and doesn&apos;t build a profile of you. It
+        records things like the page visited, the referring website, browser and device type, and country. It also counts a
+        few actions, such as clicks on our TikTok links and completed email sign-ups — never what you type. We only use this
+        in aggregate.
       </p>
 
       <h2>How we use information</h2>
       <ul>
-        <li>To reply to your messages.</li>
-        <li>To run, maintain, and protect the Site.</li>
+        <li>To reply to your messages and help with orders.</li>
+        <li>To send launch emails, if you&apos;ve signed up and confirmed.</li>
+        <li>To run, improve, and protect the Site.</li>
+        <li>To meet legal obligations.</li>
       </ul>
 
-      <h2>Sharing</h2>
+      <h2>Who we share it with</h2>
       <p>
-        We do not sell your personal information. We share it only with service providers that help us run the Site or our
-        email (such as Netlify and Google Workspace), or when required by law.
+        We share information only with service providers that run parts of our business on our behalf — currently Netlify
+        (hosting) and Google Workspace (email), and, once active, Brevo (email list) and Umami (analytics) — or when required
+        by law. We don&apos;t sell or rent personal information.
       </p>
-
-      <h2>Links to other sites</h2>
-      <p>The Site links to TikTok and other third-party services. Their own privacy policies apply when you use them.</p>
 
       <h2>When our shop opens</h2>
       <p>
-        Before we sell anything, we will update this policy to explain what we collect for orders, shipping, and customer
-        support. Payments will be handled by a third-party payment provider; we will not see or store full card numbers.{" "}
-        <Decision>name the checkout/payment provider (e.g. Shopify, TikTok Shop), shipping provider, and how long order records are kept</Decision>
+        Orders will be processed by a third-party checkout provider, which handles payment details. We will never see or
+        store your full card number. Before taking orders we&apos;ll update this policy to name that provider and explain what
+        order information (such as your name, shipping address, and order history) we keep and for how long.{" "}
+        <Decision>checkout provider(s) and order-record retention period</Decision>
       </p>
 
-      <h2>Children&apos;s privacy</h2>
+      <h2>Children</h2>
       <p>
-        The Site is not directed to children under 13 and we do not knowingly collect their personal information.{" "}
-        <Todo>Owner/legal review: approach for younger customers and parental consent (e.g. COPPA)</Todo>
+        The Site is meant for a general audience and isn&apos;t directed to children under 13. We don&apos;t knowingly collect
+        personal information from children under 13. If you believe a child has sent us personal information, email us and
+        we&apos;ll delete it. <Todo>legal review of children&apos;s privacy approach (COPPA)</Todo>
       </p>
 
       <h2>Your choices and rights</h2>
       <p>
-        You can ask what personal information we hold about you, or ask us to delete it, by emailing{" "}
-        <a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a>.{" "}
-        <Todo>Owner/legal review: state privacy laws that apply to the business</Todo>
+        You can ask what personal information we have about you, ask us to correct or delete it, or unsubscribe from emails at
+        any time by emailing <a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a>. Depending on where you live, you may
+        have additional rights under state law. <Todo>legal review of applicable state privacy laws</Todo>
       </p>
 
-      <h2>Changes to this policy</h2>
+      <h2>Keeping information</h2>
+      <p>
+        We keep emails as long as needed to help you and for our records. Email-list subscribers are kept until they
+        unsubscribe or ask to be deleted.
+      </p>
+
+      <h2>Security</h2>
+      <p>
+        We use reputable providers and limit access to business information. No method of storing or sending information is
+        perfectly secure, but we work to protect it.
+      </p>
+
+      <h2>Changes</h2>
       <p>We may update this policy. The date at the top shows when it last changed.</p>
 
       <h2>Contact</h2>
       <p>
-        Questions? Email <a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a>.{" "}
-        <Todo>business mailing address, if required — do not use a home address without considering privacy</Todo>
+        Questions? Email <a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a>. Mailing address:{" "}
+        <Todo>business mailing address (PO box or private mailbox — not a home address)</Todo>
       </p>
     </LegalPage>
   );

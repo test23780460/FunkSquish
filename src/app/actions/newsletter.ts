@@ -1,15 +1,15 @@
 "use server";
 
-import { features } from "@/lib/features";
-import { brevoConfigured, subscribeWithDoubleOptIn } from "@/lib/newsletter/brevo";
+import { subscribeWithDoubleOptIn } from "@/lib/newsletter/brevo";
+import { newsletterActive } from "@/lib/integrations/status";
 
 export type SignupState = { status: "idle" | "success" | "error"; message: string };
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-/** True only when the switch is on AND the email provider is configured. */
+/** True only when Brevo is configured AND sign-ups are switched on (see lib/integrations/status). */
 export async function newsletterAvailable() {
-  return features.newsletter && brevoConfigured();
+  return newsletterActive();
 }
 
 /**

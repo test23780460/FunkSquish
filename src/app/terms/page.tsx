@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { LegalPage, Todo } from "@/components/layout/LegalPage";
 import { siteConfig } from "@/lib/site";
 import { pageMetadata } from "@/lib/seo";
@@ -45,25 +46,43 @@ export default function TermsPage() {
       <h2>Third-party links</h2>
       <p>The Site links to services like TikTok. We aren&apos;t responsible for their content or practices.</p>
 
-      <h2>Future purchases</h2>
-      <p>
-        When our shop opens, additional terms will cover orders, pricing errors, payment, shipping, returns, and exchanges.
-        Our draft <a href="/shipping">Shipping Policy</a> and <a href="/returns">Returns &amp; Refunds Policy</a> will be
-        finalized before then. <Todo>Add sales terms (order acceptance, pricing errors, cancellations) before launch</Todo>
-      </p>
-      <p>
-        Purchases made through TikTok Shop or another marketplace are also subject to that marketplace&apos;s terms.
-      </p>
+      <h2>Orders and pricing (when the shop opens)</h2>
+      <ul>
+        <li>
+          <strong>Order acceptance.</strong> Your order is an offer to buy. We accept it when we ship it or send a shipping
+          confirmation. We may decline or cancel an order — for example, if an item is out of stock or the order looks
+          fraudulent — and if we do, we&apos;ll refund any payment in full.
+        </li>
+        <li>
+          <strong>Prices and errors.</strong> Prices are in U.S. dollars and shown at checkout with shipping and any tax before
+          you pay. If a product is listed at the wrong price, we&apos;ll contact you before shipping and let you cancel for a full
+          refund.
+        </li>
+        <li>
+          <strong>Product information.</strong> We try to describe products and colors accurately. Real items may look slightly
+          different from photos or illustrations.
+        </li>
+        <li>
+          <strong>Shipping, returns, and refunds</strong> are covered by our <Link href="/shipping">Shipping Policy</Link> and{" "}
+          <Link href="/returns">Returns &amp; Refunds Policy</Link>.
+        </li>
+        <li>
+          <strong>Marketplace orders.</strong> Purchases through TikTok Shop or another marketplace are also subject to that
+          marketplace&apos;s terms.
+        </li>
+      </ul>
 
       <h2>Product safety</h2>
       <p>
         Please follow the age grading, warnings, and care instructions on each product&apos;s label and product page. Never
-        heat or microwave squishy toys. See <a href="/product-care">Product care &amp; safety</a>.
+        heat or microwave squishy toys. See <Link href="/product-care">Product care &amp; safety</Link>.
       </p>
 
-      <h2>Disclaimers</h2>
+      <h2>Disclaimers and liability</h2>
       <p>
-        The Site is provided &ldquo;as is.&rdquo; <Todo>Owner/legal review: disclaimers and limitation of liability.</Todo>
+        The Site is provided &ldquo;as is.&rdquo; To the extent allowed by law, FunkSquish isn&apos;t liable for indirect or
+        consequential damages from using the Site. Nothing in these Terms limits rights you have under consumer protection law
+        that can&apos;t be waived. <Todo>legal review of disclaimers and limitation of liability</Todo>
       </p>
 
       <h2>Governing law</h2>

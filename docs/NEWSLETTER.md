@@ -20,18 +20,25 @@ _Status: built and **disabled**. No email addresses are collected until you comp
 - After confirming, people land on `/newsletter/confirmed`.
 - A successful sign-up fires an analytics event `newsletter-signup` (no email address is sent to analytics).
 
-## Setup steps (owner)
+## Before it can go live
 
-1. Create a free Brevo account with travis@funksquish.com. **Authenticate your domain** in Brevo (Senders & IP → Domains). Brevo will give you DNS records (DKIM/TXT) to add in Squarespace. **These are new records — do not edit or remove your existing Google MX, SPF, or DKIM records.** If Brevo asks you to change SPF, merge the include into the existing SPF record rather than adding a second SPF record; ask for help if unsure.
-2. Contacts → Lists → create **"FunkSquish launch list"**. Note its numeric **list ID**.
-3. Templates → create a **double opt-in confirmation** template (Brevo has a DOI template type). Branding: use the FunkSquish logo, a short friendly message, and the confirmation button. Note the **template ID**.
-4. SMTP & API → API keys → create a key named `funksquish-website`. **Don't paste it into chat, email, or GitHub.**
-5. In **Netlify → Site configuration → Environment variables**, add:
-   - `BREVO_API_KEY` (mark as secret)
-   - `BREVO_LIST_ID`
-   - `BREVO_DOI_TEMPLATE_ID`
-6. Update and finalize the **Privacy Policy** newsletter section (`src/app/privacy/page.tsx`).
-7. Set `newsletter: true` in `src/lib/features.ts`, push to a branch, and test on the deploy preview with your own address (confirm → check you appear in the list → unsubscribe works).
-8. Merge to `main` (one production deploy).
+- **Postal address (blocker):** U.S. CAN-SPAM requires a valid physical postal address in every marketing email — a USPS PO box or a registered private mailbox is fine ([FTC guide](https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business)). Brevo also asks for one in your account and adds it to the email footer.
+- **Domain authentication (needs your DNS approval):** Brevo shows the exact records under *Senders, Domains & Dedicated IPs → Domains*. They are **new** records (a `brevo-code` TXT, DKIM records, and usually a DMARC TXT). Never edit or replace the Google MX, SPF, or `google._domainkey` records. If Brevo asks to change SPF, merge it into the single existing SPF record — never add a second SPF record.
+- **Privacy policy approved** (owner decision B6 in `docs/OWNER-DECISIONS.md`). The policy's "active / not active yet" label updates automatically from the build configuration.
 
-The form only turns on when **both** the env vars exist **and** the switch is on.
+## Setup steps
+
+| Step | Who |
+| --- | --- |
+| 1. Create a free Brevo account (Sign up with Google using travis@funksquish.com is easiest) | **You** |
+| 2. Fill Brevo's company profile incl. the postal address | **You** |
+| 3. Create list **"FunkSquish Launch List"**, note its ID | Claude (once you're signed in) |
+| 4. Templates → New template → paste `templates/email/brevo-double-opt-in.html`; subject "Confirm your FunkSquish launch emails 💙"; mark it as the double opt-in template; note its ID | Claude |
+| 5. Senders: add/verify `travis@funksquish.com` as sender "FunkSquish" (Brevo emails a code to that inbox) | Claude + you (code) |
+| 6. Domains: add `funksquish.com`, copy the exact DNS records Brevo shows | Claude → **your approval** → add in Squarespace |
+| 7. SMTP & API → API keys → create `funksquish-website` → paste it into Netlify env var `BREVO_API_KEY` (mark "Contains secret values") | **You** (keys must never pass through chat) |
+| 8. Netlify env vars `BREVO_LIST_ID`, `BREVO_DOI_TEMPLATE_ID`, and `NEWSLETTER_ENABLED=true` scoped to **Deploy Previews** only | Claude |
+| 9. Test on the deploy preview: sign up → confirmation email → confirm → appears in list → unsubscribe works | Claude + you (inbox) |
+| 10. Approve go-live → add `NEWSLETTER_ENABLED=true` for **Production** → redeploy | You approve, Claude does it |
+
+Env vars only affect new builds — after changing them, redeploy (previews: push a commit; production: costs one deploy).
