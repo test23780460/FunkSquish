@@ -51,7 +51,7 @@ Env vars only affect new builds — after changing them, redeploy (previews: pus
 | Double opt-in template | "FunkSquish Double Opt-in Confirmation", ID **1**, tag `optin`, sender "FunkSquish" / travis@funksquish.com, reply-to travis@funksquish.com | ✅ active |
 | Sender | travis@funksquish.com | ✅ verified |
 | Netlify (Deploy Previews only) | `BREVO_LIST_ID=3`, `BREVO_DOI_TEMPLATE_ID=1`, `NEWSLETTER_ENABLED=true` | ✅ set |
-| Netlify `BREVO_API_KEY` | key `funksquish-website`: Restricted, **Contacts = All only**, MCP off | ✅ added by owner, secret, Deploy Previews only (Production empty) |
+| Netlify `BREVO_API_KEY` | key `funksquish-website`: Restricted, **Contacts = All + Transactional email = All** (nothing else), MCP off | ✅ added by owner, secret, Deploy Previews only (Production empty) |
 | Domain authentication | records below, added in Squarespace with owner approval | ✅ authenticated in Brevo |
 
 DNS records added for Brevo (all **new**; nothing existing changed, SPF untouched):
@@ -65,9 +65,21 @@ DNS records added for Brevo (all **new**; nothing existing changed, SPF untouche
 
 `p=none` is monitor-only: it never blocks or quarantines mail, including Google Workspace mail. Brevo now sends as travis@funksquish.com with DKIM signed by funksquish.com.
 
-### Blocker: Brevo sending activation (Oct 24, 2026)
+### Test results (Deploy Preview, Oct 24, 2026)
 
-The first preview test failed with Brevo `403 permission_denied: Your SMTP account needs to be activated`. New Brevo accounts must be approved before they can send any email, including double opt-in confirmations. The website code and settings are fine. **Owner action:** open a support ticket in Brevo (or email contact@brevo.com) asking to activate transactional/SMTP sending. Review usually takes 1–2 business days. Then retest on the preview.
+| Step | Result |
+| --- | --- |
+| Sign-up form submits (desktop) | ✅ success message |
+| Confirmation email sent + delivered | ✅ Brevo transactional log, tag `optin` |
+| Confirm link → contact added to "FunkSquish Launch List" (#3) | ✅ |
+| Sign-up on a phone | ⏳ not yet tested |
+| Unsubscribe | ⏳ not yet tested — needs a real marketing email, which needs the postal address (owner decision B2) |
+
+**Fixes that were needed** (keep for future accounts/keys):
+1. New Brevo accounts can't send until Brevo approves them. The API answers `403 permission_denied: Your SMTP account needs to be activated`. Request activation via a support ticket (done: ticket #5634982, approved the same night).
+2. Even after approval, the same 403 appears if the API key lacks **Transactional email** permission, because the double opt-in endpoint sends an email. The key needs **Contacts = All** and **Transactional email = All**.
+3. Don't send custom contact attributes unless they exist in the Brevo account (removed `SOURCE`).
+4. Keep Brevo's "block unauthorized IPs" **off** for API keys — Netlify functions don't have fixed IPs.
 
 ### API key expiry (check before launch)
 
