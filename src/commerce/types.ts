@@ -102,7 +102,16 @@ export interface ProductVariant {
   dimensions: Dimensions | null;
   /** Optional link to buy this variant on an external channel (e.g. TikTok Shop). */
   externalPurchaseUrl: string | null;
+  /**
+   * Who ships this variant. "in_house" = our own stock; "supplier" = an
+   * approved partner ships it (fulfilled manually — never auto-purchased).
+   * The supplier's identity stays in the private catalog, never here.
+   * Missing = "in_house".
+   */
+  fulfillmentSource?: FulfillmentSource;
 }
+
+export type FulfillmentSource = "in_house" | "supplier";
 
 /** Public product specifications. `null` = not confirmed yet. */
 export interface ProductSpecs {

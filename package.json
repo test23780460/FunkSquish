@@ -10,12 +10,16 @@
     "typecheck": "tsc --noEmit",
     "catalog:import": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/catalog-import.mjs",
     "catalog:export": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/catalog-export.mjs",
-    "catalog:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/catalog-check.mjs"
+    "catalog:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/catalog-check.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@netlify/blobs": "11.1.6",
     "next": "16.4.2",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "server-only": "0.0.1",
+    "stripe": "23.0.1"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
@@ -25,7 +29,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "4.1.12"
   },
   "engines": {
     "node": ">=20.9.0"
