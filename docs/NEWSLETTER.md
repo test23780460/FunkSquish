@@ -46,6 +46,7 @@ Env vars only affect new builds — after changing them, redeploy (previews: pus
 ## Current setup (FunkSquish Brevo account, travis@funksquish.com)
 
 | Item | Value | Status |
+| Company address (email footer) | FunkSquish, 207 Towne Dr Unit 1029, Elizabethtown, KY 42701 (Brevo → My Profile) | ✅ set |
 | --- | --- | --- |
 | List | "FunkSquish Launch List", ID **3** | ✅ created |
 | Double opt-in template | "FunkSquish Double Opt-in Confirmation", ID **1**, tag `optin`, sender "FunkSquish" / travis@funksquish.com, reply-to travis@funksquish.com | ✅ active |
@@ -73,7 +74,7 @@ DNS records added for Brevo (all **new**; nothing existing changed, SPF untouche
 | Confirmation email sent + delivered | ✅ Brevo transactional log, tag `optin` |
 | Confirm link → contact added to "FunkSquish Launch List" (#3) | ✅ |
 | Sign-up + confirm on a phone (new contact, Gmail) | ✅ email delivered, confirmed, added to list #3; layout OK per owner |
-| Unsubscribe | ⏳ not yet tested — needs a real marketing email, which needs the postal address (owner decision B2) |
+| Marketing email footer + unsubscribe | ✅ test campaign #2 sent to list #3 (2 owner addresses): footer address shown, `{{ unsubscribe }}` link → Brevo marked travis@funksquish.com "Unsubscribed from email campaigns" (still gets transactional emails) |
 
 **Fixes that were needed** (keep for future accounts/keys):
 1. New Brevo accounts can't send until Brevo approves them. The API answers `403 permission_denied: Your SMTP account needs to be activated`. Request activation via a support ticket (done: ticket #5634982, approved the same night).
