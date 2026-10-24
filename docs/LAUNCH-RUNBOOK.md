@@ -15,9 +15,10 @@ All switches live in `src/lib/features.ts` and are **off**. Turn them on one at 
 1. **Policies final:** remove the draft banners from Privacy, Terms, Shipping, and Returns only after every `[Owner decision]` / `[bracketed]` item is resolved and reviewed.
 2. **Catalog:** every published product has photos, age grading, warnings exactly as labeled, price, weight, tracked inventory, and verified CPC/test report/tracking label (`npm run catalog:check`).
 3. **FAQ:** update answers marked "Coming soon" (`src/content/faq.ts`).
-4. **Test-mode Stripe integration** — see `docs/STRIPE-TEST-SETUP.md`; signed webhook validation alone does not persist orders.\n5. **Test purchase on the Deploy Preview** (provider test mode): add to cart / buy link → checkout → confirmation email → refund the test.
-5. **Mobile check:** iPhone Safari and Android Chrome, including the TikTok in-app browser.
-6. Merge to `main`, then repeat one real low-value purchase on production and refund it.
+4. **Stripe test mode passes** every scenario in `docs/STRIPE-TEST-SETUP.md` (signed webhooks, orders, stock holds, refunds).
+5. **Launch blockers cleared:** `docs/CHECKOUT-LAUNCH-READINESS.md` (shipping rates, sales tax, order storage, emails, policies).
+6. **Mobile check:** iPhone Safari and Android Chrome, including the TikTok in-app browser.
+7. A separate, owner-approved **live launch PR** adds a live provider (never by pasting a live key into the test code), then one real low-value purchase on production, refunded.
 
 ## If something goes wrong after launch
 

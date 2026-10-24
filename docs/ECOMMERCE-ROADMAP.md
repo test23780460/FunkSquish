@@ -34,9 +34,11 @@ Whatever you choose, **no product can be sold until it has its safety paperwork*
 | Private data split (cost, supplier, invoices, compliance) | `private/` + `scripts/` (git-ignored) | Ready |
 | CSV import/export + launch gate | `npm run catalog:import / export / check` | Ready — see `docs/CATALOG.md` |
 | Availability rules (never claims stock unless sellable and tracked) | `src/commerce/availability.ts` | Ready |
-| Checkout provider interface + Stripe test-only adapter | `src/commerce/provider.ts`, `providers/stripe-test-checkout.ts` | Prepared, **disabled**; legacy Shopify file retained but not selected |
-| Server-side checkout action (re-validates every line) | `src/app/actions/checkout.ts` | Built, **disabled** |
-| Cart drawer + header cart button | `src/components/cart/Cart.tsx` | Built, **not rendered** |
+| Stripe Checkout **test mode** (B4): environment guard, cart validation, stock holds, session creation | `src/commerce/checkout/` | Built + unit-tested; runs **only** on Deploy Previews / local dev — see `docs/STRIPE-TEST-SETUP.md` |
+| Orders: data model, idempotent fulfillment, signed webhook, refunds | `src/commerce/orders/`, `src/app/api/stripe/test-webhook` | Built + unit-tested, **test mode only** — see `docs/ORDER-MANAGEMENT.md` |
+| Live checkout provider | `src/commerce/provider.ts` | **Not approved** — always refuses (legacy Shopify adapter kept, unused) |
+| Server-side checkout action (re-validates every line) | `src/app/actions/checkout.ts` | Built; test mode only |
+| Cart drawer + header cart button | `src/components/cart/Cart.tsx` | Built; used on the test harness, **not rendered** on the public site |
 | "Buy on TikTok Shop" links per variant | `PurchaseButton` + `externalPurchaseUrl` column | Built, **disabled** |
 | Shipping configuration (packages, weights, carriers) | `src/commerce/shipping.ts` | Prepared, all decisions `null` |
 
