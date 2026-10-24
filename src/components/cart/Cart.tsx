@@ -23,14 +23,38 @@ export interface CartLine {
   quantity: number;
 }
 
-const KEY = "funksquish-cart-v1";
+const DEFAULT_KEY = "funksquish-cart-v1";
+let storageKey = DEFAULT_KEY;
 let lines: CartLine[] = [];
 let loaded = false;
 const listeners = new Set<() => void>();
 
+const MAX_QTY = 10;
+const clampQty = (n: unknown) => (typeof n === "number" && Number.isInteger(n) ? Math.max(1, Math.min(MAX_QTY, n)) : 1);
+
+/** Stored data is untrusted (old versions, manual edits): keep only well-formed lines. */
+function sanitize(raw: unknown): CartLine[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: CartLine[] = [];
+  for (const l of raw.slice(0, 20)) {
+    if (!l || typeof l !== "object" || typeof l.variantId !== "string" || seen.has(l.variantId)) continue;
+    seen.add(l.variantId);
+    const price = l.price && Number.isInteger(l.price.amount) && l.price.currency === "USD" ? (l.price as Money) : null;
+    out.push({
+      variantId: l.variantId,
+      productName: typeof l.productName === "string" ? l.productName : "Item",
+      variantName: typeof l.variantName === "string" ? l.variantName : "",
+      price,
+      quantity: clampQty(l.quantity),
+    });
+  }
+  return out;
+}
+
 function load() {
   try {
-    lines = JSON.parse(localStorage.getItem(KEY) ?? "[]");
+    lines = sanitize(JSON.parse(localStorage.getItem(storageKey) ?? "[]"));
   } catch {
     lines = [];
   }
@@ -38,7 +62,7 @@ function load() {
 function save(next: CartLine[]) {
   lines = next;
   try {
-    localStorage.setItem(KEY, JSON.stringify(next));
+    localStorage.setItem(storageKey, JSON.stringify(next));
   } catch {
     /* storage unavailable: cart still works for this visit */
   }
@@ -66,12 +90,17 @@ export function useCart() {
   return useContext(CartContext);
 }
 
-export function CartProvider({ children }: { children: ReactNode }) {
+/**
+ * `storageKey` keeps the Stripe TEST cart separate from the real one, so test
+ * fixtures can never end up in a shopper's cart.
+ */
+export function CartProvider({ children, storageKey: key = DEFAULT_KEY }: { children: ReactNode; storageKey?: string }) {
   const [open, setOpen] = useState(false);
   const current = useSyncExternalStore(
     subscribe,
     () => {
-      if (!loaded) {
+      if (!loaded || storageKey !== key) {
+        storageKey = key;
         load();
         loaded = true;
       }
@@ -87,13 +116,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const existing = lines.find((l) => l.variantId === line.variantId);
       save(
         existing
-          ? lines.map((l) => (l.variantId === line.variantId ? { ...l, quantity: Math.min(10, l.quantity + quantity) } : l))
-          : [...lines, { ...line, quantity }],
+          ? lines.map((l) => (l.variantId === line.variantId ? { ...l, quantity: clampQty(l.quantity + quantity) } : l))
+          : [...lines, { ...line, quantity: clampQty(quantity) }],
       );
       setOpen(true);
     },
     setQuantity(variantId, quantity) {
-      save(lines.map((l) => (l.variantId === variantId ? { ...l, quantity: Math.max(1, Math.min(10, quantity)) } : l)));
+      if (!Number.isFinite(quantity)) return; // e.g. the box was cleared while typing
+      save(lines.map((l) => (l.variantId === variantId ? { ...l, quantity: clampQty(Math.round(quantity)) } : l)));
     },
     remove(variantId) {
       save(lines.filter((l) => l.variantId !== variantId));
