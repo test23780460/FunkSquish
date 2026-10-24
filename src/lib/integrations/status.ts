@@ -9,7 +9,7 @@ import { brevoConfigured } from "@/lib/newsletter/brevo";
  * Netlify sets CONTEXT at build time: "production", "deploy-preview",
  * "branch-deploy" or undefined locally.
  */
-const context = process.env.CONTEXT;
+const context = process.env.BUILD_CONTEXT || process.env.CONTEXT; // BUILD_CONTEXT is frozen at build (next.config.ts)
 
 // Build-log diagnostic (no secret values): shows which integrations this build turns on.
 if (process.env.NEXT_PHASE === "phase-production-build" && !(globalThis as { __fsIntegrationsLogged?: boolean }).__fsIntegrationsLogged) {
