@@ -7,9 +7,9 @@
 | Piece | State |
 | --- | --- |
 | Live checkout on funksquish.com | ❌ Not approved. `src/commerce/provider.ts` always refuses; `features.commerce = false`. |
-| Stripe test integration | ✅ Built and unit-tested (91 automated tests). Runs **only** on Netlify Deploy Previews or `npm run dev`. |
+| Stripe test integration | ✅ Built and unit-tested (97 automated tests). Runs **only** on Netlify Deploy Previews or `npm run dev`. |
 | Real products | ❌ None. Test mode uses 4 labeled **test fixtures** with made-up prices, never shown in the shop. |
-| End-to-end test with a real Stripe test account | ⏳ Not done yet. Needs the owner's Stripe **test** keys (see Owner setup). |
+| End-to-end test with the real Stripe sandbox | ✅ Oct 24, 2026 (local): paid order, decline, cancel, stock holds — see Test plan. ⏳ Webhooks (needs Stripe CLI) and refunds still to run. |
 
 ## How production is protected
 
@@ -36,13 +36,13 @@ Also: Stripe's reply must be a `cs_test_` session with `livemode: false` hosted 
 | `src/app/checkout/test/page.tsx` | Internal test harness (real cart drawer + bad-cart buttons) |
 | `src/app/checkout/test-result/page.tsx` | Return page: re-fetches the session from Stripe; only a **paid** session creates an order |
 
-Checkout Session settings: `mode=payment`, U.S. shipping address required (`allowed_countries: ["US"]` — all 50 states and APO/FPO/DPO; territories excluded per policy S2), shipping options = your test rate IDs, tax off unless `STRIPE_TEST_AUTOMATIC_TAX=true`, expires after ~31 minutes (Stripe's minimum is 30), metadata links every line to its variant, SKU and fulfillment source.
+Checkout Session settings: `mode=payment`, U.S. shipping address required (`allowed_countries: ["US"]`; Stripe still lists territories, so a shipping-area note is shown and territory orders are flagged — see Findings), shipping options = your test rate IDs, tax off unless `STRIPE_TEST_AUTOMATIC_TAX=true`, expires after ~31 minutes (Stripe's minimum is 30), metadata links every line to its variant, SKU and fulfillment source.
 
 ## Owner setup (you do these — I never handle keys)
 
 1. **Stripe account:** sign up or log in at stripe.com yourself and stay in **Test mode / Sandbox**. No business verification is needed for test mode.
-2. **Test API key:** Developers → API keys. Prefer a **restricted test key** (`rk_test_…`) with *Checkout Sessions: Write* and *Products: Read*; the standard test secret key (`sk_test_…`) also works. Never create or paste a live key.
-3. **Test shipping rate:** Product catalog → Shipping rates → create one (e.g. "Test standard"). It's a placeholder for testing, **not** a decision about real shipping prices. Copy its `shr_…` ID.
+2. **Test API key:** Developers → API keys → Create secret key → *Building your own integration* → *Custom permissions*: **Checkout Sessions: Write; Products, Prices, Shipping Rates: Read**; everything else None (done Oct 24 as `funksquish-test-website`, a `rk_test_` key). Never create or paste a live key.
+3. **Test shipping rate:** Product catalog → Shipping rates. Created Oct 24: "TEST standard (not a real rate)", $5.00, `shr_1UUBDKDGCeAlIfUisH1g8nVc` — a placeholder, **not** a real shipping price.
 4. **Where to put them** (never in GitHub, never in chat):
    - **Local:** a file named `.env.local` in the project (already git-ignored):
      `STRIPE_TEST_CHECKOUT_ENABLED=true`, `STRIPE_TEST_SECRET_KEY=…`, `STRIPE_TEST_SHIPPING_RATE_IDS=shr_…`
@@ -68,13 +68,22 @@ Open `/checkout/test` (local or preview). Test cards: `4242 4242 4242 4242` (suc
 | Live key supplied | — | ✅ rejected | — |
 | Invalid / tampered / replayed webhook signature | — | ✅ 400 | ✅ local (bad signature → 400) |
 | Duplicate webhook events | — | ✅ one order, stock once | ⏳ needs Stripe CLI |
-| Successful payment → order | Card 4242 | ✅ (mocked Stripe) | ⏳ needs your test keys |
-| Canceled checkout | Back button on Stripe | ✅ session expired, stock freed | ✅ local (cancel page) |
-| Failed / declined payment | Card …0002 | ✅ async failure cancels order | ⏳ needs your test keys |
-| Two shoppers, one unit | — | ✅ only one gets it | — |
-| Refund | Refund in Stripe test Dashboard | ✅ order updated | ⏳ needs Stripe CLI |
+| Successful payment → order | Card 4242 | ✅ | ✅ **real sandbox:** 2 Blue + 1 supplier Mint → $17.50 + $5.00 shipping = $22.50; order `FS-T-20261024-69076031` split into 2 shipments; page reload kept the same order |
+| Stock committed after payment | Try to buy 4 of the 5 Blue after 2 sold | ✅ | ✅ real sandbox: "Only 3 … can be ordered" |
+| Canceled checkout | "Back" link on Stripe | ✅ session expired, stock freed | ✅ real sandbox: Stripe log shows `POST …/expire 200`; the 3 held units were available again |
+| Declined payment | Card `4000 0000 0000 0002` | ✅ | ✅ real sandbox: Stripe shows "card was declined", no redirect; opening the result URL for that unpaid session → "Payment not completed", **no order** |
+| Held stock blocks others | Checkout open on all remaining units | ✅ only one gets it | ✅ real sandbox: second cart → "just sold out" |
+| Territory address (PR, GU, VI…) | — | ✅ order flagged `restricted_destination` | ✅ note shows on Stripe's address form |
+| Refund | Refund in Stripe test Dashboard | ✅ order updated | ⏳ needs Stripe CLI (webhook) |
 
 Run the automated suite any time with `npm test`.
+
+## Findings from the real sandbox test
+
+- **Stripe lists U.S. territories under "United States".** With `allowed_countries: ["US"]`, Stripe's state menu includes Puerto Rico, Guam, the U.S. Virgin Islands, American Samoa, the Northern Mariana Islands, and the Marshall Islands, Micronesia and Palau. Hosted Checkout can't hide them, so a note now appears on Stripe's address form, and any such order is flagged `restricted_destination` for a refund (`src/commerce/orders/shipping-restrictions.ts`). D.C. is treated as allowed. Confirm this with the owner, since the policy lists "50 states + APO/FPO/DPO".
+- **Payment methods shown:** card, Cash App Pay, Klarna and Bank (ACH) are on by default in the sandbox. Bank is a delayed method; the code handles it (order "processing" until Stripe confirms), but stock holds last only ~31 min, so a slow bank payment can be flagged `oversold`. Before launch, decide which payment methods to keep (Dashboard → Settings → Payment methods).
+- **Link "save my info" is ticked by default** on Stripe's page. That's Stripe's own feature, not ours.
+- **Adaptive Pricing is on** (shows local currencies to foreign cards). It's harmless for U.S.-only shipping; you can turn it off in Dashboard → Settings → Checkout if you prefer USD only.
 
 ## Not built yet (on purpose)
 

@@ -7,7 +7,7 @@ Current decisions: U.S. only (50 states + APO/FPO/DPO), buyer-paid shipping with
 ## 1. Shipping rates and restrictions
 - **Don't guess rates.** Weigh each packed product (`weightGrams` + package tare in `src/commerce/shipping.ts`), then choose rates from real USPS/UPS quotes.
 - Stripe Checkout charges **fixed shipping rates** you create (optionally several, e.g. standard/expedited) or rates you compute per cart; Stripe does **not** buy labels or ship anything. Labels come from a shipping tool (e.g. Pirate Ship, free) or the carrier.
-- Restriction is already enforced: `allowed_countries: ["US"]` (all states, APO/FPO/DPO; no territories). Revisit if policy S2 changes.
+- `allowed_countries: ["US"]` is set, but **Stripe still lists U.S. territories** (PR, GU, VI, AS, MP, plus MH/FM/PW) as states. Shoppers now see a note on Stripe's address form, and territory orders are flagged `restricted_destination` for refund. Confirm D.C. is allowed. Revisit if policy S2 changes.
 - Before launch: decide 1–3 shipping rates from real package weights; create them in Stripe **live** mode at launch time.
 
 ## 2. Sales tax (Kentucky and beyond)
