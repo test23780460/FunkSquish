@@ -10,6 +10,14 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  /**
+   * Netlify's CONTEXT ("production", "deploy-preview", ...) only exists during the
+   * build, not in the server functions that re-render pages later. Freeze it into
+   * the bundle so re-rendered pages make the same integration decisions.
+   */
+  env: {
+    BUILD_CONTEXT: process.env.CONTEXT ?? "",
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
