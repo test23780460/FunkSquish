@@ -52,9 +52,9 @@ Env vars only affect new builds — after changing them, redeploy (previews: pus
 | Sender | travis@funksquish.com | ✅ verified |
 | Netlify (Deploy Previews only) | `BREVO_LIST_ID=3`, `BREVO_DOI_TEMPLATE_ID=1`, `NEWSLETTER_ENABLED=true` | ✅ set |
 | Netlify `BREVO_API_KEY` | — | ⏳ you add it (secret) |
-| Domain authentication | records below | ⏳ awaiting your DNS approval |
+| Domain authentication | records below, added in Squarespace with owner approval | ✅ authenticated in Brevo |
 
-DNS records Brevo asks for (all **new**; nothing existing changes, SPF untouched):
+DNS records added for Brevo (all **new**; nothing existing changed, SPF untouched):
 
 | Type | Host (Squarespace) | Value |
 | --- | --- | --- |
@@ -63,4 +63,4 @@ DNS records Brevo asks for (all **new**; nothing existing changes, SPF untouched
 | CNAME | `brevo2._domainkey` | `b2.funksquish-com.dkim.brevo.com` |
 | TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com` |
 
-`p=none` is monitor-only: it never blocks or quarantines mail, including Google Workspace mail. Until the domain is authenticated, Brevo sends from a `@brevosend.com` address on your behalf.
+`p=none` is monitor-only: it never blocks or quarantines mail, including Google Workspace mail. Brevo now sends as travis@funksquish.com with DKIM signed by funksquish.com.
