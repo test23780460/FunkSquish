@@ -38,7 +38,7 @@ Already decided by you: U.S. only · buyer-paid shipping · tracking on every or
 | # | Item | Notes |
 | --- | --- | --- |
 | B1 | Legal business name + entity type | ✅ **Decided:** sole proprietor — "Travis Phillips, a sole proprietor doing business as FunkSquish". Kentucky generally expects a sole proprietor using a business name to file an assumed-name certificate with the county clerk — worth confirming with Hardin County or an accountant. |
-| B2 | **Business mailing address** | ✅ **Decided (Oct 24, 2026):** FunkSquish, 207 Towne Dr, Unit #1029, Elizabethtown, KY 42701. Shown on the Privacy page and must be set in Brevo (account/company address) so it appears in every marketing email footer. |
+| B2 | **Business mailing address** | ✅ **Decided (Oct 24, 2026):** FunkSquish, 207 Towne Dr, Unit #1029, Elizabethtown, KY 42701. Shown on the Privacy page. ✅ Set in Brevo → My Profile → Company information (Oct 24, 2026) as "FunkSquish, 207 Towne Dr Unit 1029" — Brevo rejects "#" and commas in the street field — so it appears in marketing email footers. |
 | B3 | Governing law state | ✅ **Decided:** Kentucky. |
 | B4 | Checkout provider(s) | TikTok Shop first (recommended), Shopify later. |
 | B5 | Order-record retention | e.g. 7 years for tax records — check with your accountant. |
