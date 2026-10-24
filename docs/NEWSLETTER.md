@@ -42,3 +42,25 @@ _Status: built and **disabled**. No email addresses are collected until you comp
 | 10. Approve go-live → add `NEWSLETTER_ENABLED=true` for **Production** → redeploy | You approve, Claude does it |
 
 Env vars only affect new builds — after changing them, redeploy (previews: push a commit; production: costs one deploy).
+
+## Current setup (FunkSquish Brevo account, travis@funksquish.com)
+
+| Item | Value | Status |
+| --- | --- | --- |
+| List | "FunkSquish Launch List", ID **3** | ✅ created |
+| Double opt-in template | "FunkSquish Double Opt-in Confirmation", ID **1**, tag `optin`, sender "FunkSquish" / travis@funksquish.com, reply-to travis@funksquish.com | ✅ active |
+| Sender | travis@funksquish.com | ✅ verified |
+| Netlify (Deploy Previews only) | `BREVO_LIST_ID=3`, `BREVO_DOI_TEMPLATE_ID=1`, `NEWSLETTER_ENABLED=true` | ✅ set |
+| Netlify `BREVO_API_KEY` | — | ⏳ you add it (secret) |
+| Domain authentication | records below | ⏳ awaiting your DNS approval |
+
+DNS records Brevo asks for (all **new**; nothing existing changes, SPF untouched):
+
+| Type | Host (Squarespace) | Value |
+| --- | --- | --- |
+| TXT | `@` | `brevo-code:01e5cb113dc94fa80527b8983f23fd6e` |
+| CNAME | `brevo1._domainkey` | `b1.funksquish-com.dkim.brevo.com` |
+| CNAME | `brevo2._domainkey` | `b2.funksquish-com.dkim.brevo.com` |
+| TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com` |
+
+`p=none` is monitor-only: it never blocks or quarantines mail, including Google Workspace mail. Until the domain is authenticated, Brevo sends from a `@brevosend.com` address on your behalf.
