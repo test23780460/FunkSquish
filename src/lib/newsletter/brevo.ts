@@ -38,7 +38,7 @@ export async function subscribeWithDoubleOptIn(email: string): Promise<Subscribe
       includeListIds: [listId],
       templateId,
       redirectionUrl,
-      attributes: { SOURCE: "funksquish.com launch signup" },
+      // No custom attributes: Brevo rejects any attribute that isn't defined in the account.
     }),
     cache: "no-store",
   });
@@ -46,10 +46,9 @@ export async function subscribeWithDoubleOptIn(email: string): Promise<Subscribe
   // 201/204 = confirmation email sent. Brevo answers 400 for some duplicates;
   // we show the same neutral message either way so addresses can't be probed.
   if (res.ok) return "confirmation-sent";
-  if (res.status === 400) {
-    const body = (await res.json().catch(() => ({}))) as { code?: string };
-    if (body.code === "duplicate_parameter") return "confirmation-sent";
-  }
-  console.error("[newsletter] Brevo error", res.status);
+  const body = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
+  if (res.status === 400 && body.code === "duplicate_parameter") return "confirmation-sent";
+  // Log Brevo's reason for debugging — never the email address or the API key.
+  console.error(`[newsletter] Brevo error ${res.status} ${body.code ?? ""}: ${String(body.message ?? "").replace(/\S+@\S+/g, "[email]").slice(0, 200)}`);
   return "failed";
 }
