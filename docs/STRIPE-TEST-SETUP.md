@@ -7,9 +7,9 @@
 | Piece | State |
 | --- | --- |
 | Live checkout on funksquish.com | ❌ Not approved. `src/commerce/provider.ts` always refuses; `features.commerce = false`. |
-| Stripe test integration | ✅ Built and unit-tested (97 automated tests). Runs **only** on Netlify Deploy Previews or `npm run dev`. |
+| Stripe test integration | ✅ Built and unit-tested (98 automated tests). Runs **only** on Netlify Deploy Previews or `npm run dev`. |
 | Real products | ❌ None. Test mode uses 4 labeled **test fixtures** with made-up prices, never shown in the shop. |
-| End-to-end test with the real Stripe sandbox | ✅ Oct 24, 2026 (local): paid order, decline, cancel, stock holds — see Test plan. ⏳ Webhooks (needs Stripe CLI) and refunds still to run. |
+| End-to-end test with the real Stripe sandbox | ✅ Oct 24, 2026 (local, Stripe CLI forwarding): paid order, decline, cancel, stock holds, signed webhooks, duplicate deliveries, partial + full refunds — see Test plan. ⏳ 3-D Secure not run. |
 
 ## How production is protected
 
@@ -47,7 +47,7 @@ Checkout Session settings: `mode=payment`, U.S. shipping address required (`allo
    - **Local:** a file named `.env.local` in the project (already git-ignored):
      `STRIPE_TEST_CHECKOUT_ENABLED=true`, `STRIPE_TEST_SECRET_KEY=…`, `STRIPE_TEST_SHIPPING_RATE_IDS=shr_…`
    - **Netlify:** Environment variables → add each with **Deploy Previews only** (Production left empty); tick **Contains secret values** for the key.
-5. **Webhooks (local):** install the Stripe CLI, then run
+5. **Webhooks (local):** install the Stripe CLI (`npm install -g @stripe/cli`), log in with `stripe login` and authorize **only the sandbox** (done Oct 24 as project `funksquish`), then run
    `stripe listen --forward-to localhost:3000/api/stripe/test-webhook --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired,charge.refunded`
    and put the printed `whsec_…` in `.env.local` as `STRIPE_TEST_WEBHOOK_SECRET`.
 6. **Webhooks (previews):** Netlify protects Deploy Previews with team login, so **Stripe can't reach a preview's webhook** (it gets 401). That's a good default — keep it. On previews the return page still records paid orders; test expiry/refund/async webhooks locally with the CLI.
@@ -66,15 +66,16 @@ Open `/checkout/test` (local or preview). Test cards: `4242 4242 4242 4242` (suc
 | Missing Stripe configuration / switch off / production | — | ✅ 404 / "isn't open yet" | ✅ production build: 404s |
 | Invalid test credentials | Fake key | ✅ friendly error, stock released | ✅ local (Stripe rejected fake key; log shows only the error class) |
 | Live key supplied | — | ✅ rejected | — |
-| Invalid / tampered / replayed webhook signature | — | ✅ 400 | ✅ local (bad signature → 400) |
-| Duplicate webhook events | — | ✅ one order, stock once | ⏳ needs Stripe CLI |
+| Invalid / tampered / replayed webhook signature | — | ✅ 400 | ✅ local (forged signature → 400) |
+| Signed webhook creates the order | Pay with card 4242 while `stripe listen` forwards | ✅ | ✅ real sandbox: `checkout.session.completed` → 200, order `FS-T-20261024-E92D5E6E`; the return page showed the same order |
+| Duplicate webhook events | `stripe events resend evt_…` | ✅ one order, stock once | ✅ real sandbox: resent `checkout.session.completed` and `charge.refunded` → 200 "duplicate", not re-processed |
 | Successful payment → order | Card 4242 | ✅ | ✅ **real sandbox:** 2 Blue + 1 supplier Mint → $17.50 + $5.00 shipping = $22.50; order `FS-T-20261024-69076031` split into 2 shipments; page reload kept the same order |
 | Stock committed after payment | Try to buy 4 of the 5 Blue after 2 sold | ✅ | ✅ real sandbox: "Only 3 … can be ordered" |
 | Canceled checkout | "Back" link on Stripe | ✅ session expired, stock freed | ✅ real sandbox: Stripe log shows `POST …/expire 200`; the 3 held units were available again |
 | Declined payment | Card `4000 0000 0000 0002` | ✅ | ✅ real sandbox: Stripe shows "card was declined", no redirect; opening the result URL for that unpaid session → "Payment not completed", **no order** |
 | Held stock blocks others | Checkout open on all remaining units | ✅ only one gets it | ✅ real sandbox: second cart → "just sold out" |
 | Territory address (PR, GU, VI…) | — | ✅ order flagged `restricted_destination` | ✅ note shows on Stripe's address form |
-| Refund | Refund in Stripe test Dashboard | ✅ order updated | ⏳ needs Stripe CLI (webhook) |
+| Refund | `stripe refunds create` (or Dashboard) | ✅ order updated | ✅ real sandbox: $5 partial → "Part of this order was refunded"; rest → "refunded in full" (via `charge.refunded` webhooks) |
 
 Run the automated suite any time with `npm test`.
 
@@ -84,6 +85,8 @@ Run the automated suite any time with `npm test`.
 - **Payment methods shown:** card, Cash App Pay, Klarna and Bank (ACH) are on by default in the sandbox. Bank is a delayed method; the code handles it (order "processing" until Stripe confirms), but stock holds last only ~31 min, so a slow bank payment can be flagged `oversold`. Before launch, decide which payment methods to keep (Dashboard → Settings → Payment methods).
 - **Link "save my info" is ticked by default** on Stripe's page. That's Stripe's own feature, not ours.
 - **Adaptive Pricing is on** (shows local currencies to foreign cards). It's harmless for U.S.-only shipping; you can turn it off in Dashboard → Settings → Checkout if you prefer USD only.
+
+- **Local dev store:** test orders live in memory under `npm run dev`, shared by the webhook and pages, and reset when the server restarts. Stripe is the source of truth: the next time an order's return page is opened, it's rebuilt from Stripe (refunds recorded before the restart aren't re-applied until the next refund event). Deploy Previews use durable Netlify Blobs.
 
 ## Not built yet (on purpose)
 
