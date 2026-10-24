@@ -142,3 +142,15 @@ describe("fulfillCheckoutSession", () => {
     expect(await recordRefund("pi_test_unknown", 100, f.deps, "evt")).toBe(false);
   });
 });
+
+describe("after a refund", () => {
+  it("still reports the order as paid (not processing) and keeps one order", async () => {
+    const f = fakeDeps();
+    await fulfillCheckoutSession(SESSION_ID, f.deps, "evt_1", "checkout.session.completed");
+    await recordRefund("pi_test_123", 2250, f.deps, "evt_r");
+    const again = await fulfillCheckoutSession(SESSION_ID, f.deps, "landing-page", "landing-page");
+    expect(again.state).toBe("paid");
+    if (again.state === "paid") expect(again.order.paymentStatus).toBe("refunded");
+    expect(f.store.keys().filter((k) => k.startsWith("order/session/"))).toHaveLength(1);
+  });
+});

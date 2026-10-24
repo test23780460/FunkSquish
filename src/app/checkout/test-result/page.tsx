@@ -131,6 +131,11 @@ async function Result({ searchParams }: { searchParams: PageProps<"/checkout/tes
           body="Stripe confirmed this test payment. In a real order you'd get a confirmation email now, and tracking once it ships."
         >
           <OrderSummary order={outcome.order} />
+          {outcome.order.paymentStatus !== "paid" && (
+            <p role="status" className="mt-4 rounded-xl bg-ice-50 px-4 py-3 text-ink ring-1 ring-inset ring-sky-200">
+              {outcome.order.paymentStatus === "refunded" ? "This order was refunded in full." : "Part of this order was refunded."}
+            </p>
+          )}
           {outcome.order.flags.includes("restricted_destination") && (
             <p role="alert" className="mt-4 rounded-xl bg-berry-soft px-4 py-3 text-ink">
               Flagged for review: we can&apos;t ship to this address yet (U.S. territories aren&apos;t supported). In a real order

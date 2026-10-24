@@ -99,7 +99,10 @@ export async function createBlobsKvStore(name: string): Promise<KvStore> {
   };
 }
 
-let memorySingleton: MemoryKvStore | null = null;
+// One in-memory store per server process. A module-level variable isn't enough:
+// Next.js dev loads route handlers and pages as separate module copies, so the
+// webhook and the result page would otherwise see different stores.
+const globalStore = globalThis as { __funksquishTestOrderStore?: MemoryKvStore };
 
 /**
  * The store used by the Stripe TEST integration. Netlify Blobs on deploy
@@ -108,6 +111,6 @@ let memorySingleton: MemoryKvStore | null = null;
 export async function getTestOrderStore(): Promise<KvStore> {
   // BUILD_CONTEXT is frozen at build time (next.config.ts); runtime-only Netlify vars aren't reliable.
   if (process.env.BUILD_CONTEXT === "deploy-preview") return createBlobsKvStore("stripe-test-orders");
-  memorySingleton ??= new MemoryKvStore();
-  return memorySingleton;
+  globalStore.__funksquishTestOrderStore ??= new MemoryKvStore();
+  return globalStore.__funksquishTestOrderStore;
 }

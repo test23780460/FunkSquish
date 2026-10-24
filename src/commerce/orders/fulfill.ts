@@ -136,7 +136,10 @@ export async function fulfillCheckoutSession(sessionId: string, deps: OrderDeps,
     order = result.value ?? order;
   }
 
-  return order.paymentStatus === "paid" ? { state: "paid", order } : { state: "processing", order };
+  // Paid orders stay "paid" for display even after a refund (the order shows the refund).
+  const settled = order.paymentStatus === "paid" || order.paymentStatus === "partially_refunded" || order.paymentStatus === "refunded";
+  if (order.paymentStatus === "failed") return { state: "not_paid", sessionStatus: snapshot.status };
+  return settled ? { state: "paid", order } : { state: "processing", order };
 }
 
 /** Delayed payment failed: cancel the order (if any) and free the stock. */
