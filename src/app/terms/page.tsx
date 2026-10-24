@@ -12,10 +12,10 @@ export const metadata = pageMetadata({
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Terms of Service" lastUpdated="October 23, 2026">
+    <LegalPage title="Terms of Service" lastUpdated="October 24, 2026">
       <p>
         These Terms of Service (&ldquo;Terms&rdquo;) apply to your use of <a href={siteConfig.url}>funksquish.com</a>{" "}
-        (the &ldquo;Site&rdquo;), operated by <Todo>legal business name</Todo> (&ldquo;FunkSquish,&rdquo;
+        (the &ldquo;Site&rdquo;), operated by {siteConfig.legalOperator} (&ldquo;FunkSquish,&rdquo;
         &ldquo;we,&rdquo; &ldquo;us&rdquo;). By using the Site, you agree to these Terms.
       </p>
 
@@ -87,7 +87,8 @@ export default function TermsPage() {
 
       <h2>Governing law</h2>
       <p>
-        <Todo>State / jurisdiction to be confirmed by owner.</Todo>
+        These Terms are governed by the laws of the Commonwealth of Kentucky, without regard to its conflict-of-law rules.
+        This doesn&apos;t take away any protections you have under the consumer laws of the state where you live.
       </p>
 
       <h2>Changes</h2>

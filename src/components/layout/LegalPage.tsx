@@ -4,18 +4,33 @@ import { PageHero } from "./PageHero";
 import { Container, Notice } from "@/components/ui/Primitives";
 
 /**
- * Shell for draft legal documents. The DRAFT banner stays until the owner
- * (ideally with a lawyer) has reviewed and finalized the text.
+ * Shell for legal documents. Drafts show a DRAFT banner until the owner
+ * (ideally with a lawyer) has reviewed and finalized the text; pass
+ * `draft={false}` only once every decision on the page is owner-approved.
  */
 export function LegalPage({
   title,
   lastUpdated,
+  draft = true,
   children,
 }: {
   title: string;
   lastUpdated: string;
+  draft?: boolean;
   children: ReactNode;
 }) {
+  if (!draft) {
+    return (
+      <PageTransition>
+        <PageHero eyebrow="FunkSquish policy" title={title} lead={`Last updated ${lastUpdated}.`} />
+        <section className="bg-white pb-28 pt-6 sm:pb-36">
+          <Container className="max-w-3xl">
+            <div className="legal-prose">{children}</div>
+          </Container>
+        </section>
+      </PageTransition>
+    );
+  }
   return (
     <PageTransition>
       <PageHero

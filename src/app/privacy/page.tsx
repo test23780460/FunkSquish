@@ -23,12 +23,11 @@ const status = {
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy Policy" lastUpdated="October 23, 2026">
+    <LegalPage title="Privacy Policy" lastUpdated="October 24, 2026">
       <p>
         This Privacy Policy explains how FunkSquish (&ldquo;FunkSquish,&rdquo; &ldquo;we,&rdquo; &ldquo;us&rdquo;),
-        operated by <Todo>legal business name and entity type</Todo>, collects and uses information when you visit{" "}
-        <a href={siteConfig.url}>funksquish.com</a> (the &ldquo;Site&rdquo;) or contact us. FunkSquish is based in the United
-        States.
+        operated by {siteConfig.legalOperator}, collects and uses information when you visit{" "}
+        <a href={siteConfig.url}>funksquish.com</a> (the &ldquo;Site&rdquo;) or contact us. FunkSquish is based in Kentucky, United States.
       </p>
 
       <h2>Summary</h2>
@@ -128,9 +127,15 @@ export default function PrivacyPage() {
 
       <h2>Contact</h2>
       <p>
-        Questions? Email <a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a>. Mailing address:{" "}
-        <Todo>business mailing address (PO box or private mailbox — not a home address)</Todo>
+        Questions? Email <a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a>, or write to us at:
       </p>
+      <address className="not-italic">
+        {siteConfig.mailingAddress.map((line) => (
+          <span key={line} className="block">
+            {line}
+          </span>
+        ))}
+      </address>
     </LegalPage>
   );
 }

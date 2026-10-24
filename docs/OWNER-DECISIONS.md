@@ -1,10 +1,12 @@
-# Owner decisions — policies (awaiting approval)
+# Owner decisions — policies
 
 Reply with ✅ (accept the recommendation) or your own answer for each item. Nothing here is live until you approve it; after that, the "Draft" labels come off the matching pages.
 
+**Status (Oct 24, 2026):** ✅ Shipping S1–S6 and Returns R1–R9 approved as recommended — `/shipping` and `/returns` are final (Draft labels removed, now indexed). ✅ B1 sole proprietor, ✅ B2 mailing address, ✅ B3 Kentucky. ⏳ B4, B5, B6 still open, so `/privacy` and `/terms` stay marked Draft.
+
 _Research basis: FTC Mail, Internet, or Telephone Order Merchandise Rule ([FTC guide](https://www.ftc.gov/business-guidance/resources/business-guide-ftcs-mail-internet-or-telephone-order-merchandise-rule)); CAN-SPAM ([FTC guide](https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business)); California Civ. Code §1723 ([text](https://law.justia.com/codes/california/code-civ/division-3/part-3/section-1723)); TikTok Shop U.S. return norms (secondary sources, e.g. [Webgility](https://www.webgility.com/blog/guide-on-tiktok-shop-return) — confirm in Seller Center). Not legal advice._
 
-## Shipping
+## Shipping — ✅ all approved Oct 24, 2026
 
 | # | Decision | Recommendation | Why |
 | --- | --- | --- | --- |
@@ -17,7 +19,7 @@ _Research basis: FTC Mail, Internet, or Telephone Order Merchandise Rule ([FTC g
 
 Already decided by you: U.S. only · buyer-paid shipping · tracking on every order · rates calculated by the selling platform · no guaranteed delivery dates.
 
-## Returns & refunds
+## Returns & refunds — ✅ all approved Oct 24, 2026
 
 | # | Decision | Recommendation | Why |
 | --- | --- | --- | --- |
@@ -35,9 +37,9 @@ Already decided by you: U.S. only · buyer-paid shipping · tracking on every or
 
 | # | Item | Notes |
 | --- | --- | --- |
-| B1 | Legal business name + entity type | Sole proprietor, LLC, etc. Shown in Privacy and Terms. |
-| B2 | **Business mailing address** | **Required by CAN-SPAM in every marketing email** (a USPS PO box or a registered private mailbox works). **Blocks the email list.** Don't use a home address unless you're comfortable with it being public. |
-| B3 | Governing law state | For the Terms. |
+| B1 | Legal business name + entity type | ✅ **Decided:** sole proprietor — "Travis Phillips, a sole proprietor doing business as FunkSquish". Kentucky generally expects a sole proprietor using a business name to file an assumed-name certificate with the county clerk — worth confirming with Hardin County or an accountant. |
+| B2 | **Business mailing address** | ✅ **Decided (Oct 24, 2026):** FunkSquish, 207 Towne Dr, Unit #1029, Elizabethtown, KY 42701. Shown on the Privacy page and must be set in Brevo (account/company address) so it appears in every marketing email footer. |
+| B3 | Governing law state | ✅ **Decided:** Kentucky. |
 | B4 | Checkout provider(s) | TikTok Shop first (recommended), Shopify later. |
 | B5 | Order-record retention | e.g. 7 years for tax records — check with your accountant. |
 | B6 | Legal review | Recommended before removing "Draft" from Privacy and Terms. |
