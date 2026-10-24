@@ -65,6 +65,10 @@ DNS records added for Brevo (all **new**; nothing existing changed, SPF untouche
 
 `p=none` is monitor-only: it never blocks or quarantines mail, including Google Workspace mail. Brevo now sends as travis@funksquish.com with DKIM signed by funksquish.com.
 
+### Blocker: Brevo sending activation (Oct 24, 2026)
+
+The first preview test failed with Brevo `403 permission_denied: Your SMTP account needs to be activated`. New Brevo accounts must be approved before they can send any email, including double opt-in confirmations. The website code and settings are fine. **Owner action:** open a support ticket in Brevo (or email contact@brevo.com) asking to activate transactional/SMTP sending. Review usually takes 1–2 business days. Then retest on the preview.
+
 ### API key expiry (check before launch)
 
 Brevo disables a key after **90 days without use** and at its expiry date (**Oct 24, 2027**). If sign-ups are quiet for 3 months, the form would start failing. Before launch, and every few months, check *Brevo → SMTP & API → API keys*; if `funksquish-website` is expired, create a new one with the same permissions and replace `BREVO_API_KEY` in Netlify.
