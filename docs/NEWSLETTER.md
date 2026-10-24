@@ -72,7 +72,7 @@ DNS records added for Brevo (all **new**; nothing existing changed, SPF untouche
 | Sign-up form submits (desktop) | ✅ success message |
 | Confirmation email sent + delivered | ✅ Brevo transactional log, tag `optin` |
 | Confirm link → contact added to "FunkSquish Launch List" (#3) | ✅ |
-| Sign-up on a phone | ⏳ not yet tested |
+| Sign-up + confirm on a phone (new contact, Gmail) | ✅ email delivered, confirmed, added to list #3; layout OK per owner |
 | Unsubscribe | ⏳ not yet tested — needs a real marketing email, which needs the postal address (owner decision B2) |
 
 **Fixes that were needed** (keep for future accounts/keys):
