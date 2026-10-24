@@ -24,7 +24,7 @@ Prepared, **off** until you add the site ID.
 - Cookieless, no personal profiles, no consent banner needed for basic use (still mention it in the privacy policy).
 - Free Hobby tier: ~100K events/month, 1 website ([Umami FAQ](https://umami.is/docs/cloud/faq), [summary](https://freetier.co/directory/products/umami)).
 - Loaded from Umami's servers → **no Netlify function or bandwidth cost**.
-- Only counts visits on `funksquish.com` (deploy previews and localhost are ignored), and respects browser Do Not Track.
+- **Only loads on the Netlify production build** (`CONTEXT=production`) — never in local development or deploy previews — and only records visits on `funksquish.com`. Respects browser Do Not Track.
 
 What you'll see:
 

@@ -29,13 +29,18 @@ const topics: { title: string; body: ReactNode }[] = [
     body: (
       <>
         Email us your order number and a photo of the item and packaging. Please stop using any squishy that is torn,
-        leaking, or sticky. See our draft <Link href="/returns">returns policy</Link>.
+        leaking, or sticky. See our <Link href="/returns">returns policy</Link>.
       </>
     ),
   },
   {
     title: "Changing or canceling an order",
-    body: <>Email us as soon as possible with your order number. Our cancellation rules will be published before launch.</>,
+    body: (
+      <>
+        Email us as soon as possible with your order number. If it hasn&apos;t shipped yet, we&apos;ll cancel it and refund
+        you in full. See our <Link href="/returns">returns policy</Link>.
+      </>
+    ),
   },
   {
     title: "Shipping questions",

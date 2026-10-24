@@ -64,13 +64,11 @@ export const faqGroups: FaqGroup[] = [
       },
       {
         q: "Where do you ship, and how much does shipping cost?",
-        a: "Shipping regions, rates, and processing times are still being decided. A draft of our shipping policy is on the Shipping page, and the final details will be published before launch. Shipping costs are always shown at checkout before you pay.",
-        pending: true,
+        a: "Once the shop opens, we'll ship to all 50 U.S. states and military APO/FPO/DPO addresses (not U.S. territories yet). Shipping is paid by the buyer and always shown at checkout before you pay. Orders ship within 2 business days, and every order has tracking. Full details are in our Shipping Policy.",
       },
       {
         q: "What is your return policy?",
-        a: "Our returns and exchanges policy is still being decided. A draft is on the Returns page, and the final policy will be published before the shop opens.",
-        pending: true,
+        a: "Unopened, unused items can be returned within 30 days of delivery (the buyer pays return shipping). If something arrives damaged, defective, or wrong, email us within 7 days of delivery with photos and we'll send a free replacement or a full refund. Full details are in our Returns & Refunds Policy.",
       },
       {
         q: "Which payment methods will you accept?",
