@@ -131,6 +131,12 @@ async function Result({ searchParams }: { searchParams: PageProps<"/checkout/tes
           body="Stripe confirmed this test payment. In a real order you'd get a confirmation email now, and tracking once it ships."
         >
           <OrderSummary order={outcome.order} />
+          {outcome.order.flags.includes("restricted_destination") && (
+            <p role="alert" className="mt-4 rounded-xl bg-berry-soft px-4 py-3 text-ink">
+              Flagged for review: we can&apos;t ship to this address yet (U.S. territories aren&apos;t supported). In a real order
+              we&apos;d contact you and refund it in full.
+            </p>
+          )}
           {outcome.order.flags.includes("oversold") && (
             <p role="alert" className="mt-4 rounded-xl bg-berry-soft px-4 py-3 text-ink">
               Flagged for review: an item sold out while this checkout was open. In a real order we&apos;d contact you and refund it.

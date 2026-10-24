@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { isLiveKey, type StripeTestConfig } from "./environment";
 import type { CheckedLine } from "./validate-cart";
+import { SHIPPING_AREA_NOTE } from "../orders/shipping-restrictions";
 
 /**
  * Stripe helpers for the TEST integration (server-only).
@@ -54,9 +55,11 @@ export function buildCheckoutSessionParams(input: {
         },
       },
     })),
-    // U.S. only (policy S2). "US" covers all 50 states and APO/FPO/DPO
-    // (AA/AE/AP); U.S. territories have their own country codes and are excluded.
+    // U.S. only (policy S2). Stripe's "US" also lists territories (PR, GU, VI…)
+    // as states and hosted Checkout can't hide them, so shoppers see a note here
+    // and any territory order is flagged for refund (see shipping-restrictions.ts).
     shipping_address_collection: { allowed_countries: ["US"] },
+    custom_text: { shipping_address: { message: SHIPPING_AREA_NOTE } },
     shipping_options: config.shippingRateIds.map((id) => ({ shipping_rate: id })),
     automatic_tax: { enabled: config.automaticTax },
     expires_at: expiresAt,

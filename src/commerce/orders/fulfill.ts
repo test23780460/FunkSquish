@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { commitStock, getReservation, releaseStock } from "./inventory";
 import { updateWithRetry, type KvStore } from "./store";
 import type { SessionSnapshot } from "./session-snapshot";
+import { isAllowedDestination } from "./shipping-restrictions";
 import type { FulfillmentGroup, Order, OrderEventRecord } from "./types";
 
 /**
@@ -74,7 +75,8 @@ function newOrder(snapshot: SessionSnapshot, paid: boolean, at: Date, trigger: O
     shippingRateId: snapshot.shippingRateId,
     refunds: [],
     inventoryCommitted: false,
-    flags: [],
+    // Territory / non-US address slipped through Stripe's form → refund, don't ship.
+    flags: isAllowedDestination(snapshot.shippingAddress) ? [] : ["restricted_destination"],
     createdAt: iso,
     updatedAt: iso,
     history: [trigger],
