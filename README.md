@@ -88,7 +88,7 @@ src/
     icons/             Inline SVG icons
   content/             Editable copy (FAQ, LIVE schedule, product care)
   lib/                 Site config, feature flags, SEO helpers, newsletter (Brevo)
-scripts/               catalog:import / catalog:export / catalog:check (local only)
+scripts/               catalog:import / catalog:export / catalog:check, backup/restore (local only)
 templates/             Blank catalog spreadsheet template
 private/               GIT-IGNORED: your catalog sheet, costs, compliance files, internal checklist
 docs/
@@ -99,6 +99,8 @@ docs/
   NEWSLETTER.md        Launch email list (Brevo) setup
   ANALYTICS-SEO.md     SEO rules, Search Console, Umami analytics setup
   LAUNCH-RUNBOOK.md    Turning each feature on safely
+  OWNER-DECISIONS.md   Policy decisions awaiting approval (shipping, returns, business details)
+  BACKUP-RECOVERY.md   Encrypted backups of private/ and how to restore them
 ```
 
 ## Design system (quick reference)

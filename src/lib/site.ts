@@ -9,6 +9,10 @@ export const siteConfig = {
   description:
     "FunkSquish is a new squishy toy shop for colorful fruit slushies, jelly squishies, crunchy squishies, and cute collectibles. Coming soon!",
   email: "travis@funksquish.com",
+  /** Legal operator (owner-approved Oct 24, 2026). */
+  legalOperator: "Travis Phillips, a sole proprietor doing business as FunkSquish",
+  /** Business mailing address (owner-approved; required in marketing emails by CAN-SPAM). */
+  mailingAddress: ["FunkSquish", "207 Towne Dr, Unit #1029", "Elizabethtown, KY 42701"],
   tiktok: {
     handle: "@FunkSquish",
     url: "https://www.tiktok.com/@funksquish",
