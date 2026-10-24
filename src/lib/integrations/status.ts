@@ -11,6 +11,14 @@ import { brevoConfigured } from "@/lib/newsletter/brevo";
  */
 const context = process.env.CONTEXT;
 
+// Build-log diagnostic (no secret values): shows which integrations this build turns on.
+if (process.env.NEXT_PHASE === "phase-production-build" && !(globalThis as { __fsIntegrationsLogged?: boolean }).__fsIntegrationsLogged) {
+  (globalThis as { __fsIntegrationsLogged?: boolean }).__fsIntegrationsLogged = true;
+  console.log(
+    `[integrations] CONTEXT=${context ?? "(unset)"} NETLIFY=${process.env.NETLIFY ?? "(unset)"} umamiId=${process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ? "set" : "unset"}`,
+  );
+}
+
 /** Email sign-ups: Brevo configured AND switched on (code switch or per-context env var). */
 export function newsletterActive() {
   return brevoConfigured() && (features.newsletter || process.env.NEWSLETTER_ENABLED === "true");
