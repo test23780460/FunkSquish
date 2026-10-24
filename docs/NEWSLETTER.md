@@ -51,7 +51,7 @@ Env vars only affect new builds — after changing them, redeploy (previews: pus
 | Double opt-in template | "FunkSquish Double Opt-in Confirmation", ID **1**, tag `optin`, sender "FunkSquish" / travis@funksquish.com, reply-to travis@funksquish.com | ✅ active |
 | Sender | travis@funksquish.com | ✅ verified |
 | Netlify (Deploy Previews only) | `BREVO_LIST_ID=3`, `BREVO_DOI_TEMPLATE_ID=1`, `NEWSLETTER_ENABLED=true` | ✅ set |
-| Netlify `BREVO_API_KEY` | — | ⏳ you add it (secret) |
+| Netlify `BREVO_API_KEY` | key `funksquish-website`: Restricted, **Contacts = All only**, MCP off | ✅ added by owner, secret, Deploy Previews only (Production empty) |
 | Domain authentication | records below, added in Squarespace with owner approval | ✅ authenticated in Brevo |
 
 DNS records added for Brevo (all **new**; nothing existing changed, SPF untouched):
@@ -64,3 +64,7 @@ DNS records added for Brevo (all **new**; nothing existing changed, SPF untouche
 | TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com` |
 
 `p=none` is monitor-only: it never blocks or quarantines mail, including Google Workspace mail. Brevo now sends as travis@funksquish.com with DKIM signed by funksquish.com.
+
+### API key expiry (check before launch)
+
+Brevo disables a key after **90 days without use** and at its expiry date (**Oct 24, 2027**). If sign-ups are quiet for 3 months, the form would start failing. Before launch, and every few months, check *Brevo → SMTP & API → API keys*; if `funksquish-website` is expired, create a new one with the same permissions and replace `BREVO_API_KEY` in Netlify.
