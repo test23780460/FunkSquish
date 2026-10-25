@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { textures, getTexture, type TextureId } from "@/content/textures";
 import { TextureBlob } from "@/components/illustrations/TextureBlob";
@@ -24,6 +24,15 @@ export function SquishLab({ initial = "soft", matches }: { initial?: TextureId; 
   const [squishes, setSquishes] = useState(0);
   const [tried, setTried] = useState<Set<TextureId>>(() => new Set([initial]));
   const texture = getTexture(current) ?? textures[0];
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  // On phones the picker scrolls sideways: keep the chosen texture in view.
+  useEffect(() => {
+    const row = pickerRef.current;
+    const chip = row?.querySelector<HTMLElement>(`[data-texture="${current}"]`);
+    if (!row || !chip || row.scrollWidth <= row.clientWidth) return;
+    row.scrollTo({ left: chip.offsetLeft - (row.clientWidth - chip.offsetWidth) / 2, behavior: "smooth" });
+  }, [current]);
 
   const choose = (id: TextureId) => {
     setCurrent(id);
@@ -37,12 +46,13 @@ export function SquishLab({ initial = "soft", matches }: { initial?: TextureId; 
     <div>
       <fieldset>
         <legend className="sr-only">Pick a texture to try</legend>
-        <div className="-mx-4 flex snap-x gap-2.5 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-5 sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
+        <div ref={pickerRef} className="-mx-4 flex snap-x gap-2.5 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-5 sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
           {textures.map((t) => {
             const active = t.id === current;
             return (
               <label
                 key={t.id}
+                data-texture={t.id}
                 className={cn(
                   "relative flex w-36 shrink-0 cursor-pointer snap-start flex-col items-center rounded-[1.6rem] px-2 pb-3 pt-2 text-center transition-all duration-300 ease-squish sm:w-auto",
                   "has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-royal",
@@ -71,7 +81,7 @@ export function SquishLab({ initial = "soft", matches }: { initial?: TextureId; 
           <span aria-hidden="true" className="absolute inset-0 dots opacity-50" />
           <div className="absolute inset-x-4 top-4 flex items-center justify-between gap-2">
             <span className="rounded-full bg-white/90 px-3 py-1 font-display text-xs font-semibold text-ink-soft ring-1 ring-inset ring-sky-200">
-              Animated demo, not a real product
+              Animated demo<span className="hidden min-[420px]:inline">, not a real product</span>
             </span>
             <button
               type="button"
@@ -81,7 +91,7 @@ export function SquishLab({ initial = "soft", matches }: { initial?: TextureId; 
                 setSoundOn((s) => !s);
               }}
               className={cn(
-                "inline-flex min-h-10 items-center gap-1.5 rounded-full px-3.5 font-display text-sm font-semibold ring-1 ring-inset transition-colors",
+                "inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 font-display text-sm font-semibold ring-1 ring-inset transition-colors",
                 soundOn ? "bg-ink text-white ring-ink" : "bg-white text-ink ring-sky-200 hover:bg-ice",
               )}
             >

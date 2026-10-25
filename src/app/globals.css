@@ -136,6 +136,12 @@
     text-wrap: pretty;
   }
 
+  /* Fieldsets default to their content's width, which lets scrolling chip rows
+     push the page wider than a phone screen. */
+  fieldset {
+    min-width: 0;
+  }
+
   :focus-visible {
     outline: 3px solid var(--color-royal);
     outline-offset: 3px;
