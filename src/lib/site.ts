@@ -34,9 +34,16 @@ export type NavItem = { label: string; href: string };
 export const mainNav: NavItem[] = [
   { label: "Home", href: "/" },
   { label: "Shop", href: "/shop" },
-  { label: "Our Story", href: "/our-story" },
+  { label: "Squish Lab", href: "/squish-lab" },
   { label: "TikTok LIVE", href: "/tiktok-live" },
+  { label: "Our Story", href: "/our-story" },
   { label: "FAQ", href: "/faq" },
+];
+
+/** Extra links shown in the mobile menu and footer. */
+export const exploreNav: NavItem[] = [
+  { label: "Squish Lab", href: "/squish-lab" },
+  { label: "My wishlist", href: "/wishlist" },
 ];
 
 export const footerNav: { title: string; items: NavItem[] }[] = [
@@ -45,6 +52,8 @@ export const footerNav: { title: string; items: NavItem[] }[] = [
     items: [
       { label: "Home", href: "/" },
       { label: "Shop preview", href: "/shop" },
+      { label: "Squish Lab", href: "/squish-lab" },
+      { label: "Wishlist", href: "/wishlist" },
       { label: "TikTok LIVE", href: "/tiktok-live" },
     ],
   },

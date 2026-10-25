@@ -47,6 +47,9 @@ export type PublicationStatus = "draft" | "preview" | "published" | "archived";
 /** What a shopper is told. Derived — never stored. See `getAvailability`. */
 export type Availability = "preview" | "coming-soon" | "in-stock" | "low-stock" | "sold-out" | "unavailable";
 
+/** Squishy texture styles (see src/content/textures.ts). */
+export type TextureId = "soft" | "slow-rise" | "jelly" | "crunchy" | "buttery";
+
 /** Illustration families drawn in /components/illustrations. */
 export type ProductArtKind = "slushie" | "jelly" | "crunchy" | "capsule";
 
@@ -66,6 +69,8 @@ export interface ProductMedia {
   height: number;
   /** Poster frame for videos. */
   poster?: string;
+  /** WebVTT captions/description track for videos (path under /public). */
+  captions?: string;
 }
 
 export interface Dimensions {
@@ -143,6 +148,11 @@ export interface Product {
   specs: ProductSpecs;
   safety: ProductSafety;
   tags: string[];
+  /**
+   * Texture styles this product has, confirmed with a real sample (or, for
+   * preview concepts, the texture the concept is designed around). Optional.
+   */
+  textures?: TextureId[];
   /** Lower = shown first under "Featured" sort. */
   featuredRank: number;
   /** ISO date the product was added (used by "Newest" sort). */

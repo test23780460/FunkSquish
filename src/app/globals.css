@@ -52,6 +52,25 @@
   --animate-rise: rise 0.7s var(--ease-squish) both;
   --animate-heart: heart 4s ease-in infinite;
   --animate-twinkle: twinkle 3.2s ease-in-out infinite;
+  --animate-crumb: crumb 0.7s cubic-bezier(0.2, 0.7, 0.4, 1) forwards;
+  --animate-pop: pop 0.45s var(--ease-squish);
+  --animate-drop-in: drop-in 0.55s var(--ease-squish) both;
+
+  @keyframes crumb {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(calc(-50% + var(--crumb-x)), calc(-50% + var(--crumb-y) + 40px)) rotate(220deg) scale(0.6); }
+  }
+  @keyframes pop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.35); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+  }
+  @keyframes drop-in {
+    0% { opacity: 0; transform: translateY(-40px) scale(0.7, 1.2); }
+    60% { opacity: 1; transform: translateY(4px) scale(1.12, 0.88); }
+    100% { opacity: 1; transform: translateY(0) scale(1, 1); }
+  }
 
   @keyframes float {
     0%, 100% { transform: translate3d(0, 0, 0); }
