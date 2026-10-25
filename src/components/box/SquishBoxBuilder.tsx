@@ -103,7 +103,7 @@ export function SquishBoxBuilder({ products, shared = null }: { products: Produc
   const cols = slots === 8 ? "grid-cols-4" : "grid-cols-3";
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_1.05fr] lg:items-start">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_1.05fr] lg:items-start">
       {/* ---------------- The box ---------------- */}
       <div id="your-box" className="lg:sticky lg:top-28">
         {viewingShared && (
