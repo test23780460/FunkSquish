@@ -85,3 +85,23 @@ DNS records added for Brevo (all **new**; nothing existing changed, SPF untouche
 ### API key expiry (check before launch)
 
 Brevo disables a key after **90 days without use** and at its expiry date (**Oct 24, 2027**). If sign-ups are quiet for 3 months, the form would start failing. Before launch, and every few months, check *Brevo → SMTP & API → API keys*; if `funksquish-website` is expired, create a new one with the same permissions and replace `BREVO_API_KEY` in Netlify.
+
+## Drop & restock alerts (separate list)
+
+_Status: built and **disabled**._ The form on `/drops` and on product pages stays greyed out (pointing to TikTok)
+until every item below is done. It uses a **separate** Brevo list and confirmation email, so the launch list is never
+touched. Code: `src/app/actions/drop-alerts.ts`, `src/lib/newsletter/brevo.ts` (`subscribeToDropAlerts`).
+
+| Step | Who |
+| --- | --- |
+| 1. In Brevo, create list **"FunkSquish Drop & Restock Alerts"**, note its ID | Claude (with you signed in) |
+| 2. Templates → new template from `templates/email/brevo-drop-alerts-double-opt-in.html`, subject "Confirm your FunkSquish drop alerts 💙", tag `optin`, sender travis@funksquish.com; note its ID | Claude |
+| 3. Netlify env vars for **Deploy Previews**: `BREVO_DROPS_LIST_ID`, `BREVO_DROPS_DOI_TEMPLATE_ID`, `DROP_ALERTS_ENABLED=true` (the existing `BREVO_API_KEY` already has Contacts permission) | Claude |
+| 4. Test on a deploy preview: sign up → confirmation email → confirm → contact appears in the drops list only → unsubscribe works | Claude + you (inbox) |
+| 5. Approve the privacy-policy wording (already in the draft) and go live: add the vars for **Production** | **You approve** |
+
+**Sending alerts:** when a drop or restock is real, send a Brevo campaign to the drops list only. Only announce a
+restock once the stock is actually in hand (the `/drops` page promises this).
+
+Per-product interest isn't tracked: the alert is "new drops and restocks" in general, and the form says so. Tracking
+interest per product would need a Brevo contact attribute and an updated privacy notice.

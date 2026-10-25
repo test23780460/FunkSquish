@@ -16,6 +16,8 @@ import { getTexture } from "@/content/textures";
 import { WishlistButton } from "@/components/wishlist/WishlistButton";
 import { ShareButton } from "@/components/shop/ShareButton";
 import { ProductFacts } from "@/components/shop/ProductFacts";
+import { DropAlertForm } from "@/components/drops/DropAlertForm";
+import { dropAlertsAvailable } from "@/app/actions/drop-alerts";
 
 export async function generateStaticParams() {
   const products = await listProducts();
@@ -77,6 +79,7 @@ async function ProductContent({ slug }: { slug: string }) {
   const theme = category ? themeClasses[category.theme] : themeClasses.berry;
   const availability = getAvailability(product);
   const productTextures = (product.textures ?? []).flatMap((id) => getTexture(id) ?? []);
+  const alertsOn = await dropAlertsAvailable();
 
   // Recommended: same collection first, then fill from other collections.
   const others = (await listProducts()).filter((p) => p.id !== product.id);
@@ -137,6 +140,9 @@ async function ProductContent({ slug }: { slug: string }) {
             }
             footer={
               <>
+                {!["in-stock", "low-stock"].includes(availability) && (
+                  <DropAlertForm enabled={alertsOn} productName={product.name} className="mt-6" />
+                )}
                 <ProductFacts product={product} className="mt-6" />
                 {preview && (
                   <Notice tone="lemon" title="Sample design" icon={<SparklesIcon className="size-6" />} className="mt-4">

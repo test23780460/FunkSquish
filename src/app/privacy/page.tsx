@@ -1,7 +1,7 @@
 import { LegalPage, Todo, Decision } from "@/components/layout/LegalPage";
 import { siteConfig } from "@/lib/site";
 import { pageMetadata } from "@/lib/seo";
-import { analyticsActive, newsletterActive } from "@/lib/integrations/status";
+import { analyticsActive, dropAlertsActive, newsletterActive } from "@/lib/integrations/status";
 
 export const metadata = pageMetadata({
   title: "Privacy Policy (draft)",
@@ -18,6 +18,7 @@ export const metadata = pageMetadata({
  */
 const status = {
   newsletter: newsletterActive() ? "active" : "not active yet",
+  dropAlerts: dropAlertsActive() ? "active" : "not active yet",
   analytics: analyticsActive() ? "active" : "not active yet",
 };
 
@@ -64,6 +65,20 @@ export default function PrivacyPage() {
         <li>Our emails include a postal address for FunkSquish, as U.S. law requires.</li>
       </ul>
 
+      <h3>Drop &amp; restock alerts ({status.dropAlerts})</h3>
+      <p>
+        If you ask for drop alerts, it works the same way as the launch list — consent box, confirmation email, stored by
+        Brevo — but on a separate list. We use it only to email you when a new drop or a restock is announced. Unsubscribe
+        anytime from any alert email.
+      </p>
+
+      <h3>Wishlists, Squish Boxes and quiz results</h3>
+      <p>
+        These are saved only in your own browser (local storage) so they&apos;re still there when you come back. They&apos;re never
+        sent to us. If you share a wishlist or box link, the link contains short product codes (like grape-jelly-bear) and your box name, if
+        you gave one — nothing else. Clearing your browser data deletes them.
+      </p>
+
       <h3>Website analytics ({status.analytics})</h3>
       <p>
         We use <strong>Umami</strong>, a privacy-focused analytics service, to count visits and see which pages are popular
@@ -76,7 +91,7 @@ export default function PrivacyPage() {
       <h2>How we use information</h2>
       <ul>
         <li>To reply to your messages and help with orders.</li>
-        <li>To send launch emails, if you&apos;ve signed up and confirmed.</li>
+        <li>To send launch emails or drop alerts, if you&apos;ve signed up and confirmed.</li>
         <li>To run, improve, and protect the Site.</li>
         <li>To meet legal obligations.</li>
       </ul>
