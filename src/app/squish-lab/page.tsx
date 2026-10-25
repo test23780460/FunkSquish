@@ -117,9 +117,12 @@ export default async function SquishLabPage() {
           <p className="mt-3 max-w-xl text-lg text-ink-soft">
             Save sample designs to your wishlist and we&apos;ll keep them on this device for you. Nothing is for sale yet.
           </p>
-          <div className="mt-7 flex flex-col gap-3 min-[440px]:flex-row">
+          <div className="mt-7 flex flex-col flex-wrap justify-center gap-3 min-[440px]:flex-row">
             <ButtonLink href="/shop" size="lg">
               See all sample designs
+            </ButtonLink>
+            <ButtonLink href="/quiz" size="lg" variant="secondary">
+              Take the personality quiz
             </ButtonLink>
             <ButtonLink href="/wishlist" size="lg" variant="secondary">
               <HeartIcon className="size-5" />
