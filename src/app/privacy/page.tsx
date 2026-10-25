@@ -1,7 +1,7 @@
 import { LegalPage, Todo, Decision } from "@/components/layout/LegalPage";
 import { siteConfig } from "@/lib/site";
 import { pageMetadata } from "@/lib/seo";
-import { analyticsActive, dropAlertsActive, newsletterActive } from "@/lib/integrations/status";
+import { analyticsActive, dropAlertsActive, newsletterActive, partnerApplicationsActive } from "@/lib/integrations/status";
 
 export const metadata = pageMetadata({
   title: "Privacy Policy (draft)",
@@ -19,6 +19,7 @@ export const metadata = pageMetadata({
 const status = {
   newsletter: newsletterActive() ? "active" : "not active yet",
   dropAlerts: dropAlertsActive() ? "active" : "not active yet",
+  partners: partnerApplicationsActive() ? "active" : "not active yet",
   analytics: analyticsActive() ? "active" : "not active yet",
 };
 
@@ -79,6 +80,17 @@ export default function PrivacyPage() {
         you gave one — nothing else. Clearing your browser data deletes them.
       </p>
 
+      <h3>Partner and supplier applications ({status.partners})</h3>
+      <p>
+        If a business applies through our <a href="/partners">partner page</a>, we store the answers (such as name, work
+        email, business details and product information) privately with our host, Netlify, so we can review the application
+        and reply. Only FunkSquish&apos;s owner can see them, after signing in. Our email provider, Brevo, sends us a short
+        notice that an application arrived, without the applicant&apos;s contact details. To prevent spam we keep a keyed hash of
+        the sender&apos;s IP address, not the address itself. Applicants are never added to marketing lists. We keep applications for
+        up to 24 months after the last update unless we start working together, and delete them sooner on request.{" "}
+        <Todo>owner/legal review of the partner-application retention period</Todo>
+      </p>
+
       <h3>Website analytics ({status.analytics})</h3>
       <p>
         We use <strong>Umami</strong>, a privacy-focused analytics service, to count visits and see which pages are popular
@@ -99,7 +111,8 @@ export default function PrivacyPage() {
       <h2>Who we share it with</h2>
       <p>
         We share information only with service providers that run parts of our business on our behalf — currently Netlify
-        (hosting) and Google Workspace (email), and, once active, Brevo (email list) and Umami (analytics) — or when required
+        (hosting and private application storage) and Google Workspace (email), and, once active, Brevo (email lists and
+        notifications) and Umami (analytics) — or when required
         by law. We don&apos;t sell or rent personal information.
       </p>
 

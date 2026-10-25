@@ -47,6 +47,7 @@ export const exploreNav: NavItem[] = [
   { label: "Build a Squish Box", href: "/squish-box" },
   { label: "My wishlist", href: "/wishlist" },
   { label: "FAQ", href: "/faq" },
+  { label: "Become a partner", href: "/partners" },
 ];
 
 export const footerNav: { title: string; items: NavItem[] }[] = [
@@ -67,6 +68,7 @@ export const footerNav: { title: string; items: NavItem[] }[] = [
     title: "FunkSquish",
     items: [
       { label: "About", href: "/our-story" },
+      { label: "Become a partner", href: "/partners" },
       { label: "FAQ", href: "/faq" },
       { label: "Contact", href: "/contact" },
     ],

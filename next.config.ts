@@ -17,9 +17,21 @@ const nextConfig: NextConfig = {
    */
   env: {
     BUILD_CONTEXT: process.env.CONTEXT ?? "",
+    // This deploy's own URL (previews), used for links in owner notification emails.
+    BUILD_DEPLOY_URL: process.env.DEPLOY_PRIME_URL ?? "",
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Private owner area: never indexed, never cached.
+      ...["/partners/review", "/partners/review/:path*"].map((source) => ({
+        source,
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Cache-Control", value: "private, no-store" },
+        ],
+      })),
+    ];
   },
   cacheComponents: true,
   partialPrefetching: true,
