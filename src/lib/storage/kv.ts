@@ -93,7 +93,13 @@ function withTimeout<T>(op: string, p: Promise<T>, ms = 5000): Promise<T> {
 
 export async function createBlobsKvStore(name: string): Promise<KvStore> {
   const { getStore } = await import("@netlify/blobs");
-  const raw = getStore({ name, consistency: "strong" });
+  // Use the platform's own fetch, not Next.js's patched (caching) fetch: through the
+  // patched one, strongly-consistent Blobs reads never returned inside server actions.
+  const blobsFetch: typeof fetch = (input, init) => {
+    const patched = globalThis.fetch as typeof fetch & { _nextOriginalFetch?: typeof fetch };
+    return (patched._nextOriginalFetch ?? patched)(input, { ...init, cache: "no-store" });
+  };
+  const raw = getStore({ name, consistency: "strong", fetch: blobsFetch });
   const store = {
     getWithMetadata: (key: string, o: { type: "json" }) => withTimeout("read", raw.getWithMetadata(key, o)),
     setJSON: (key: string, v: unknown, o: Parameters<typeof raw.setJSON>[2]) => withTimeout("write", raw.setJSON(key, v, o)),
