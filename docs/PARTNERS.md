@@ -119,5 +119,12 @@ Local testing only: `PARTNER_DEV_MEMORY_STORE=true` in a git-ignored `.env.devel
   every type fits the size limits, screening flags). Local walkthrough at 1280 px and 375 px (no sideways scrolling for
   any type), error states, wholesale submission with a sealed-water-bead answer flagged in review, reseller "Interest
   noted" confirmation. Screenshots: `docs/screenshots/partners-v2/`.
-- **Not verified yet:** the updated questions on a Netlify deploy preview, and production (needs
-  `--netlify=production` setup and your approval).
+- **Verified on the PR #10 deploy preview (2026-10-26, commit 6289228):** all six types show the right sections and
+  required counts at 1280 px and 375 px (no sideways scrolling, no cut-off placeholders); empty dropship form shows the
+  10 required-field errors; a full dropship application (loose water beads, recall) saved to Netlify Blobs with the
+  owner email sent, every answer shown in review with 2 serious + 3 check flags and a "Safety check" badge; stage
+  change to Declined with a note and history; a reseller entry was refused until the acknowledgement was ticked, then
+  confirmed as "Interest noted" with no safety flags; both test entries deleted, store empty. SEO on the preview:
+  robots allows all, 15 canonical sitemap URLs, canonicals match, excluded pages carry noindex (Netlify also adds
+  `X-Robots-Tag: noindex` to every preview response, as expected for previews).
+- **Not verified yet:** production (needs `--netlify=production` setup and your approval).
