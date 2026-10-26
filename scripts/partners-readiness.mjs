@@ -40,7 +40,8 @@ try {
 try {
   const deploy = netlifyApi("getDeploy", { deploy_id: site.published_deploy.id });
   const fn = (deploy.available_functions ?? []).find((f) => f.n === "partner-retention");
-  check(!!fn, "Retention cleanup function is in the published deploy", fn?.s ? `schedule ${fn.s}` : "");
+  const schedule = (deploy.function_schedules ?? []).find((f) => f.name === "partner-retention")?.cron;
+  check(!!fn && !!schedule, "Retention cleanup function is deployed and scheduled", schedule ? `cron ${schedule} UTC` : "not scheduled");
 } catch (err) {
   check(false, "Read the published deploy", err.message);
 }

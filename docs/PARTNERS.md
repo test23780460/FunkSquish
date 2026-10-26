@@ -148,4 +148,11 @@ Local testing only: `PARTNER_DEV_MEMORY_STORE=true` in a git-ignored `.env.devel
   confirmed as "Interest noted" with no safety flags; both test entries deleted, store empty. SEO on the preview:
   robots allows all, 15 canonical sitemap URLs, canonicals match, excluded pages carry noindex (Netlify also adds
   `X-Robots-Tag: noindex` to every preview response, as expected for previews).
+- **Retention + deletion requests on the PR #10 preview (2026-10-26, after #7–#9 merged):** the preview build bundled
+  `partner-retention` with schedule `0 8 * * *`; manufacturer, wholesale, brand, designer and reseller applications
+  submitted with every field filled (notifications sent; resend updated the time); a 6th submission from the same
+  connection was refused by the rate limit and not stored; legal hold placed and released (list badge, rule shown);
+  a deletion request entered with different capitalisation matched exactly one application, showed a 30-day due date,
+  never displayed the email, and "Delete and complete" removed it and recorded the outcome; dry run and real cleanup
+  ran against Netlify Blobs (0 due — everything was new); all test applications deleted.
 - **Not verified yet:** production (needs `--netlify=production` setup and your approval).
