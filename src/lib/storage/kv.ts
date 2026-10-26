@@ -73,9 +73,33 @@ export class MemoryKvStore implements KvStore {
   }
 }
 
+export class StorageTimeoutError extends Error {
+  constructor(op: string) {
+    super(`Storage ${op} took too long`);
+    this.name = "StorageTimeoutError";
+  }
+}
+
+/** Never let one storage call hang a request until the platform kills it. */
+function withTimeout<T>(op: string, p: Promise<T>, ms = 5000): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  return Promise.race([
+    p.finally(() => clearTimeout(timer)),
+    new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new StorageTimeoutError(op)), ms);
+    }),
+  ]);
+}
+
 export async function createBlobsKvStore(name: string): Promise<KvStore> {
   const { getStore } = await import("@netlify/blobs");
-  const store = getStore({ name, consistency: "strong" });
+  const raw = getStore({ name, consistency: "strong" });
+  const store = {
+    getWithMetadata: (key: string, o: { type: "json" }) => withTimeout("read", raw.getWithMetadata(key, o)),
+    setJSON: (key: string, v: unknown, o: Parameters<typeof raw.setJSON>[2]) => withTimeout("write", raw.setJSON(key, v, o)),
+    delete: (key: string) => withTimeout("delete", raw.delete(key)),
+    list: (o: { prefix: string }) => withTimeout("list", raw.list(o)),
+  };
   return {
     durable: true,
     async get<T>(key: string) {

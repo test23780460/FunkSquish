@@ -110,7 +110,8 @@ describe("partner application submission", () => {
     vi.spyOn(stores.apps, "create").mockRejectedValue(new Error("blobs down"));
     const r = await handleSubmission(config, signed(), ipHeaders(), later);
     expect(r).toMatchObject({ status: "error", message: expect.stringContaining("email") });
-    expect(logs.join(" ")).toContain("[partners] storage error");
+    expect(logs.join(" ")).toContain("[partners] failed at store after");
+    expect(logs.join(" ")).toContain("Error blobs down");
   });
 });
 

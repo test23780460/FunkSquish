@@ -40,8 +40,11 @@ export async function handleSubmission(config: PartnerConfig, formData: FormData
   const ipHash = hashIdentifier(config.secret, "ip", clientIp(h));
   const emailHash = hashIdentifier(config.secret, "email", String(result.data.fields.email));
 
+  const t0 = Date.now();
+  let stage = "open-storage";
   try {
     const stores = await partnerStores(config);
+    stage = "rate-limit";
     const allowed = await takeRateLimits(
       stores.limits,
       [
@@ -55,17 +58,22 @@ export async function handleSubmission(config: PartnerConfig, formData: FormData
     if (!allowed)
       return { status: "error", message: `We've received a lot of applications from you or overall today. Please try again tomorrow, or email ${siteConfig.email}.` };
 
+    stage = "store";
     const app = await createApplication(stores.apps, result.data, ipHash, new Date(nowMs));
+    stage = "notify";
     const notification = await notifyOwner(config, app, siteOrigin());
+    stage = "record-notification";
     await updateApplication(stores.apps, app.id, (a) => ({
       ...a,
       notification: notification.status === "sent" ? { status: "sent", at: new Date().toISOString() } : { status: "failed", at: new Date().toISOString(), code: notification.code },
     }));
     // Log only the reference, type and outcome — never names, emails or answers.
-    console.info(`[partners] stored ${app.id} type=${app.type} notify=${notification.status}${notification.status === "failed" ? `:${notification.code}` : ""}`);
+    console.info(`[partners] stored ${app.id} type=${app.type} notify=${notification.status}${notification.status === "failed" ? `:${notification.code}` : ""} ms=${Date.now() - t0}`);
     return { status: "success", reference: app.id };
   } catch (err) {
-    console.error(`[partners] storage error: ${(err as Error)?.name ?? "Error"}`);
+    // Error name/message from the storage or email client only (emails scrubbed just in case).
+    const e = err as Error;
+    console.error(`[partners] failed at ${stage} after ${Date.now() - t0}ms: ${e?.name ?? "Error"} ${String(e?.message ?? "").replace(/\S+@\S+/g, "[email]").slice(0, 200)}`);
     return { status: "error", message: `We couldn't save your application just now. Please try again later or email ${siteConfig.email}.` };
   }
 }
