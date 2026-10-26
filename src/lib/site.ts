@@ -43,6 +43,8 @@ export const mainNav: NavItem[] = [
 /** Extra links shown in the mobile menu and footer. */
 export const exploreNav: NavItem[] = [
   { label: "Squish Lab", href: "/squish-lab" },
+  { label: "Personality quiz", href: "/quiz" },
+  { label: "Build a Squish Box", href: "/squish-box" },
   { label: "My wishlist", href: "/wishlist" },
 ];
 
@@ -53,6 +55,8 @@ export const footerNav: { title: string; items: NavItem[] }[] = [
       { label: "Home", href: "/" },
       { label: "Shop preview", href: "/shop" },
       { label: "Squish Lab", href: "/squish-lab" },
+      { label: "Personality quiz", href: "/quiz" },
+      { label: "Squish Box builder", href: "/squish-box" },
       { label: "Wishlist", href: "/wishlist" },
       { label: "TikTok LIVE", href: "/tiktok-live" },
     ],

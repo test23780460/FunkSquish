@@ -45,6 +45,26 @@ export function SquishLabTeaser() {
               <ArrowRightIcon className="size-5" />
             </ButtonLink>
           </div>
+          <ul className="mt-8 grid gap-3 sm:grid-cols-2">
+            <li>
+              <Link href="/quiz" className="squishy flex h-full items-center gap-3 rounded-[1.75rem] bg-white p-4 shadow-[var(--shadow-card)] ring-1 ring-inset ring-sky-200">
+                <span aria-hidden="true" className="grid size-12 shrink-0 place-items-center rounded-2xl bg-grape-soft text-2xl">🔮</span>
+                <span>
+                  <span className="block font-display text-lg font-bold text-ink">Personality quiz</span>
+                  <span className="block text-sm text-ink-soft">Six questions to find your squish match</span>
+                </span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/squish-box" className="squishy flex h-full items-center gap-3 rounded-[1.75rem] bg-white p-4 shadow-[var(--shadow-card)] ring-1 ring-inset ring-sky-200">
+                <span aria-hidden="true" className="grid size-12 shrink-0 place-items-center rounded-2xl bg-berry-soft text-2xl">🎁</span>
+                <span>
+                  <span className="block font-display text-lg font-bold text-ink">Build a Squish Box</span>
+                  <span className="block text-sm text-ink-soft">Design your dream box (preview)</span>
+                </span>
+              </Link>
+            </li>
+          </ul>
         </div>
         <div className="mx-auto rounded-[2.5rem] bg-white/70 px-4 pb-5 pt-6 shadow-[var(--shadow-card)] ring-1 ring-inset ring-sky-200">
           <TeaserPad />
