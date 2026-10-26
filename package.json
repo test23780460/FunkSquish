@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "catalog:import": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/catalog-import.mjs",
     "catalog:export": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/catalog-export.mjs",
-    "catalog:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/catalog-check.mjs"
+    "catalog:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/catalog-check.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
     "next": "16.4.2",
@@ -25,7 +26,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.12"
   },
   "engines": {
     "node": ">=20.9.0"

@@ -7,7 +7,7 @@ import { listProducts } from "@/commerce/catalog";
  * are also marked noindex on the page itself.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const pages = ["", "/shop", "/our-story", "/tiktok-live", "/faq", "/contact", "/order-help", "/product-care", "/shipping", "/returns"];
+  const pages = ["", "/shop", "/squish-lab", "/our-story", "/tiktok-live", "/faq", "/contact", "/order-help", "/product-care", "/shipping", "/returns"];
   const products = (await listProducts()).filter((p) => p.publication === "published");
   return [
     ...pages.map((path) => ({ url: `${siteConfig.url}${path}` })),
