@@ -26,7 +26,7 @@ const steps = [
 ];
 
 const values = [
-  { title: "Safety first", body: "Squishies are loved by kids. We ask about materials, age grading and children's product safety documentation (such as a CPC) up front." },
+  { title: "Safety first", body: "Squishies are loved by kids. We ask about fillings, water beads, recalls, lab testing and Children's Product Certificates up front." },
   { title: "Original & authorized", body: "Only original designs or products you're authorized to sell. No knock-offs of other brands." },
   { title: "Honest terms", body: "Clear pricing tiers, MOQs, lead times and shipping estimates — and we'll be just as clear back." },
   { title: "Small & personal", body: "We're a new, independent shop based in Kentucky. You'll talk to the person who runs it." },
@@ -35,8 +35,9 @@ const values = [
 const faqs = [
   { q: "Do you charge an application fee?", a: "No. We never charge fees to apply or to be considered, and we'll never ask for payment by DM." },
   { q: "Should I send samples?", a: "Please don't send anything until we ask. We'll request samples, with an address, if we'd like to move forward." },
-  { q: "Can I attach a catalog or price list?", a: "The form doesn't take files on purpose. Share a link to your catalog instead; we'll ask for pricing privately if it's a fit." },
-  { q: "Are you taking reseller accounts?", a: "Not yet — our shop hasn't launched. Resellers and distributors can apply now and we'll get in touch when wholesale opens." },
+  { q: "Can I attach a catalog or price list?", a: "The form doesn't take files on purpose. Type a few SKU prices into the form and share a link to your catalog; we'll ask for a full price list privately if it's a fit." },
+  { q: "Are you taking reseller accounts?", a: "No — we don't have a wholesale program yet. Shops and distributors can register future interest, and we'll email if one opens. Registering isn't an account, an order or a price quote." },
+  { q: "Where would you sell my products?", a: "Only where you allow it. The form asks which channels you'd authorize — our website, TikTok Shop, TikTok LIVE and others — and nothing is agreed until we both sign." },
 ];
 
 export default async function PartnersPage() {
@@ -137,6 +138,7 @@ export default async function PartnersPage() {
             </h3>
             <ul className="mt-3 list-disc space-y-1.5 pl-5 text-[0.95rem] leading-relaxed text-ink-soft marker:text-sky">
               <li>We use your answers only to review your application and reply to you. We don&apos;t sell them or add you to any marketing list.</li>
+              <li>Prices, terms and safety answers you share are kept confidential. They&apos;re never shown on our website.</li>
               <li>Applications are stored privately by our website host (Netlify) and are visible only to FunkSquish&apos;s owner after signing in.</li>
               <li>We get an email that a new application arrived (via our email provider, Brevo). It doesn&apos;t include your contact details.</li>
               <li>To prevent spam we keep a scrambled code made from your IP address — not the address itself.</li>

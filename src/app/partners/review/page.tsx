@@ -7,6 +7,7 @@ import { reviewConfig } from "@/lib/partners/config";
 import { requireReviewer } from "@/lib/partners/review-auth";
 import { listApplications, pastRetention } from "@/lib/partners/store";
 import { PARTNER_TYPES, STAGES, STAGE_LABELS, isPartnerType, isStage } from "@/lib/partners/schema";
+import { screeningFlags } from "@/lib/partners/screening";
 import { Container } from "@/components/ui/Primitives";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { logoutAction } from "./actions";
@@ -109,6 +110,9 @@ async function Review({ searchParams }: { searchParams: PageProps<"/partners/rev
                 </span>
                 <span className="text-sm text-ink-soft">{new Date(a.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
                 {a.notification.status === "failed" && <span className="rounded-full bg-berry-soft px-2.5 py-1 text-xs font-bold text-ink">Email failed</span>}
+                {screeningFlags(a.type, a.fields).some((f) => f.level === "serious") && (
+                  <span className="rounded-full bg-berry-soft px-2.5 py-1 text-xs font-bold text-ink">Safety check</span>
+                )}
                 {pastRetention(a) && <span className="rounded-full bg-lemon-soft px-2.5 py-1 text-xs font-bold text-ink">Past retention</span>}
               </Link>
             </li>

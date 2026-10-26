@@ -16,8 +16,8 @@ export interface PartnerInput {
 
 export type ValidationResult = { ok: true; data: PartnerInput } | { ok: false; errors: Record<string, string> };
 
-export const MAX_ENTRIES = 60;
-export const MAX_TOTAL_CHARS = 12_000;
+export const MAX_ENTRIES = 120;
+export const MAX_TOTAL_CHARS = 16_000;
 
 const EMAIL = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[^\s@<>()[\]\\,;:"]{2,}$/;
 // Control characters (keep tab/newline for multi-line answers).
@@ -52,7 +52,8 @@ function checkField(def: FieldDef, values: string[], errors: Record<string, stri
   if (def.kind === "checkboxes") {
     const picked = [...new Set(values.map((v) => clean(v, false)))].filter((v) => def.options?.includes(v));
     if (values.length > (def.options?.length ?? 0) || picked.length !== new Set(values).size) errors[def.name] = "Please choose from the list.";
-    if (def.required && picked.length === 0) errors[def.name] = "Please choose at least one.";
+    if (def.exclusive && picked.includes(def.exclusive) && picked.length > 1) errors[def.name] = `"${def.exclusive}" can't be combined with other choices.`;
+    if (def.required && picked.length === 0) errors[def.name] = def.options?.length === 1 ? "Please tick this box to continue." : "Please choose at least one.";
     return picked.length ? picked : undefined;
   }
 

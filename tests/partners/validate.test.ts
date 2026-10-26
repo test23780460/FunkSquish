@@ -48,7 +48,7 @@ describe("partner form validation", () => {
     const huge = validatePartnerEntries(entries(goodForm({ message: "x".repeat(20_000) })));
     expect(!huge.ok && huge.errors.form).toBeTruthy();
     const many = goodForm();
-    for (let i = 0; i < 80; i++) many.append(`junk${i}`, "x");
+    for (let i = 0; i < 120; i++) many.append(`junk${i}`, "x");
     expect(validatePartnerEntries(entries(many)).ok).toBe(false);
     const withFile = goodForm();
     withFile.append("upload", new File(["MZ"], "evil.exe"));
@@ -66,7 +66,7 @@ describe("partner form validation", () => {
       const names = fieldsFor(t.id).map((f) => f.name);
       for (const core of ["name", "email", "business", "website", "country", "message"]) expect(names).toContain(core);
     }
-    expect(fieldsFor("dropship").map((f) => f.name)).toContain("orderHandling");
+    expect(fieldsFor("dropship").map((f) => f.name)).toContain("customStore");
     expect(fieldsFor("reseller").map((f) => f.name)).toContain("channels");
     expect(fieldsFor("designer").map((f) => f.name)).toContain("portfolio");
     expect(fieldsFor("reseller").map((f) => f.name)).not.toContain("moq");

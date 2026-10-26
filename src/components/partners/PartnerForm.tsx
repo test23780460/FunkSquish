@@ -4,21 +4,13 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { getPartnerFormToken, submitPartnerApplication } from "@/app/actions/partners";
 import type { PartnerSubmitState } from "@/lib/partners/submit";
-import { CONSENT_TEXT, PARTNER_TYPES, fieldsFor, type FieldDef, type PartnerType } from "@/lib/partners/schema";
+import { CONSENT_TEXT, FIELD_GROUPS, PARTNER_TYPES, fieldsFor, type FieldDef, type PartnerType } from "@/lib/partners/schema";
 import { validatePartnerEntries } from "@/lib/partners/validate";
 import { buttonClasses } from "@/components/ui/Button";
 import { CheckIcon, MailIcon } from "@/components/icons/Icons";
 import { Mascot } from "@/components/illustrations/Mascot";
 import { trackEvent } from "@/components/analytics/track";
 import { cn } from "@/lib/cn";
-
-const GROUPS: { title: string; fields: string[] }[] = [
-  { title: "About you and your business", fields: ["name", "email", "business", "website", "country"] },
-  { title: "Products and terms", fields: ["categories", "examples", "moq", "samples", "leadTime", "custom", "fulfillment", "usShipping", "orderHandling", "packaging", "resale", "safetyDocs"] },
-  { title: "Collaboration", fields: ["collab", "portfolio", "rights"] },
-  { title: "Where you sell", fields: ["channels", "region", "volume"] },
-  { title: "Anything else", fields: ["message"] },
-];
 
 const inputBase =
   "mt-1.5 w-full rounded-2xl bg-white px-4 text-base text-ink ring-2 ring-inset placeholder:text-ink-soft/70 focus:outline-none focus:ring-royal";
@@ -79,27 +71,37 @@ export function PartnerForm({ email }: { email: string }) {
     });
   };
 
+  const interestOnly = type === "reseller";
+
   if (result.status === "success") {
     return (
       <div ref={resultRef} tabIndex={-1} role="status" className="rounded-[2.25rem] bg-white p-6 text-center shadow-[var(--shadow-card)] ring-1 ring-inset ring-sky-200 focus:outline-none sm:p-10">
         <Mascot className="mx-auto w-28" mood="grin" wave />
-        <h3 className="mt-4 font-display text-3xl font-bold text-ink">Application received — thank you!</h3>
+        <h3 className="mt-4 font-display text-3xl font-bold text-ink">{interestOnly ? "Interest noted — thank you!" : "Application received — thank you!"}</h3>
         {result.reference && (
           <p className="mt-3 font-display text-lg text-ink">
             Your reference: <strong className="select-all rounded-lg bg-ice px-2 py-0.5">{result.reference}</strong>
           </p>
         )}
-        <p className="mx-auto mt-4 max-w-lg text-lg leading-relaxed text-ink-soft">
-          This confirms we&apos;ve received your application — <strong className="text-ink">it isn&apos;t an approval</strong>. We read
-          every application ourselves. If it&apos;s a fit, we&apos;ll reply from {email} to talk next steps.
-        </p>
+        {interestOnly ? (
+          <p className="mx-auto mt-4 max-w-lg text-lg leading-relaxed text-ink-soft">
+            We&apos;ve saved your details. <strong className="text-ink">This isn&apos;t a wholesale account or an order</strong> — we don&apos;t
+            have a wholesale program yet. If one opens, we&apos;ll email you from {email}.
+          </p>
+        ) : (
+          <p className="mx-auto mt-4 max-w-lg text-lg leading-relaxed text-ink-soft">
+            This confirms we&apos;ve received your application — <strong className="text-ink">it isn&apos;t an approval</strong>. We read
+            every application ourselves. If it&apos;s a fit, we&apos;ll reply from {email} to talk next steps.
+          </p>
+        )}
         <p className="mt-3 text-sm text-ink-soft">We never charge application fees and won&apos;t ask for payment to be considered.</p>
       </div>
     );
   }
 
   const fields = type ? fieldsFor(type) : [];
-  const groups = GROUPS.map((g) => ({ ...g, defs: fields.filter((f) => g.fields.includes(f.name)) })).filter((g) => g.defs.length);
+  const groups = FIELD_GROUPS.map((g) => ({ ...g, defs: g.fields.flatMap((n) => fields.filter((f) => f.name === n)) })).filter((g) => g.defs.length);
+  const requiredCount = fields.filter((f) => f.required).length;
 
   return (
     <form ref={formRef} onSubmit={onSubmit} noValidate className="space-y-6" aria-describedby="partner-form-note">
@@ -136,11 +138,18 @@ export function PartnerForm({ email }: { email: string }) {
 
       {type && (
         <>
+          <p className="rounded-2xl bg-ice-50 px-4 py-3 text-[0.95rem] leading-relaxed text-ink ring-1 ring-inset ring-sky-200">
+            <strong>
+              {fields.length} questions, only {requiredCount} required
+            </strong>{" "}
+            (marked <span className="text-[#b8215a]">*</span>). Rough answers are fine — skip anything you&apos;d rather discuss by email.
+          </p>
           {groups.map((g, gi) => (
             <fieldset key={g.title} className="rounded-[2rem] bg-white p-5 ring-1 ring-inset ring-sky-200 sm:p-6">
               <legend className="float-left w-full font-display text-xl font-bold text-ink">
                 {gi + 2}. {g.title}
               </legend>
+              {g.intro && <p className="clear-left pt-1.5 text-[0.95rem] leading-relaxed text-ink-soft">{g.intro}</p>}
               <div className="clear-left grid gap-4 pt-4 sm:grid-cols-2">
                 {g.defs.map((f) => (
                   <Field key={f.name} def={f} error={errors[f.name]} />
@@ -185,7 +194,7 @@ export function PartnerForm({ email }: { email: string }) {
           )}
 
           <button type="submit" disabled={pending || !token} className={buttonClasses({ size: "lg", className: "w-full disabled:cursor-wait disabled:opacity-60 sm:w-auto" })}>
-            {pending ? "Sending…" : token ? "Send application" : "Getting the form ready…"}
+            {pending ? "Sending…" : !token ? "Getting the form ready…" : interestOnly ? "Register my interest" : "Send application"}
           </button>
         </>
       )}
@@ -197,27 +206,49 @@ function Field({ def, error }: { def: FieldDef; error?: string }) {
   const id = `pf-${def.name}`;
   const describedBy = [def.hint ? `${id}-hint` : null, error ? `${id}-error` : null].filter(Boolean).join(" ") || undefined;
   const ring = error ? "ring-[#d62f6d]" : "ring-sky-200";
-  const wide = def.kind === "textarea" || def.kind === "checkboxes" || def.name === "website";
+  const wide = def.kind === "textarea" || def.kind === "checkboxes" || def.name === "website" || (def.kind === "select" && def.label.length > 40);
+  const marker = def.required ? <span className="text-[#b8215a]" aria-hidden="true"> *</span> : <span className="font-normal text-ink-soft"> (optional)</span>;
 
   return (
     <div className={cn(wide && "sm:col-span-2")}>
       {def.kind === "checkboxes" ? (
         <fieldset aria-describedby={describedBy}>
-          <legend className="font-display font-semibold text-ink">{def.label}</legend>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {def.options?.map((o) => (
-              <label key={o} className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-full bg-ice-50 px-3.5 text-sm font-semibold text-ink ring-1 ring-inset ring-sky-200 has-[:checked]:bg-ice has-[:checked]:ring-2 has-[:checked]:ring-royal has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-royal">
-                <input type="checkbox" name={def.name} value={o} className="size-4 accent-[var(--color-royal)]" />
-                {o}
-              </label>
-            ))}
-          </div>
+          <legend className="font-display font-semibold text-ink">
+            {def.label}
+            {marker}
+          </legend>
+          {def.options?.length === 1 ? (
+            <label
+              className={cn(
+                "mt-2 flex cursor-pointer items-start gap-3 rounded-2xl bg-lemon-soft p-4 text-ink ring-inset has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-royal",
+                error ? "ring-2 ring-[#d62f6d]" : "ring-1 ring-lemon",
+              )}
+            >
+              <input type="checkbox" name={def.name} value={def.options[0]} aria-invalid={!!error} className="mt-1 size-5 shrink-0 accent-[var(--color-royal)]" />
+              <span className="leading-relaxed">{def.options[0]}</span>
+            </label>
+          ) : (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {def.options?.map((o) => (
+                <label
+                  key={o}
+                  className={cn(
+                    "inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-full bg-ice-50 px-3.5 py-1.5 text-sm font-semibold text-ink ring-1 ring-inset has-[:checked]:bg-ice has-[:checked]:ring-2 has-[:checked]:ring-royal has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-royal",
+                    error ? "ring-[#d62f6d]" : "ring-sky-200",
+                  )}
+                >
+                  <input type="checkbox" name={def.name} value={o} aria-invalid={!!error} className="size-4 shrink-0 accent-[var(--color-royal)]" />
+                  {o}
+                </label>
+              ))}
+            </div>
+          )}
         </fieldset>
       ) : (
         <>
           <label htmlFor={id} className="font-display font-semibold text-ink">
             {def.label}
-            {def.required ? <span className="text-[#b8215a]" aria-hidden="true"> *</span> : <span className="font-normal text-ink-soft"> (optional)</span>}
+            {marker}
           </label>
           {def.kind === "textarea" ? (
             <textarea id={id} name={def.name} rows={4} maxLength={def.max} required={def.required} aria-invalid={!!error} aria-describedby={describedBy} placeholder={def.placeholder} className={cn(inputBase, ring, "py-3")} />

@@ -6,7 +6,8 @@ import { connection } from "next/server";
 import { reviewConfig } from "@/lib/partners/config";
 import { requireReviewer } from "@/lib/partners/review-auth";
 import { getApplication, pastRetention } from "@/lib/partners/store";
-import { PARTNER_FIELDS, PARTNER_TYPES, STAGES, STAGE_LABELS } from "@/lib/partners/schema";
+import { FIELD_GROUPS, PARTNER_FIELDS, PARTNER_TYPES, STAGES, STAGE_LABELS, type FieldDef } from "@/lib/partners/schema";
+import { screeningFlags } from "@/lib/partners/screening";
 import { safeUrl } from "@/lib/partners/validate";
 import { Container } from "@/components/ui/Primitives";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
@@ -44,7 +45,15 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
 
   const type = PARTNER_TYPES.find((t) => t.id === app.type);
   const email = String(app.fields.email ?? "");
-  const rows = PARTNER_FIELDS.filter((f) => app.fields[f.name] !== undefined);
+  const answered = (names: string[]) => names.flatMap((n) => PARTNER_FIELDS.filter((f) => f.name === n && app.fields[f.name] !== undefined));
+  const sections = FIELD_GROUPS.map((g) => ({ title: g.title, defs: answered(g.fields) })).filter((s) => s.defs.length);
+  // Answers to questions that have since been renamed or removed are still shown, never hidden.
+  const known = new Set(PARTNER_FIELDS.map((f) => f.name));
+  const legacy: FieldDef[] = Object.keys(app.fields)
+    .filter((k) => !known.has(k))
+    .map((k) => ({ name: k, label: k, kind: "text", max: 0 }));
+  if (legacy.length) sections.push({ title: "Other answers (older form version)", defs: legacy });
+  const flags = screeningFlags(app.type, app.fields);
 
   return (
     <div className="space-y-6">
@@ -72,29 +81,51 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
         )}
       </header>
 
+      {flags.length > 0 && (
+        <section aria-labelledby="flags" className="rounded-[2rem] bg-white p-6 ring-2 ring-inset ring-lemon">
+          <h2 id="flags" className="font-display text-xl font-bold text-ink">Look at these first</h2>
+          <ul className="mt-3 space-y-2">
+            {flags.map((f) => (
+              <li key={f.text} className="flex items-start gap-2 text-ink">
+                <span className={f.level === "serious" ? "mt-0.5 rounded-full bg-berry-soft px-2 py-0.5 text-xs font-bold" : "mt-0.5 rounded-full bg-lemon-soft px-2 py-0.5 text-xs font-bold"}>
+                  {f.level === "serious" ? "Serious" : "Check"}
+                </span>
+                <span>{f.text}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-sm text-ink-soft">Automatic hints from the applicant&apos;s own answers. They never approve or decline anything.</p>
+        </section>
+      )}
+
       <section aria-labelledby="answers" className="rounded-[2rem] bg-white p-6 ring-1 ring-inset ring-sky-200">
         <h2 id="answers" className="font-display text-xl font-bold text-ink">Answers</h2>
-        <dl className="mt-4 divide-y divide-sky-100">
-          {rows.map((f) => {
-            const v = app.fields[f.name];
-            const text = Array.isArray(v) ? v.join(", ") : String(v);
-            const link = f.kind === "url" ? safeUrl(text) : null;
-            return (
-              <div key={f.name} className="grid gap-1 py-3 sm:grid-cols-[14rem_1fr] sm:gap-4">
-                <dt className="font-semibold text-ink">{f.label}</dt>
-                <dd className="whitespace-pre-wrap break-words text-ink">
-                  {link ? (
-                    <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="font-semibold text-royal underline">
-                      {text}
-                    </a>
-                  ) : (
-                    text
-                  )}
-                </dd>
-              </div>
-            );
-          })}
-        </dl>
+        {sections.map((sec) => (
+          <div key={sec.title} className="mt-5">
+            <h3 className="font-display text-sm font-semibold uppercase tracking-[0.12em] text-royal">{sec.title}</h3>
+            <dl className="mt-1 divide-y divide-sky-100">
+              {sec.defs.map((f) => {
+                const v = app.fields[f.name];
+                const text = Array.isArray(v) ? v.join(", ") : String(v);
+                const link = f.kind === "url" ? safeUrl(text) : null;
+                return (
+                  <div key={f.name} className="grid gap-1 py-3 sm:grid-cols-[14rem_1fr] sm:gap-4">
+                    <dt className="font-semibold text-ink">{f.label}</dt>
+                    <dd className="whitespace-pre-wrap break-words text-ink">
+                      {link ? (
+                        <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="font-semibold text-royal underline">
+                          {text}
+                        </a>
+                      ) : (
+                        text
+                      )}
+                    </dd>
+                  </div>
+                );
+              })}
+            </dl>
+          </div>
+        ))}
         <p className="mt-4 text-sm text-ink-soft">
           Consent ({app.consent.version}) given {fmt(app.consent.at)}. Links come from the applicant — check where they go before opening them.
         </p>
