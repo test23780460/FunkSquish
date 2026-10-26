@@ -21,6 +21,15 @@ export interface PartnerConfig {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export const PASSPHRASE_HASH = /^scrypt:\d+:\d+:\d+:[A-Za-z0-9_-]{16,}:[A-Za-z0-9_-]{32,}$/;
 
+/**
+ * process.env plus the build-time deploy context. BUILD_CONTEXT only exists
+ * where the code literally says `process.env.BUILD_CONTEXT` (next.config.ts
+ * inlines it at build); Netlify's CONTEXT isn't there at runtime.
+ */
+function runtimeEnv(): NodeJS.ProcessEnv {
+  return { ...process.env, BUILD_CONTEXT: process.env.BUILD_CONTEXT };
+}
+
 function storage(env: NodeJS.ProcessEnv): Pick<PartnerConfig, "storage" | "storeSuffix"> | null {
   const context = env.BUILD_CONTEXT || env.CONTEXT;
   if (context === "production") return { storage: "blobs", storeSuffix: "" };
@@ -31,7 +40,7 @@ function storage(env: NodeJS.ProcessEnv): Pick<PartnerConfig, "storage" | "store
 }
 
 /** What the review area needs (it stays reachable even if new applications are paused). */
-export function reviewConfig(env: NodeJS.ProcessEnv = process.env): Pick<PartnerConfig, "secret" | "passphraseHash" | "storage" | "storeSuffix"> | null {
+export function reviewConfig(env: NodeJS.ProcessEnv = runtimeEnv()): Pick<PartnerConfig, "secret" | "passphraseHash" | "storage" | "storeSuffix"> | null {
   const s = storage(env);
   const secret = env.PARTNER_SECRET ?? "";
   const passphraseHash = env.PARTNER_REVIEW_PASSPHRASE_HASH ?? "";
@@ -39,7 +48,7 @@ export function reviewConfig(env: NodeJS.ProcessEnv = process.env): Pick<Partner
   return { secret, passphraseHash, ...s };
 }
 
-export function partnerSetup(env: NodeJS.ProcessEnv = process.env): { ready: boolean; missing: string[]; config: PartnerConfig | null } {
+export function partnerSetup(env: NodeJS.ProcessEnv = runtimeEnv()): { ready: boolean; missing: string[]; config: PartnerConfig | null } {
   const missing: string[] = [];
   if (!(features.partnerApplications || env.PARTNER_APPLICATIONS_ENABLED === "true")) missing.push("PARTNER_APPLICATIONS_ENABLED");
   if ((env.PARTNER_SECRET ?? "").length < 32) missing.push("PARTNER_SECRET");
