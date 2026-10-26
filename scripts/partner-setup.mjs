@@ -93,11 +93,15 @@ const secret = randomBytes(32).toString("base64url");
 if (netlifyContext) {
   // Send both values straight to Netlify as secret variables. They are never printed.
   for (const [name, value] of [["PARTNER_REVIEW_PASSPHRASE_HASH", hash], ["PARTNER_SECRET", secret]]) {
-    const r = spawnSync(
-      "npx",
-      ["netlify", "env:set", name, value, "--secret", "--context", netlifyContext, "--scope", "builds", "functions", "runtime"],
-      { shell: process.platform === "win32", stdio: ["ignore", "ignore", "pipe"], encoding: "utf8" },
-    );
+    const set = (extra) =>
+      spawnSync("npx", ["netlify", "env:set", name, value, "--secret", "--context", netlifyContext, ...extra], {
+        shell: process.platform === "win32",
+        stdio: ["ignore", "ignore", "pipe"],
+        encoding: "utf8",
+      });
+    let r = set(["--scope", "builds", "functions", "runtime"]);
+    // A variable that already exists for another context keeps its scopes; Netlify then refuses --scope.
+    if (r.status !== 0 && /context and scope at the same time/i.test(String(r.stderr))) r = set([]);
     if (r.status !== 0) {
       console.error(`Couldn't save ${name} to Netlify: ${String(r.stderr ?? "").split(value).join("[hidden]").trim().slice(0, 300)}`);
       process.exit(1);
