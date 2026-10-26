@@ -5,14 +5,15 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { reviewConfig } from "@/lib/partners/config";
 import { requireReviewer } from "@/lib/partners/review-auth";
-import { getApplication, pastRetention } from "@/lib/partners/store";
+import { getApplication } from "@/lib/partners/store";
+import { lastActivity, retentionDecision } from "@/lib/partners/retention";
 import { FIELD_GROUPS, PARTNER_FIELDS, PARTNER_TYPES, STAGES, STAGE_LABELS, type FieldDef } from "@/lib/partners/schema";
 import { screeningFlags } from "@/lib/partners/screening";
 import { safeUrl } from "@/lib/partners/validate";
 import { Container } from "@/components/ui/Primitives";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { ArrowLeftIcon } from "@/components/icons/Icons";
-import { deleteApplicationAction, resendNotificationAction, updateStatusAction } from "../actions";
+import { confirmActiveAction, deleteApplicationAction, legalHoldAction, releaseHoldAction, resendNotificationAction, updateStatusAction } from "../actions";
 
 export const metadata: Metadata = { title: "Partner application", robots: { index: false, follow: false } };
 
@@ -54,6 +55,8 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
     .map((k) => ({ name: k, label: k, kind: "text", max: 0 }));
   if (legacy.length) sections.push({ title: "Other answers (older form version)", defs: legacy });
   const flags = screeningFlags(app.type, app.fields);
+  const retention = retentionDecision(app);
+  const day = (d: Date) => d.toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "America/New_York" });
 
   return (
     <div className="space-y-6">
@@ -68,8 +71,8 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
         <p className="mt-1 text-ink-soft">
           {app.id} · received {fmt(app.createdAt)} · {STAGE_LABELS[app.status]}
         </p>
-        {pastRetention(app) && (
-          <p className="mt-3 rounded-xl bg-lemon-soft px-3 py-2 text-sm font-semibold text-ink">Older than the proposed retention period — consider deleting it.</p>
+        {retention.action === "delete" && (
+          <p className="mt-3 rounded-xl bg-lemon-soft px-3 py-2 text-sm font-semibold text-ink">Past its retention date — the next cleanup run deletes it.</p>
         )}
         {email && (
           <a
@@ -185,9 +188,46 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
         </form>
       </section>
 
+      <section aria-labelledby="retention" className="rounded-[2rem] bg-white p-6 ring-1 ring-inset ring-sky-200">
+        <h2 id="retention" className="font-display text-xl font-bold text-ink">Retention</h2>
+        <p className="mt-2 text-ink">{retention.rule}.</p>
+        <p className="mt-1 text-ink-soft">
+          Last activity {day(lastActivity(app))}
+          {retention.action === "keep" && ` · deleted automatically on or after ${day(retention.dueAt)}`}
+          {retention.action === "delete" && ` · was due ${day(retention.dueAt)}`}
+          {retention.action === "review" && ` · ${retention.overdue ? "review overdue since" : "next review"} ${day(retention.dueAt)}`}
+        </p>
+        <p className="mt-1 text-sm text-ink-soft">Stage changes and notes count as activity. Viewing, re-sending the email and legal holds don&apos;t.</p>
+        {app.status === "approved" && (
+          <form action={confirmActiveAction} className="mt-3">
+            <input type="hidden" name="id" value={app.id} />
+            <button type="submit" className="rounded-full bg-white px-4 py-2 font-display font-semibold text-ink ring-1 ring-inset ring-sky-200 hover:bg-ice">We&apos;re still working together</button>
+            <p className="mt-1 text-sm text-ink-soft">When it ends, copy what your business records need, then delete this application.</p>
+          </form>
+        )}
+        {app.legalHold ? (
+          <form action={releaseHoldAction} className="mt-4 rounded-2xl bg-grape-soft p-4">
+            <input type="hidden" name="id" value={app.id} />
+            <p className="font-semibold text-ink">Legal hold since {day(new Date(app.legalHold.at))}: {app.legalHold.reason}</p>
+            <button type="submit" className="mt-2 rounded-full bg-white px-4 py-2 font-display text-sm font-semibold text-ink ring-1 ring-inset ring-sky-200">Release hold</button>
+          </form>
+        ) : (
+          <details className="mt-4">
+            <summary className="cursor-pointer font-semibold text-royal">Keep it longer for a legal reason</summary>
+            <form action={legalHoldAction} className="mt-2 grid gap-2">
+              <input type="hidden" name="id" value={app.id} />
+              <label htmlFor="reason" className="text-sm font-semibold text-ink">Documented reason (no personal details)</label>
+              <input id="reason" name="reason" maxLength={300} required className="min-h-11 rounded-xl bg-ice-50 px-3 text-ink ring-2 ring-inset ring-sky-200" />
+              <button type="submit" className="justify-self-start rounded-full bg-white px-4 py-2 font-display text-sm font-semibold text-ink ring-1 ring-inset ring-sky-200">Place legal hold</button>
+              {sp.hold === "reason" && <p role="alert" className="text-sm font-semibold text-[#b8215a]">Please write the reason.</p>}
+            </form>
+          </details>
+        )}
+      </section>
+
       <section aria-labelledby="danger" className="rounded-[2rem] bg-white p-6 ring-2 ring-inset ring-berry/40">
         <h2 id="danger" className="font-display text-xl font-bold text-ink">Delete application</h2>
-        <p className="mt-2 text-ink-soft">Permanently deletes it from storage (for example when someone asks, or after the retention period). This can&apos;t be undone.</p>
+        <p className="mt-2 text-ink-soft">Permanently deletes it from storage. For a deletion request, use <Link href="/partners/review/requests" className="font-semibold text-royal underline">Deletion requests</Link> so the deadline and outcome are recorded. This can&apos;t be undone.</p>
         <form action={deleteApplicationAction} className="mt-3 flex flex-wrap items-end gap-3">
           <input type="hidden" name="id" value={app.id} />
           <label className="grid gap-1 text-sm font-semibold text-ink">

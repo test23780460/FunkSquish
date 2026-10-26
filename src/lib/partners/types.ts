@@ -16,4 +16,8 @@ export interface PartnerApplication {
   /** Owner's private notes. */
   notes: { at: string; text: string }[];
   history: { at: string; from: Stage | null; to: Stage }[];
+  /** Owner confirmed an approved relationship is still active (restarts the yearly review). */
+  relationshipConfirmedAt?: string;
+  /** Documented legal reason to keep the record past its retention date. Never set automatically. */
+  legalHold?: { reason: string; at: string };
 }

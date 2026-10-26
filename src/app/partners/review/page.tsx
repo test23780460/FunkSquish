@@ -5,12 +5,16 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { reviewConfig } from "@/lib/partners/config";
 import { requireReviewer } from "@/lib/partners/review-auth";
-import { listApplications, pastRetention } from "@/lib/partners/store";
+import { listApplications } from "@/lib/partners/store";
+import { retentionDecision } from "@/lib/partners/retention";
+import { lastRuns } from "@/lib/partners/cleanup";
+import { deletionState } from "@/lib/partners/deletion";
+import { listDeletionRequests } from "@/lib/partners/deletion-requests";
 import { PARTNER_TYPES, STAGES, STAGE_LABELS, isPartnerType, isStage } from "@/lib/partners/schema";
 import { screeningFlags } from "@/lib/partners/screening";
 import { Container } from "@/components/ui/Primitives";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
-import { logoutAction } from "./actions";
+import { logoutAction, runCleanupAction } from "./actions";
 import { cn } from "@/lib/cn";
 
 export const metadata: Metadata = { title: "Partner applications", robots: { index: false, follow: false } };
@@ -47,7 +51,16 @@ async function Review({ searchParams }: { searchParams: PageProps<"/partners/rev
   const status = isStage(one(params.status)) ? one(params.status) : null;
   const type = isPartnerType(one(params.type)) ? one(params.type) : null;
 
-  const all = await listApplications(ctx.stores.apps);
+  const now = new Date();
+  const [all, runs, requests] = await Promise.all([listApplications(ctx.stores.apps), lastRuns(ctx.stores.ops), listDeletionRequests(ctx.stores.ops)]);
+  const decisions = new Map(all.map((a) => [a.id, retentionDecision(a, now)]));
+  const due = all.filter((a) => decisions.get(a.id)?.action === "delete");
+  const reviewDue = all.filter((a) => { const d = decisions.get(a.id); return d?.action === "review" && d.overdue; });
+  const openRequests = requests.filter((r) => r.status === "open");
+  const overdueRequests = openRequests.filter((r) => deletionState(r, now) === "overdue");
+  const live = ctx.cfg.storage === "blobs" && !ctx.cfg.storeSuffix;
+  const lastSuccess = runs.lastSuccessAt ? new Date(runs.lastSuccessAt) : null;
+  const stale = live && (!lastSuccess || now.getTime() - lastSuccess.getTime() > 36 * 3_600_000);
   const shown = all.filter((a) => (!status || a.status === status) && (!type || a.type === type));
   const counts = Object.fromEntries(STAGES.map((s) => [s, all.filter((a) => a.status === s).length]));
   const qs = (next: Record<string, string | null>) => {
@@ -74,6 +87,45 @@ async function Review({ searchParams }: { searchParams: PageProps<"/partners/rev
         </form>
       </div>
       {one(params.deleted) && <p role="status" className="mt-4 rounded-2xl bg-mint-soft px-4 py-3 font-semibold text-ink">Application deleted.</p>}
+      {one(params.cleanup) && (
+        <p role="status" className="mt-4 rounded-2xl bg-mint-soft px-4 py-3 font-semibold text-ink">
+          {one(params.cleanup) === "dry-run" ? "Dry run finished — nothing was deleted. See the report below." : `Cleanup finished (${one(params.cleanup)}).`}
+        </p>
+      )}
+
+      <section aria-labelledby="retention-title" className={cn("mt-6 rounded-[2rem] bg-white p-5 ring-1 ring-inset sm:p-6", stale || overdueRequests.length ? "ring-2 ring-[#d62f6d]" : "ring-sky-200")}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 id="retention-title" className="font-display text-xl font-bold text-ink">Data retention</h2>
+            <p className="mt-1 text-sm text-ink-soft">
+              {live ? "Cleanup runs automatically every day at 08:00 UTC." : "Preview/test data: the daily schedule only runs on the live site, so use the buttons here."}
+            </p>
+          </div>
+          <Link href="/partners/review/requests" className="rounded-full bg-white px-4 py-2 font-display text-sm font-semibold text-ink ring-1 ring-inset ring-sky-200 hover:bg-ice">
+            Deletion requests ({openRequests.length} open{overdueRequests.length ? `, ${overdueRequests.length} overdue` : ""})
+          </Link>
+        </div>
+        <ul className="mt-3 space-y-1 text-[0.95rem] text-ink">
+          <li>
+            Last run:{" "}
+            {runs.last
+              ? `${new Date(runs.last.finishedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "America/New_York" })} · ${runs.last.dryRun ? "dry run" : runs.last.status} · ${runs.last.dryRun ? "would delete" : "deleted"} ${runs.last.dryRun ? runs.last.applications.due : runs.last.applications.deleted} application(s) and ${runs.last.dryRun ? runs.last.rateLimits.due : runs.last.rateLimits.deleted} rate-limit record(s)`
+              : "never"}
+          </li>
+          {stale && <li className="font-semibold text-[#b8215a]">No successful cleanup in the last 36 hours — check the Netlify function log for &ldquo;partner-retention&rdquo;.</li>}
+          <li>Due for deletion now: {due.length ? due.map((a) => a.id).join(", ") : "none"}</li>
+          {reviewDue.length > 0 && <li>Approved partners due for their yearly review: {reviewDue.map((a) => a.id).join(", ")}</li>}
+        </ul>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <form action={runCleanupAction}>
+            <input type="hidden" name="dryRun" value="true" />
+            <button type="submit" className="rounded-full bg-white px-4 py-2 font-display text-sm font-semibold text-ink ring-1 ring-inset ring-sky-200 hover:bg-ice">Dry run (delete nothing)</button>
+          </form>
+          <form action={runCleanupAction}>
+            <button type="submit" className="rounded-full bg-royal px-4 py-2 font-display text-sm font-semibold text-white shadow-[0_3px_0_var(--color-navy)]">Run cleanup now</button>
+          </form>
+        </div>
+      </section>
 
       <nav aria-label="Filter by stage" className="mt-6 flex flex-wrap gap-2">
         <Link href={qs({ status: null })} aria-current={!status ? "page" : undefined} className={cn("rounded-full px-4 py-2 font-display text-sm font-semibold ring-1 ring-inset ring-sky-200", !status ? "bg-ink text-white" : "bg-white text-ink")}>
@@ -113,7 +165,7 @@ async function Review({ searchParams }: { searchParams: PageProps<"/partners/rev
                 {screeningFlags(a.type, a.fields).some((f) => f.level === "serious") && (
                   <span className="rounded-full bg-berry-soft px-2.5 py-1 text-xs font-bold text-ink">Safety check</span>
                 )}
-                {pastRetention(a) && <span className="rounded-full bg-lemon-soft px-2.5 py-1 text-xs font-bold text-ink">Past retention</span>}
+                <RetentionBadge decision={decisions.get(a.id)} />
               </Link>
             </li>
           ))}
@@ -121,4 +173,12 @@ async function Review({ searchParams }: { searchParams: PageProps<"/partners/rev
       )}
     </div>
   );
+}
+
+function RetentionBadge({ decision }: { decision: ReturnType<typeof retentionDecision> | undefined }) {
+  if (!decision) return null;
+  if (decision.action === "hold") return <span className="rounded-full bg-grape-soft px-2.5 py-1 text-xs font-bold text-ink">Legal hold</span>;
+  if (decision.action === "delete") return <span className="rounded-full bg-lemon-soft px-2.5 py-1 text-xs font-bold text-ink">Due for deletion</span>;
+  if (decision.action === "review" && decision.overdue) return <span className="rounded-full bg-lemon-soft px-2.5 py-1 text-xs font-bold text-ink">Review due</span>;
+  return null;
 }

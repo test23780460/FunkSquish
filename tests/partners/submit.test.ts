@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 import { handleSubmission } from "@/lib/partners/submit";
 import { issueFormToken } from "@/lib/partners/security";
-import { listApplications, partnerStores, updateApplication, withStatus, deleteApplication, getApplication, pastRetention } from "@/lib/partners/store";
+import { listApplications, partnerStores, updateApplication, withStatus, deleteApplication, getApplication } from "@/lib/partners/store";
 import { notificationEmail } from "@/lib/partners/notify";
 import { config, goodForm, resetMemoryStores } from "./helpers";
 
@@ -139,11 +139,6 @@ describe("review workflow store helpers", () => {
     expect(await getApplication(apps, "../../etc/passwd")).toBeNull();
     await deleteApplication(apps, id);
     expect(await getApplication(apps, id)).toBeNull();
-  });
-
-  it("flags applications past the proposed retention period", () => {
-    const old = { updatedAt: "2020-01-01T00:00:00Z" } as Parameters<typeof pastRetention>[0];
-    expect(pastRetention(old, new Date("2026-10-25"))).toBe(true);
   });
 
   it("escapes applicant text in the owner email", () => {

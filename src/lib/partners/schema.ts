@@ -217,7 +217,7 @@ export function fieldsFor(type: PartnerType): FieldDef[] {
 }
 
 /** Shown next to the consent box and stored with each application (bump when the wording changes). */
-export const CONSENT_VERSION = "2026-10-25";
+export const CONSENT_VERSION = "2026-10-26";
 export const CONSENT_TEXT =
   "I agree that FunkSquish may store this application and contact me about it, as described in the privacy notice below. This doesn't sign me up for marketing emails.";
 

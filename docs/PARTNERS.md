@@ -48,42 +48,63 @@ safeguard below is configured. Until then it shows an honest "email us" fallback
 - Delete permanently (type the reference to confirm). Applications older than the proposed retention period are
   flagged "Past retention".
 
-## Data & retention (proposed — needs your/legal review)
+## Data & retention (owner-approved 2026-10-26; legal review still open)
 
-| Stored | Why |
+| Stored | Why | Where |
+| --- | --- | --- |
+| Answers to the form (name, work email, business details, products, pricing, safety, channels, message) | Review and reply | `partner-applications` |
+| Consent version + time | Record of agreement to store and contact | with the application |
+| Keyed hash of the IP (not the IP) | Spam protection | with the application |
+| Notification status, stage history, owner notes, legal hold | Workflow | with the application |
+| Rate-limit counters (keyed hashes of IP/email) | Spam/rate limiting | `partner-rate-limits` |
+| Retention run reports (counts only), deletion-request records (dates, hashed email, references, outcome) | Show cleanup and requests happen on time | `partner-ops` |
+
+Stores get a `-preview` suffix on deploy previews, so preview and production data never mix. Blobs are private to the
+site and never served publicly; nothing goes to GitHub.
+
+### Retention schedule (enforced by `src/lib/partners/retention.ts`)
+
+| Data | Deleted |
 | --- | --- |
-| Answers to the form (name, work email, business details, product info, message) | Review and reply |
-| Consent version + time | Record of agreement to store and contact |
-| Keyed hash of the IP (not the IP) | Spam/rate limiting |
-| Notification status, stage history, your notes | Workflow |
+| Declined applications | 12 months after the last activity |
+| New / Under review / Need more info | 24 months after the last activity |
+| Future reseller/distributor interest | 24 months after the last activity |
+| Approved for follow-up | Never automatically. Yearly review ("Review due" badge, Monday alert email). Press "We're still working together" to restart the year, or copy what your records need and delete it. |
+| Rate-limit counters | 2 days after their time window started |
+| Deletion-request records | 24 months after completion (exceptions stay until closed) |
+| Run reports | Last 30 kept |
 
-Storage: Netlify Blobs store `partner-applications` (production) and `partner-applications-preview` (deploy
-previews), plus `partner-rate-limits[-preview]`. Blobs are private to the site and never served publicly; nothing goes
-to GitHub. **Proposed retention:** delete 24 months after the last update unless you start working together; delete
-sooner on request. The privacy notice on `/partners` and the draft privacy policy say this.
+**Last activity** = the submission, a stage change, an owner note, or "We're still working together". Re-sending the
+notification, legal holds, cleanup runs and other bookkeeping never restart the clock (they only change `updatedAt`,
+which the rules ignore). A **legal hold** (with a documented reason) stops deletion until released.
 
-Rate-limit counters are tiny and keyed by hashed IP/email per hour/day; they can be cleared any time.
+### Automatic cleanup
 
-### Retention review (2026-10-26) — automatic deletion is NOT built yet, waiting for your approval
+- `netlify/functions/partner-retention.mts` — Netlify Scheduled Function, **every day at 08:00 UTC**. Netlify only runs
+  scheduled functions on the published production deploy and doesn't expose them at a public URL there.
+- Re-checks each record just before deleting it, continues past individual failures, and is safe to re-run (a failed
+  item is picked up the next day).
+- Logs one line of counts and error codes (`[partners] retention ok: applications checked=… deleted=…`) — never names,
+  emails, answers or storage keys.
+- **Failure detection:** the review page shows the last run and turns red if there's been no successful run for 36
+  hours; the owner gets an email (counts only) when a run fails or partly fails, or deletion requests are due/overdue.
+- **Dry run:** set `PARTNER_RETENTION_DRY_RUN=true` (Production, functions scope) to report without deleting, or press
+  "Dry run" in the review area. Dry runs never count as a successful cleanup.
+- Deploy previews (no schedule there): use "Run cleanup now" / "Dry run" in the review area.
 
-Today deletion is **manual**: the review page flags anything past 24 months and you delete it. The public notice says
-we delete after 24 months, so until automatic deletion exists that promise depends on you checking the "Past
-retention" badge. Rate-limit counters are never cleaned up at the moment.
+### Deletion requests (runbook)
 
-Proposed rules (approve, change or reject):
+1. Someone emails asking to delete their application → open **/partners/review/requests**, enter the email they applied
+   with and the date the request arrived. The deadline (30 days) is calculated; the email is stored only as a keyed hash.
+2. The page lists matching applications (by reference and business name). If none match, check the address with them.
+3. Type the request number and press **Delete and complete** — every match is deleted at that moment and the outcome
+   is recorded. Or, after getting advice, **record a legal exception** with the reason (re-open it when it no longer applies).
+4. Reply to them, then delete the request and notification emails from your inbox (the website can't reach Gmail).
+   Brevo keeps its own sending log under Brevo's retention policy.
 
-| Data | Proposed rule |
-| --- | --- |
-| Declined applications | Delete 12 months after the last update |
-| New / Under review / Need more info, no activity | Delete 24 months after the last update (current wording) |
-| Approved for follow-up | Keep while you're talking or working together; once a contract exists, keep records in your business files and delete the application |
-| Future-reseller interest | Delete 24 months after the last update |
-| Rate-limit counters (hashed IP/email) | Delete after 2 days |
-| Any application, on request | Delete within 30 days of the request (manual, from the review page) |
-
-Proposed mechanism once approved: a daily Netlify Scheduled Function (free plan) that deletes what's past the rules
-above and logs only counts (no names or emails), plus tests. The privacy notice and draft privacy policy would be updated
-to match the approved rules (they still need legal review — B6).
+Not covered by the website (owner tasks): Gmail copies of notification emails and replies, and anything copied into
+other business records. The encrypted `npm run backup` only covers the `private/` folder — it never contains
+applications, which live only in Netlify Blobs (no separate backups are made).
 
 ## Setup (all values are secret Netlify env vars — never in chat, email or GitHub)
 

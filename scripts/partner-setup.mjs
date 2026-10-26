@@ -49,10 +49,16 @@ function askHidden(question) {
 // --generate: create a strong random passphrase and save it ONLY to a file in the
 // git-ignored private/ folder (never printed). Copy it to your password manager.
 const generate = process.argv.includes("--generate");
-const PASS_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "private", "partner-review-passphrase.txt");
+// One file per Netlify context (the preview one keeps its original name), and never overwritten.
+const PASS_NAME = !netlifyContext || netlifyContext === "deploy-preview" ? "partner-review-passphrase.txt" : `partner-review-passphrase-${netlifyContext}.txt`;
+const PASS_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "private", PASS_NAME);
 
 let first;
 if (generate) {
+  if (fs.existsSync(PASS_FILE)) {
+    console.error(`private/${PASS_NAME} already exists. Move that passphrase to your password manager and delete the file first, so it isn't overwritten.`);
+    process.exit(1);
+  }
   const ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
   const groups = Array.from({ length: 5 }, () => Array.from(randomBytes(5), (b) => ALPHABET[b % ALPHABET.length]).join(""));
   first = groups.join("-");
@@ -62,9 +68,9 @@ if (generate) {
     `FunkSquish partner review passphrase (${netlifyContext ?? "not saved to Netlify"}), created ${new Date().toISOString().slice(0, 10)}\n` +
       `Sign in at /partners/review with:\n\n${first}\n\n` +
       "Move it into your password manager, then delete this file. Never share it in chat, email or GitHub.\n",
-    { mode: 0o600 },
+    { mode: 0o600, flag: "wx" },
   );
-  console.log("Generated a passphrase and saved it to private/partner-review-passphrase.txt (git-ignored, not printed).");
+  console.log(`Generated a passphrase and saved it to private/${PASS_NAME} (git-ignored, not printed).`);
 } else {
   first = await askHidden("Choose a review passphrase (at least 14 characters, e.g. four random words): ");
   if (first.length < 14) {

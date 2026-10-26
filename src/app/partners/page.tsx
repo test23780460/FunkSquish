@@ -7,7 +7,7 @@ import { Mascot } from "@/components/illustrations/Mascot";
 import { buttonClasses } from "@/components/ui/Button";
 import { partnerApplicationsOpen } from "@/app/actions/partners";
 import { PARTNER_TYPES } from "@/lib/partners/schema";
-import { RETENTION_MONTHS_PUBLIC } from "@/lib/partners/public";
+import { RETENTION } from "@/lib/partners/retention";
 import { siteConfig } from "@/lib/site";
 import { pageMetadata } from "@/lib/seo";
 
@@ -139,12 +139,16 @@ export default async function PartnersPage() {
             <ul className="mt-3 list-disc space-y-1.5 pl-5 text-[0.95rem] leading-relaxed text-ink-soft marker:text-sky">
               <li>We use your answers only to review your application and reply to you. We don&apos;t sell them or add you to any marketing list.</li>
               <li>Prices, terms and safety answers you share are kept confidential. They&apos;re never shown on our website.</li>
-              <li>Applications are stored privately by our website host (Netlify) and are visible only to FunkSquish&apos;s owner after signing in.</li>
-              <li>We get an email that a new application arrived (via our email provider, Brevo). It doesn&apos;t include your contact details.</li>
-              <li>To prevent spam we keep a scrambled code made from your IP address — not the address itself.</li>
+              <li>Applications are stored privately by our website host (Netlify) and are visible only to FunkSquish&apos;s owner after signing in. A person reviews every application — nothing is approved automatically.</li>
+              <li>We get an email that a new application arrived (via our email provider, Brevo) with its reference, business name and country — not your contact details.</li>
+              <li>To prevent spam we keep scrambled codes made from your IP and email address, not the addresses themselves, and delete them after 2 days.</li>
               <li>
-                We keep applications for up to {RETENTION_MONTHS_PUBLIC} months after the last update, then delete them, unless we start working together.
-                Ask us anytime to see or delete yours: <a href={`mailto:${siteConfig.email}`} className="font-semibold text-royal underline">{siteConfig.email}</a>.
+                Applications are deleted automatically: declined ones {RETENTION.declinedMonths} months after the last activity, others (including future reseller interest) after{" "}
+                {RETENTION.openMonths} months. If we work together, we keep yours while the partnership is active.
+              </li>
+              <li>
+                Want yours deleted sooner? Email <a href={`mailto:${siteConfig.email}`} className="font-semibold text-royal underline">{siteConfig.email}</a> from the
+                address you applied with and we&apos;ll delete it within 30 days. Details are in our <a href="/privacy" className="font-semibold text-royal underline">privacy policy</a>.
               </li>
             </ul>
           </div>

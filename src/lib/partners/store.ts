@@ -1,30 +1,31 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import { MemoryKvStore, createBlobsKvStore, updateWithRetry, type KvStore } from "@/lib/storage/kv";
+import { rateLimitKey } from "./retention";
+import { STORE_NAMES } from "./store-names";
 import type { PartnerConfig } from "./config";
 import type { PartnerInput } from "./validate";
 import type { PartnerApplication } from "./types";
 import type { Stage } from "./schema";
-import { RETENTION_MONTHS_PUBLIC } from "./public";
 
 export interface PartnerStores {
   apps: KvStore;
   limits: KvStore;
+  /** Retention run reports and deletion-request records (no applicant contact details). */
+  ops: KvStore;
 }
 
 const memory = globalThis as { __fsPartnerStores?: PartnerStores };
 
+
 /** Private stores. Production and previews use different store names. */
 export async function partnerStores(cfg: Pick<PartnerConfig, "storage" | "storeSuffix">): Promise<PartnerStores> {
   if (cfg.storage === "memory") {
-    memory.__fsPartnerStores ??= { apps: new MemoryKvStore(), limits: new MemoryKvStore() };
+    memory.__fsPartnerStores ??= { apps: new MemoryKvStore(), limits: new MemoryKvStore(), ops: new MemoryKvStore() };
     return memory.__fsPartnerStores;
   }
-  const [apps, limits] = await Promise.all([
-    createBlobsKvStore(`partner-applications${cfg.storeSuffix}`),
-    createBlobsKvStore(`partner-rate-limits${cfg.storeSuffix}`),
-  ]);
-  return { apps, limits };
+  const [apps, limits, ops] = await Promise.all(STORE_NAMES.map((n) => createBlobsKvStore(`${n}${cfg.storeSuffix}`)));
+  return { apps, limits, ops };
 }
 
 /* ------------------------------ rate limits ------------------------------ */
@@ -40,7 +41,7 @@ export interface Limit {
  * against all of them, so a blocked request doesn't use up other windows.
  */
 export async function takeRateLimits(store: KvStore, limits: Limit[], nowMs = Date.now()): Promise<boolean> {
-  const keyed = limits.map((l) => ({ ...l, bucketKey: `${l.key}/${Math.floor(nowMs / 1000 / l.windowSeconds)}` }));
+  const keyed = limits.map((l) => ({ ...l, bucketKey: rateLimitKey(l.key, l.windowSeconds, nowMs) }));
   for (const l of keyed) {
     const current = await store.get<{ n: number }>(l.bucketKey);
     if ((current?.value.n ?? 0) >= l.max) return false;
@@ -123,10 +124,3 @@ export async function deleteApplication(store: KvStore, id: string) {
   await store.delete(key(id));
 }
 
-/** Proposed retention (owner/legal review): flag applications untouched for 24 months. */
-export const RETENTION_MONTHS = RETENTION_MONTHS_PUBLIC;
-export function pastRetention(app: PartnerApplication, now = new Date()) {
-  const limit = new Date(now);
-  limit.setMonth(limit.getMonth() - RETENTION_MONTHS);
-  return new Date(app.updatedAt) < limit;
-}

@@ -82,13 +82,29 @@ export default function PrivacyPage() {
 
       <h3>Partner and supplier applications ({status.partners})</h3>
       <p>
-        If a business applies through our <a href="/partners">partner page</a>, we store the answers (such as name, work
-        email, business details and product information) privately with our host, Netlify, so we can review the application
-        and reply. Only FunkSquish&apos;s owner can see them, after signing in. Our email provider, Brevo, sends us a short
-        notice that an application arrived, without the applicant&apos;s contact details. To prevent spam we keep a keyed hash of
-        the sender&apos;s IP address, not the address itself. Applicants are never added to marketing lists. We keep applications for
-        up to 24 months after the last update unless we start working together, and delete them sooner on request.{" "}
-        <Todo>owner/legal review of the partner-application retention period</Todo>
+        If a business applies through our <a href="/partners">partner page</a>, we store the answers — such as name, work
+        email, business and website details, country, and what the applicant tells us about products, pricing, shipping,
+        safety documentation and where we may sell — privately with our host, Netlify, so we can review the application and
+        reply. Only FunkSquish&apos;s owner can see them, after signing in. Applications are never approved automatically: a
+        person reviews each one, and nothing is agreed until both sides sign a written agreement. Our email provider, Brevo,
+        sends us a short notice that an application arrived (its reference, business name and country, without contact
+        details). To limit spam, we keep scrambled codes made from the sender&apos;s IP address and email address in counters
+        that are deleted automatically after 2 days. Applicants are never added to marketing lists.
+      </p>
+      <p>
+        <strong>How long we keep applications.</strong> An automatic daily cleanup deletes declined applications 12 months
+        after the last activity on them, and other applications — including future reseller or distributor interest — 24
+        months after the last activity (the application itself, a change in its review stage, or a note we add). If we start
+        working together, we keep the application while the relationship is active, review it at least once a year, and
+        delete it when it&apos;s no longer needed. We may keep something longer only if the law requires it, and we record why.
+      </p>
+      <p>
+        <strong>Deleting your application.</strong> Email <a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a> from
+        the address you applied with, and we&apos;ll delete it within 30 days (or tell you if a legal reason means we must keep
+        part of it). We keep a short record that the request was handled — dates, a scrambled code instead of your email, and
+        the outcome — for 24 months. Emails you exchanged with us stay in our email account (Google Workspace) until we delete
+        them, which we&apos;ll also do on request; Brevo keeps a log of the notices it sent us under its own retention policy.{" "}
+        <Todo>legal review of the partner-application notice and retention schedule</Todo>
       </p>
 
       <h3>Website analytics ({status.analytics})</h3>
@@ -141,7 +157,7 @@ export default function PrivacyPage() {
       <h2>Keeping information</h2>
       <p>
         We keep emails as long as needed to help you and for our records. Email-list subscribers are kept until they
-        unsubscribe or ask to be deleted.
+        unsubscribe or ask to be deleted. Partner applications follow the schedule described above.
       </p>
 
       <h2>Security</h2>

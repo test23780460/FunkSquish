@@ -42,4 +42,5 @@ export const NOINDEX_PATHS: Record<string, string> = {
   "/drops/confirmed": "Confirmation page after an email link",
   "/partners/review": "Private owner area (sign-in required)",
   "/partners/review/[id]": "Private owner area (sign-in required)",
+  "/partners/review/requests": "Private owner area (sign-in required)",
 };

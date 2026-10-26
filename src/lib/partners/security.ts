@@ -40,7 +40,7 @@ export function checkFormToken(secret: string, token: string, nowMs = Date.now()
 /* ------------------------------ identifiers ------------------------------ */
 
 /** Keyed, truncated hash: enough to rate-limit and spot abuse, not reversible to the IP. */
-export function hashIdentifier(secret: string, kind: "ip" | "email", value: string) {
+export function hashIdentifier(secret: string, kind: "ip" | "email" | "deletion", value: string) {
   return hmac(secret, kind, value.trim().toLowerCase()).slice(0, 22);
 }
 
