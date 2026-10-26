@@ -12,7 +12,8 @@
     "catalog:export": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/catalog-export.mjs",
     "catalog:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/catalog-check.mjs",
     "test": "vitest run",
-    "partners:setup": "node scripts/partner-setup.mjs"
+    "partners:setup": "node scripts/partner-setup.mjs",
+    "seo:check": "node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/seo-check.mjs"
   },
   "dependencies": {
     "@netlify/blobs": "^11.1.6",
