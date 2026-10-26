@@ -51,6 +51,8 @@ Rate-limit counters are tiny and keyed by hashed IP/email per hour/day; they can
 
 ## Setup (all values are secret Netlify env vars — never in chat, email or GitHub)
 
+**Quickest:** `npm run partners:setup -- --netlify` asks for your passphrase (hidden) and saves both secrets straight to Netlify Deploy Previews. Add `--generate` to have it create a strong passphrase and save it only to `private/partner-review-passphrase.txt` (git-ignored); move it to your password manager and delete the file. Use `--netlify=production` when going live.
+
 | Step | Who |
 | --- | --- |
 | 1. Run `npm run partners:setup` **in your own terminal**. Choose a passphrase (at least 14 characters; save it in your password manager). It prints `PARTNER_REVIEW_PASSPHRASE_HASH` and `PARTNER_SECRET`. | **You** |
