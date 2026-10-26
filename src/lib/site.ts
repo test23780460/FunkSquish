@@ -35,9 +35,9 @@ export const mainNav: NavItem[] = [
   { label: "Home", href: "/" },
   { label: "Shop", href: "/shop" },
   { label: "Squish Lab", href: "/squish-lab" },
+  { label: "New Drops", href: "/drops" },
   { label: "TikTok LIVE", href: "/tiktok-live" },
   { label: "Our Story", href: "/our-story" },
-  { label: "FAQ", href: "/faq" },
 ];
 
 /** Extra links shown in the mobile menu and footer. */
@@ -46,6 +46,7 @@ export const exploreNav: NavItem[] = [
   { label: "Personality quiz", href: "/quiz" },
   { label: "Build a Squish Box", href: "/squish-box" },
   { label: "My wishlist", href: "/wishlist" },
+  { label: "FAQ", href: "/faq" },
 ];
 
 export const footerNav: { title: string; items: NavItem[] }[] = [
@@ -58,6 +59,7 @@ export const footerNav: { title: string; items: NavItem[] }[] = [
       { label: "Personality quiz", href: "/quiz" },
       { label: "Squish Box builder", href: "/squish-box" },
       { label: "Wishlist", href: "/wishlist" },
+      { label: "New drops", href: "/drops" },
       { label: "TikTok LIVE", href: "/tiktok-live" },
     ],
   },
