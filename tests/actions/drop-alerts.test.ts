@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+vi.mock("server-only", () => ({}));
 import { subscribeToDropAlertsAction } from "@/app/actions/drop-alerts";
 import { subscribeWithDoubleOptIn } from "@/lib/newsletter/brevo";
 

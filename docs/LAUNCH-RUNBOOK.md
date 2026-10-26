@@ -6,6 +6,8 @@ All switches live in `src/lib/features.ts` and are **off**. Turn them on one at 
 | --- | --- | --- |
 | `NEXT_PUBLIC_UMAMI_WEBSITE_ID` (env) | Analytics | Umami account; privacy policy analytics section finalized |
 | `newsletter: true` + Brevo env vars | Launch email sign-up | `docs/NEWSLETTER.md`; privacy policy newsletter section finalized |
+| `DROP_ALERTS_ENABLED` + drops list env vars | Drop & restock email alerts | Separate Brevo list + template (`docs/NEWSLETTER.md`); tested on a preview |
+| `PARTNER_APPLICATIONS_ENABLED` + partner env vars | Partner/distributor application form + private review | `docs/PARTNERS.md`; Blobs + notification tested on a preview; retention approved |
 | Real products `published` | Real catalog replaces samples | `npm run catalog:check` passes with no blockers |
 | `commerce: true` + `checkoutMode: "external-links"` | "Buy now" links to TikTok Shop | TikTok Shop approved; listing URLs in catalog; policies final |
 | `commerce: true` + `checkoutMode: "hosted-checkout"` | Cart + Shopify checkout | Shopify store, Storefront token in env; test-mode order succeeded |

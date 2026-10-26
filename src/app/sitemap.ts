@@ -1,16 +1,15 @@
 import type { MetadataRoute } from "next";
-import { siteConfig } from "@/lib/site";
 import { listProducts } from "@/commerce/catalog";
+import { CANONICAL_ORIGIN, INDEXABLE_PATHS } from "@/lib/indexing";
 
 /**
- * Only indexable pages are listed. Draft policies (privacy, terms) and illustrated preview products are deliberately left out — they
- * are also marked noindex on the page itself.
+ * Only indexable, canonical URLs are listed (see src/lib/indexing.ts). Draft policies, private pages and illustrated preview
+ * products are deliberately left out — they are also marked noindex on the page itself.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const pages = ["", "/shop", "/squish-lab", "/quiz", "/squish-box", "/drops", "/our-story", "/tiktok-live", "/faq", "/contact", "/order-help", "/product-care", "/shipping", "/returns"];
   const products = (await listProducts()).filter((p) => p.publication === "published");
   return [
-    ...pages.map((path) => ({ url: `${siteConfig.url}${path}` })),
-    ...products.map((p) => ({ url: `${siteConfig.url}/shop/${p.slug}` })),
+    ...INDEXABLE_PATHS.map((path) => ({ url: `${CANONICAL_ORIGIN}${path}` })),
+    ...products.map((p) => ({ url: `${CANONICAL_ORIGIN}/shop/${p.slug}` })),
   ];
 }

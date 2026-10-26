@@ -11,12 +11,17 @@
     "catalog:import": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/catalog-import.mjs",
     "catalog:export": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/catalog-export.mjs",
     "catalog:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/catalog-check.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "partners:setup": "node scripts/partner-setup.mjs",
+    "partners:readiness": "node scripts/partners-readiness.mjs",
+    "seo:check": "node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/seo-check.mjs"
   },
   "dependencies": {
+    "@netlify/blobs": "^11.1.6",
     "next": "16.4.2",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { CANONICAL_ORIGIN, NETLIFY_PRODUCTION_HOST } from "./src/lib/indexing";
 
 /** Conservative security headers that don't affect site features. */
 const securityHeaders = [
@@ -17,9 +18,35 @@ const nextConfig: NextConfig = {
    */
   env: {
     BUILD_CONTEXT: process.env.CONTEXT ?? "",
+    // This deploy's own URL (previews), used for links in owner notification emails.
+    BUILD_DEPLOY_URL: process.env.DEPLOY_PRIME_URL ?? "",
+  },
+  async redirects() {
+    return [
+      // The production site is also reachable at its Netlify subdomain: send that to the one canonical domain.
+      // (Deploy previews and branch deploys have different hostnames, so they're unaffected.)
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: NETLIFY_PRODUCTION_HOST.replace(/\./g, "\\.") }],
+        destination: `${CANONICAL_ORIGIN}/:path*`,
+        permanent: true,
+      },
+    ];
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Private owner area: never indexed, never cached.
+      ...["/partners/review", "/partners/review/:path*"].map((source) => ({
+        source,
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Cache-Control", value: "private, no-store" },
+        ],
+      })),
+      // "Add to calendar" files are downloads, not pages.
+      { source: "/tiktok-live/calendar/:id", headers: [{ key: "X-Robots-Tag", value: "noindex" }] },
+    ];
   },
   cacheComponents: true,
   partialPrefetching: true,
