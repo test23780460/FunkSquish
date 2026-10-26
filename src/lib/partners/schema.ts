@@ -114,22 +114,22 @@ export const PARTNER_FIELDS: FieldDef[] = [
     placeholder: "e.g. JB-01 jelly bear: $0.85 at 100 pcs, $0.70 at 500 pcs (USD, FOB Ningbo)",
     hint: "A few SKUs with the unit price at each quantity tier, the currency, and whether prices are EXW, FOB or delivered.",
   },
-  { name: "moq", label: "Minimum order (MOQ)", kind: "text", max: 200, types: ["manufacturer", "wholesale-supplier"], placeholder: "e.g. 100 pcs per SKU, or $300 per order" },
+  { name: "moq", label: "Minimum order (MOQ)", kind: "text", max: 200, types: ["manufacturer", "wholesale-supplier"], placeholder: "e.g. 100 pcs per SKU" },
   { name: "mixedCase", label: "Mixed cases", kind: "select", max: 60, types: ["wholesale-supplier"], options: ["Yes — any SKUs can be mixed", "Yes — within a series or assortment", "No — full cases per SKU only", "Not sure"] },
   { name: "samples", label: "Samples", kind: "select", max: 60, types: SUPPLY, options: ["Free samples", "Paid samples, credited on the first order", "Paid samples", "No samples", "Not sure"] },
-  { name: "sampleCost", label: "Sample cost and sample shipping", kind: "text", max: 200, types: SUPPLY, placeholder: "e.g. $20 for 5 SKUs + about $35 express to the U.S." },
-  { name: "leadTime", label: "Production lead time", kind: "text", max: 120, types: ["manufacturer"], placeholder: "e.g. 25–30 days after sample approval" },
-  { name: "turnaround", label: "Order turnaround (in-stock items)", kind: "text", max: 120, types: ["wholesale-supplier", "dropship"], placeholder: "e.g. ships within 1–2 business days of the order" },
+  { name: "sampleCost", label: "Sample cost and sample shipping", kind: "text", max: 200, types: SUPPLY, placeholder: "e.g. $20 + $35 express shipping" },
+  { name: "leadTime", label: "Production lead time", kind: "text", max: 120, types: ["manufacturer"], placeholder: "e.g. 25–30 days" },
+  { name: "turnaround", label: "Order turnaround (in-stock items)", kind: "text", max: 120, types: ["wholesale-supplier", "dropship"], placeholder: "e.g. ships in 1–2 business days" },
   { name: "custom", label: "Custom / OEM designs", kind: "select", max: 40, types: ["manufacturer"], options: ["Yes", "No", "Limited"] },
 
   // --- Shipping
   { name: "fulfillment", label: "Where orders ship from", kind: "select", max: 60, types: ["wholesale-supplier", "dropship"], options: ["Ship from U.S. warehouse", "Ship from overseas warehouse", "Bulk freight to us", "Mixed", "Other"] },
-  { name: "shippingEstimate", label: "Shipping cost estimate to the U.S.", kind: "text", max: 200, types: SUPPLY, placeholder: "e.g. about $4/kg by air, or $3.50 per small parcel" },
-  { name: "usShipping", label: "U.S. delivery time", kind: "text", max: 120, types: SUPPLY, placeholder: "e.g. 7–12 business days door to door" },
+  { name: "shippingEstimate", label: "Shipping cost estimate to the U.S.", kind: "text", max: 200, types: SUPPLY, placeholder: "e.g. about $4/kg by air" },
+  { name: "usShipping", label: "U.S. delivery time", kind: "text", max: 120, types: SUPPLY, placeholder: "e.g. 7–12 business days" },
 
   // --- Dropshipping & order handling
   { name: "subscriptionFee", label: "Subscription or monthly fee", kind: "text", max: 120, types: ["dropship"], placeholder: "e.g. none, or $29 a month" },
-  { name: "perOrderFee", label: "Per-order fees", kind: "text", max: 160, types: ["dropship"], placeholder: "e.g. $1.50 pick & pack, plus product and shipping" },
+  { name: "perOrderFee", label: "Per-order fees", kind: "text", max: 160, types: ["dropship"], placeholder: "e.g. $1.50 pick & pack", hint: "Any fees on top of the product and shipping cost." },
   { name: "orderMethods", label: "How we could send you orders", kind: "checkboxes", max: 5, types: ["dropship"], options: ["Manual orders (email, sheet or dashboard)", "CSV upload", "API", "Shopify or another store app", "Other"] },
   {
     name: "customStore", label: "Can you work with a custom-built store?", kind: "select", max: 60, types: ["dropship"],
@@ -172,7 +172,7 @@ export const PARTNER_FIELDS: FieldDef[] = [
     hint: "Tick every channel you'd authorize. Nothing is agreed until we both sign.",
   },
   { name: "authorizationProof", label: "Can you show you're authorized to sell these products?", kind: "select", max: 60, types: ["wholesale-supplier", "dropship"], options: ["We make them or own the rights", "Yes — we have a distributor or authorization letter", "No", "Not sure"] },
-  { name: "channelLimits", label: "Any limits we should know about?", kind: "text", max: 300, types: SELLABLE, placeholder: "e.g. minimum advertised price, U.S. only, no Amazon" },
+  { name: "channelLimits", label: "Any limits we should know about?", kind: "text", max: 300, types: SELLABLE, placeholder: "e.g. U.S. only, no Amazon" },
 
   // --- Brands & designers
   { name: "collab", label: "Kind of collaboration", kind: "select", max: 60, types: ["brand", "designer"], options: ["Licensing", "Co-branded drop", "Design commission", "Other"] },
@@ -180,7 +180,7 @@ export const PARTNER_FIELDS: FieldDef[] = [
   { name: "rights", label: "Do you own the rights to the designs?", kind: "select", max: 40, types: ["brand", "designer"], options: ["Yes, fully", "Partly / licensed", "Not sure"] },
 
   // --- Future resellers & distributors
-  { name: "channels", label: "Where you sell today", kind: "text", max: 200, types: ["reseller"], placeholder: "e.g. gift shop in Louisville, Etsy, TikTok Shop, markets" },
+  { name: "channels", label: "Where you sell today", kind: "text", max: 200, types: ["reseller"], placeholder: "e.g. gift shop, Etsy, markets" },
   { name: "region", label: "Region you'd like to cover", kind: "text", max: 120, types: ["reseller"] },
   { name: "volume", label: "Rough size of a first order, if wholesale opens", kind: "select", max: 40, types: ["reseller"], options: ["Small (under 50 units)", "Medium (50–250 units)", "Large (250+ units)", "Not sure yet"], hint: "No commitment — it just helps us plan." },
 

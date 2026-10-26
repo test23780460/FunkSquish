@@ -139,10 +139,8 @@ export function PartnerForm({ email }: { email: string }) {
       {type && (
         <>
           <p className="rounded-2xl bg-ice-50 px-4 py-3 text-[0.95rem] leading-relaxed text-ink ring-1 ring-inset ring-sky-200">
-            <strong>
-              {fields.length} questions, only {requiredCount} required
-            </strong>{" "}
-            (marked <span className="text-[#b8215a]">*</span>). Rough answers are fine — skip anything you&apos;d rather discuss by email.
+            <strong>Only the {requiredCount} questions marked <span className="text-[#b8215a]">*</span> are required.</strong> Everything else is optional and
+            rough answers are fine — skip anything you&apos;d rather discuss by email.
           </p>
           {groups.map((g, gi) => (
             <fieldset key={g.title} className="rounded-[2rem] bg-white p-5 ring-1 ring-inset ring-sky-200 sm:p-6">

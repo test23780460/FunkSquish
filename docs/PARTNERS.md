@@ -6,13 +6,24 @@ safeguard below is configured. Until then it shows an honest "email us" fallback
 ## What it does
 
 - **Public page** (`/partners`): six partner types — manufacturers, wholesale suppliers, dropshipping/fulfillment,
-  brands, independent designers and resellers/distributors — each with its own "what we look for" and form fields
-  (`src/lib/partners/schema.ts` is the single source for both the form and validation).
+  brands, independent designers and **future** resellers/distributors — each with its own "what we look for" and form
+  fields (`src/lib/partners/schema.ts` is the single source for the form, validation and the review page).
+- **Questions by type** (only 5–9 are required; everything else is optional):
+
+  | Type | Asks about |
+  | --- | --- |
+  | Wholesale suppliers | SKU pricing per quantity tier, MOQ, mixed cases, samples and sample cost, shipping cost estimate, U.S. delivery time, order turnaround, proof of authorization |
+  | Manufacturers | SKU pricing, MOQ, samples and sample cost, production lead time, custom/OEM, shipping |
+  | Dropshipping & fulfillment | Subscription fee, per-order fees, how orders are sent (manual, CSV, API, store app), custom Next.js store support, inventory syncing, blind shipping, tracking, returns/refunds/damaged parcels |
+  | All product suppliers (**required** safety screen) | Water beads (none / sealed / loose), recalls or serious complaints in 5 years, Children's Product Certificate; plus age grade, materials and fillings, filling composition, independent lab reports (ASTM F963, lead, phthalates, EN 71) |
+  | Suppliers, brands, designers (**required**) | Which channels they authorize: funksquish.com, TikTok Shop, TikTok LIVE, social posts, other marketplaces — plus any limits |
+  | Future resellers | Must tick "this is future interest — not an account, order or price quote"; where they sell, region, rough first-order size. Their confirmation says "Interest noted", not "Application received". |
+
 - **Submission** (`src/lib/partners/submit.ts`) runs, in order:
   1. hidden honeypot field → bots get a normal-looking reply, nothing stored
   2. signed, timestamped form token (rejects posts faster than 3 s, older than 2 h, or forged)
   3. strict validation: known fields only, length caps, listed choices only, public http(s) links only
-     (no `javascript:`, IPs, localhost or credentials), no files, 12,000-character / 60-field cap
+     (no `javascript:`, IPs, localhost or credentials), no files, 16,000-character / 120-field cap
   4. rate limits: 5 per IP per hour, 10 per IP per day, 3 per email per day, 200 per day overall
   5. private storage in Netlify Blobs, then an owner notification via Brevo transactional email
 - **If the notification fails**, the application is still saved, marked "Email failed" in the review list, and can be
@@ -30,6 +41,10 @@ safeguard below is configured. Until then it shows an honest "email us" fallback
   server-action posts whose `Origin` doesn't match the site (CSRF protection).
 - Stages: **New → Under review → Need more info → Approved for follow-up / Declined**, with private notes and history.
   Changing a stage never contacts the applicant — reply yourself with the "Reply by email" button.
+- Answers are grouped by section. A **"Look at these first"** box lists advisory flags from the applicant's own answers
+  (water beads, recalls, missing CPC or lab reports, can't show authorization); the list marks serious ones "Safety
+  check". Flags never approve, decline or hide anything (`src/lib/partners/screening.ts`).
+- Answers to questions from an older version of the form are still shown under "Other answers".
 - Delete permanently (type the reference to confirm). Applications older than the proposed retention period are
   flagged "Past retention".
 
@@ -48,6 +63,27 @@ to GitHub. **Proposed retention:** delete 24 months after the last update unless
 sooner on request. The privacy notice on `/partners` and the draft privacy policy say this.
 
 Rate-limit counters are tiny and keyed by hashed IP/email per hour/day; they can be cleared any time.
+
+### Retention review (2026-10-26) — automatic deletion is NOT built yet, waiting for your approval
+
+Today deletion is **manual**: the review page flags anything past 24 months and you delete it. The public notice says
+we delete after 24 months, so until automatic deletion exists that promise depends on you checking the "Past
+retention" badge. Rate-limit counters are never cleaned up at the moment.
+
+Proposed rules (approve, change or reject):
+
+| Data | Proposed rule |
+| --- | --- |
+| Declined applications | Delete 12 months after the last update |
+| New / Under review / Need more info, no activity | Delete 24 months after the last update (current wording) |
+| Approved for follow-up | Keep while you're talking or working together; once a contract exists, keep records in your business files and delete the application |
+| Future-reseller interest | Delete 24 months after the last update |
+| Rate-limit counters (hashed IP/email) | Delete after 2 days |
+| Any application, on request | Delete within 30 days of the request (manual, from the review page) |
+
+Proposed mechanism once approved: a daily Netlify Scheduled Function (free plan) that deletes what's past the rules
+above and logs only counts (no names or emails), plus tests. The privacy notice and draft privacy policy would be updated
+to match the approved rules (they still need legal review — B6).
 
 ## Setup (all values are secret Netlify env vars — never in chat, email or GitHub)
 
@@ -78,4 +114,10 @@ Local testing only: `PARTNER_DEV_MEMORY_STORE=true` in a git-ignored `.env.devel
 - **Netlify gotchas fixed along the way:** the build-time context must be read as literal
   `process.env.BUILD_CONTEXT`; Netlify Blobs reads of keys that don't exist can hang, so `kv.ts` checks existence
   with a list first; every storage call has a 5 s limit so applicants get the "email us" message instead of a crash.
-- **Not verified yet:** production (needs `--netlify=production` setup and your approval).
+- **2026-10-26 question update:** 86 unit tests pass (new: every question in exactly one section, required safety and
+  channel answers, reseller acknowledgement, "None yet" can't combine with real lab reports, a fully answered form of
+  every type fits the size limits, screening flags). Local walkthrough at 1280 px and 375 px (no sideways scrolling for
+  any type), error states, wholesale submission with a sealed-water-bead answer flagged in review, reseller "Interest
+  noted" confirmation. Screenshots: `docs/screenshots/partners-v2/`.
+- **Not verified yet:** the updated questions on a Netlify deploy preview, and production (needs
+  `--netlify=production` setup and your approval).
