@@ -109,6 +109,10 @@ export async function createBlobsKvStore(name: string): Promise<KvStore> {
   return {
     durable: true,
     async get<T>(key: string) {
+      // On Netlify, reading a key that doesn't exist can hang instead of returning
+      // "not found" (seen on the PR #10 preview), so check it exists first (fast).
+      const { blobs } = await store.list({ prefix: key });
+      if (!blobs.some((b) => b.key === key)) return null;
       const r = await store.getWithMetadata(key, { type: "json" });
       if (!r || !r.etag) return null;
       return { value: r.data as T, etag: r.etag };
