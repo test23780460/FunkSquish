@@ -71,4 +71,11 @@ Local testing only: `PARTNER_DEV_MEMORY_STORE=true` in a git-ignored `.env.devel
 - Local browser run (in-memory store, fake Brevo key): form opens with a token, client validation, successful
   submission with reference, notification failure recorded, sign-in (wrong then right passphrase), list, detail,
   stage + note, delete with confirmation, sign-out.
-- **Not yet verified:** Netlify Blobs on a real deploy preview and a real Brevo notification email (needs step 2).
+- **Verified on a real Netlify deploy preview (2026-10-26, PR #10):** form opens with a signed token, an application
+  saved to `partner-applications-preview` in ~2 s, Brevo delivered the owner email to travis@funksquish.com (it shows
+  as from "me" in Gmail because it's sent from the same address), owner sign-in, resend notification, stage change
+  with history, private note, refused delete with the wrong reference, delete with the right one. Test data removed.
+- **Netlify gotchas fixed along the way:** the build-time context must be read as literal
+  `process.env.BUILD_CONTEXT`; Netlify Blobs reads of keys that don't exist can hang, so `kv.ts` checks existence
+  with a list first; every storage call has a 5 s limit so applicants get the "email us" message instead of a crash.
+- **Not verified yet:** production (needs `--netlify=production` setup and your approval).
