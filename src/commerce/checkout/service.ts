@@ -1,30 +1,93 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import type Stripe from "stripe";
-import { stripeTestConfig, type StripeTestConfig } from "./environment";
+import { stripeTestConfig, type StripeLiveConfig, type StripeTestConfig } from "./environment";
+import { stripeLiveConfig } from "./live";
 import { TEST_FIXTURE_PRODUCTS, isTestFixtureVariant } from "./test-fixtures";
 import { normalizeCartLines, validateCartAgainstCatalog } from "./validate-cart";
-import { assertTestSession, buildCheckoutSessionParams, createStripeTestClient, SESSION_LIFETIME_SECONDS } from "./stripe";
+import { assertSession, buildCheckoutSessionParams, createStripeLiveClient, createStripeTestClient, SESSION_LIFETIME_SECONDS, type StripeMode } from "./stripe";
 import { releaseStock, reserveStock } from "../orders/inventory";
-import { getTestOrderStore } from "../orders/store";
+import { getLiveOrderStore, getTestOrderStore, type KvStore } from "../orders/store";
 import { snapshotFromStripeSession } from "../orders/session-snapshot";
+import { brevoMailer, notifyPaidOrder, type NotifyConfig } from "../orders/notify";
 import type { OrderDeps } from "../orders/fulfill";
+import { canPurchase, listProducts } from "../catalog";
+import type { Product, ProductVariant } from "../types";
+import { siteConfig } from "@/lib/site";
 
 /**
- * Server-side wiring for the Stripe TEST integration. Every entry point
- * re-checks the environment guard, so none of this can run on production.
+ * Server-side checkout wiring for both Stripe modes. Every entry point
+ * re-checks its mode's lock (environment.ts / live.ts), so the test path can't
+ * run on production and the live path can't run anywhere else — and the live
+ * path stays shut until the code switch, the env switch and live keys exist.
  */
 
 export type StartCheckoutResult = { ok: true; url: string } | { ok: false; error: string };
 
+interface ModeRuntime {
+  mode: StripeMode;
+  stripe: Stripe;
+  store: KvStore;
+  config: StripeTestConfig | StripeLiveConfig;
+  products: Product[];
+  isSellable(product: Product, variant: ProductVariant): boolean;
+}
+
 const checkoutKey = (checkoutId: string) => `checkout/${checkoutId}`;
 
-function onHand(variantId: string): number | null {
-  for (const p of TEST_FIXTURE_PRODUCTS) {
-    const v = p.variants.find((x) => x.id === variantId);
-    if (v) return v.inventory.available;
+function onHandIn(products: Product[]) {
+  return (variantId: string): number | null => {
+    for (const p of products) {
+      const v = p.variants.find((x) => x.id === variantId);
+      if (v) return v.inventory.tracked ? v.inventory.available : null;
+    }
+    return null;
+  };
+}
+
+async function runtimeFor(mode: StripeMode): Promise<ModeRuntime | null> {
+  if (mode === "test") {
+    const config = stripeTestConfig();
+    if (!config) return null;
+    return {
+      mode,
+      config,
+      stripe: createStripeTestClient(config),
+      store: await getTestOrderStore(),
+      products: TEST_FIXTURE_PRODUCTS,
+      isSellable: (_p, v) => isTestFixtureVariant(v.id),
+    };
   }
+  const config = stripeLiveConfig();
+  if (!config) return null;
+  return {
+    mode,
+    config,
+    stripe: createStripeLiveClient(config),
+    store: await getLiveOrderStore(),
+    products: await listProducts(),
+    isSellable: canPurchase,
+  };
+}
+
+/** Which mode (if any) is open here. Live wins only when its every lock is open — which also means it's production. */
+export function activeMode(): StripeMode | null {
+  if (stripeLiveConfig()) return "live";
+  if (stripeTestConfig()) return "test";
   return null;
+}
+
+export function notifyConfigFor(mode: StripeMode, origin: string): NotifyConfig {
+  const key = process.env.BREVO_API_KEY;
+  const from = process.env.ORDER_EMAIL_FROM || process.env.PARTNER_NOTIFY_FROM || null;
+  return {
+    mailer: key && from ? brevoMailer(key, from) : null,
+    ownerEmail: process.env.ORDER_NOTIFY_EMAIL || process.env.PARTNER_NOTIFY_EMAIL || null,
+    ownerOrdersUrl: `${origin}/partners/review/orders`,
+    sendInTestMode: mode === "test" && process.env.STRIPE_TEST_SEND_EMAILS === "true",
+    siteUrl: siteConfig.url,
+    contactEmail: siteConfig.email,
+  };
 }
 
 async function retrieveSnapshot(stripe: Stripe, sessionId: string) {
@@ -33,33 +96,50 @@ async function retrieveSnapshot(stripe: Stripe, sessionId: string) {
   return snapshotFromStripeSession({ ...session, line_items: items } as Stripe.Checkout.Session);
 }
 
-export async function orderDepsFor(config: StripeTestConfig): Promise<OrderDeps> {
-  const stripe = createStripeTestClient(config);
-  const store = await getTestOrderStore();
+function depsFrom(rt: ModeRuntime): OrderDeps {
+  const notify = notifyConfigFor(rt.mode, rt.config.returnOrigin);
   return {
-    store,
-    retrieveSession: (id) => retrieveSnapshot(stripe, id),
-    onHand,
+    store: rt.store,
+    mode: rt.mode,
+    retrieveSession: (id) => retrieveSnapshot(rt.stripe, id),
+    onHand: onHandIn(rt.products),
     now: () => new Date(),
+    afterPaid: (order) => notifyPaidOrder(rt.store, order, notify),
   };
 }
 
-export async function startTestCheckout(rawLines: unknown): Promise<StartCheckoutResult> {
-  const config = stripeTestConfig();
-  if (!config) return { ok: false, error: "Checkout isn't open yet." };
+/** Order-processing dependencies for a mode, or null if that mode isn't open here. */
+export async function orderDeps(mode: StripeMode): Promise<(OrderDeps & { stripe: Stripe }) | null> {
+  const rt = await runtimeFor(mode);
+  return rt ? { ...depsFrom(rt), stripe: rt.stripe } : null;
+}
 
+/** Kept for the existing test webhook route and tests. */
+export async function orderDepsFor(config: StripeTestConfig): Promise<OrderDeps> {
+  const rt: ModeRuntime = {
+    mode: "test",
+    config,
+    stripe: createStripeTestClient(config),
+    store: await getTestOrderStore(),
+    products: TEST_FIXTURE_PRODUCTS,
+    isSellable: (_p, v) => isTestFixtureVariant(v.id),
+  };
+  return depsFrom(rt);
+}
+
+async function startCheckoutIn(rt: ModeRuntime, rawLines: unknown): Promise<StartCheckoutResult> {
   const normalized = normalizeCartLines(rawLines);
   if (!normalized.ok) return { ok: false, error: normalized.message };
-  const checked = validateCartAgainstCatalog(normalized.value, TEST_FIXTURE_PRODUCTS, (_p, v) => isTestFixtureVariant(v.id));
+  const checked = validateCartAgainstCatalog(normalized.value, rt.products, rt.isSellable);
   if (!checked.ok) return { ok: false, error: checked.message };
 
-  const store = await getTestOrderStore();
+  const onHand = onHandIn(rt.products);
   const checkoutId = randomUUID();
   const now = Math.floor(Date.now() / 1000);
   const expiresAt = now + SESSION_LIFETIME_SECONDS;
 
   const reserved = await reserveStock(
-    store,
+    rt.store,
     checkoutId,
     checked.value.map((l) => ({ variantId: l.variantId, quantity: l.quantity, onHand: onHand(l.variantId) ?? 0 })),
     expiresAt,
@@ -77,41 +157,57 @@ export async function startTestCheckout(rawLines: unknown): Promise<StartCheckou
   }
 
   try {
-    const stripe = createStripeTestClient(config);
-    const session = await stripe.checkout.sessions.create(
-      buildCheckoutSessionParams({ lines: checked.value, checkoutId, config, expiresAt }),
+    const session = await rt.stripe.checkout.sessions.create(
+      buildCheckoutSessionParams({ lines: checked.value, checkoutId, config: rt.config, expiresAt, mode: rt.mode }),
       { idempotencyKey: `funksquish-checkout-${checkoutId}` },
     );
-    const url = assertTestSession(session);
-    await store.create(checkoutKey(checkoutId), { sessionId: session.id });
+    const url = assertSession(session, rt.mode);
+    await rt.store.create(checkoutKey(checkoutId), { sessionId: session.id });
     return { ok: true, url };
   } catch (err) {
-    await releaseStock(store, checkoutId);
+    await releaseStock(rt.store, checkoutId);
     // Log the error class/code only — Stripe messages can echo request data.
     const code = (err as { code?: string; type?: string })?.code ?? (err as { type?: string })?.type ?? "unknown";
-    console.error("[stripe-test] checkout session failed:", code);
+    console.error(`[stripe-${rt.mode}] checkout session failed:`, code);
     return { ok: false, error: "We couldn't start checkout. Nothing was charged — please try again in a moment." };
   }
+}
+
+export async function startTestCheckout(rawLines: unknown): Promise<StartCheckoutResult> {
+  const rt = await runtimeFor("test");
+  return rt ? startCheckoutIn(rt, rawLines) : { ok: false, error: "Checkout isn't open yet." };
+}
+
+export async function startLiveCheckout(rawLines: unknown): Promise<StartCheckoutResult> {
+  const rt = await runtimeFor("live");
+  return rt ? startCheckoutIn(rt, rawLines) : { ok: false, error: "Checkout isn't open yet." };
 }
 
 /**
  * Shopper pressed "back" on Stripe's page. Expire the session so it can't be
  * paid later, then free the stock. Safe to call repeatedly.
  */
-export async function cancelTestCheckout(checkoutId: string): Promise<void> {
-  const config = stripeTestConfig();
-  if (!config || !/^[0-9a-f-]{36}$/.test(checkoutId)) return;
-  const store = await getTestOrderStore();
-  const link = await store.get<{ sessionId: string }>(checkoutKey(checkoutId));
+async function cancelCheckoutIn(rt: ModeRuntime, checkoutId: string): Promise<void> {
+  if (!/^[0-9a-f-]{36}$/.test(checkoutId)) return;
+  const link = await rt.store.get<{ sessionId: string }>(checkoutKey(checkoutId));
   if (link) {
     try {
-      const stripe = createStripeTestClient(config);
-      const session = await stripe.checkout.sessions.retrieve(link.value.sessionId);
-      if (session.status === "open") await stripe.checkout.sessions.expire(link.value.sessionId);
+      const session = await rt.stripe.checkout.sessions.retrieve(link.value.sessionId);
+      if (session.status === "open") await rt.stripe.checkout.sessions.expire(link.value.sessionId);
       if (session.status === "complete") return; // already paid — never release
     } catch {
       return; // leave the hold; it expires on its own at expires_at
     }
   }
-  await releaseStock(store, checkoutId);
+  await releaseStock(rt.store, checkoutId);
+}
+
+export async function cancelTestCheckout(checkoutId: string): Promise<void> {
+  const rt = await runtimeFor("test");
+  if (rt) await cancelCheckoutIn(rt, checkoutId);
+}
+
+export async function cancelLiveCheckout(checkoutId: string): Promise<void> {
+  const rt = await runtimeFor("live");
+  if (rt) await cancelCheckoutIn(rt, checkoutId);
 }

@@ -35,7 +35,8 @@ export type HandleResult = { status: "processed" | "duplicate" | "ignored" };
 const str = (v: unknown) => (typeof v === "string" ? v : null);
 
 export async function handleStripeEvent(event: VerifiedEvent, deps: OrderDeps): Promise<HandleResult> {
-  if (event.livemode !== false) throw new Error("Live-mode event rejected by the test integration.");
+  const live = (deps.mode ?? "test") === "live";
+  if (event.livemode !== live) throw new Error(`${event.livemode ? "Live" : "Test"}-mode event rejected by the ${live ? "live" : "test"} integration.`);
   if (!(HANDLED_EVENT_TYPES as readonly string[]).includes(event.type)) return { status: "ignored" };
 
   const marker = await deps.store.get<{ status: string }>(eventKey(event.id));

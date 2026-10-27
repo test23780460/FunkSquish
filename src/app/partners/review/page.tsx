@@ -80,11 +80,16 @@ async function Review({ searchParams }: { searchParams: PageProps<"/partners/rev
             {all.length} total · storage: {ctx.cfg.storage === "memory" ? "local test memory (not durable)" : `Netlify Blobs${ctx.cfg.storeSuffix ? " (preview data)" : ""}`}
           </p>
         </div>
+        <div className="flex flex-wrap gap-2">
+        <Link href="/partners/review/orders" className="rounded-full bg-white px-4 py-2 font-display font-semibold text-ink ring-1 ring-inset ring-sky-200 hover:bg-ice">
+          Orders
+        </Link>
         <form action={logoutAction}>
           <button type="submit" className="rounded-full bg-white px-4 py-2 font-display font-semibold text-ink ring-1 ring-inset ring-sky-200 hover:bg-ice">
             Sign out
           </button>
         </form>
+        </div>
       </div>
       {one(params.deleted) && <p role="status" className="mt-4 rounded-2xl bg-mint-soft px-4 py-3 font-semibold text-ink">Application deleted.</p>}
       {one(params.cleanup) && (

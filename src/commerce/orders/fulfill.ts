@@ -21,12 +21,18 @@ export interface OrderDeps {
   /** Catalog on-hand count for a variant, or null if unknown. */
   onHand(variantId: string): number | null;
   now(): Date;
+  /** Which Stripe mode this store belongs to. Sessions and events of the other mode are refused. Default: test. */
+  mode?: "test" | "live";
+  /** Sends order emails once an order is paid (see ./notify). Optional so pure tests can skip it. */
+  afterPaid?(order: Order): Promise<void>;
 }
 
 export const orderKey = (sessionId: string) => `order/session/${sessionId}`;
 const piKey = (paymentIntentId: string) => `order/pi/${paymentIntentId}`;
 
 export const TEST_SESSION_ID = /^cs_test_[A-Za-z0-9]{10,200}$/;
+export const LIVE_SESSION_ID = /^cs_live_[A-Za-z0-9]{10,200}$/;
+const modeOf = (deps: Pick<OrderDeps, "mode">) => deps.mode ?? "test";
 
 /** Deterministic order number so retries can never create two orders. */
 export function orderNumberFor(sessionId: string, at: Date, mode: "test" | "live" = "test"): string {
@@ -57,11 +63,11 @@ function fulfillmentGroups(snapshot: SessionSnapshot): FulfillmentGroup[] {
   return groups;
 }
 
-function newOrder(snapshot: SessionSnapshot, paid: boolean, at: Date, trigger: OrderEventRecord): Order {
+function newOrder(snapshot: SessionSnapshot, paid: boolean, at: Date, trigger: OrderEventRecord, mode: "test" | "live"): Order {
   const iso = at.toISOString();
   return {
-    id: orderNumberFor(snapshot.id, at),
-    mode: "test",
+    id: orderNumberFor(snapshot.id, at, mode),
+    mode,
     checkoutId: snapshot.checkoutId ?? "",
     stripeCheckoutSessionId: snapshot.id,
     stripePaymentIntentId: snapshot.paymentIntentId,
@@ -94,9 +100,10 @@ export type FulfillOutcome =
   | { state: "paid"; order: Order };
 
 export async function fulfillCheckoutSession(sessionId: string, deps: OrderDeps, source: string, type: string): Promise<FulfillOutcome> {
-  if (!TEST_SESSION_ID.test(sessionId)) return { state: "invalid" };
+  const live = modeOf(deps) === "live";
+  if (!(live ? LIVE_SESSION_ID : TEST_SESSION_ID).test(sessionId)) return { state: "invalid" };
   const snapshot = await deps.retrieveSession(sessionId);
-  if (snapshot.livemode !== false || snapshot.id !== sessionId || !snapshot.checkoutId) return { state: "invalid" };
+  if (snapshot.livemode !== live || snapshot.id !== sessionId || !snapshot.checkoutId) return { state: "invalid" };
 
   const now = deps.now();
   const trigger: OrderEventRecord = { source, type, at: now.toISOString() };
@@ -107,7 +114,7 @@ export async function fulfillCheckoutSession(sessionId: string, deps: OrderDeps,
 
   // Create or advance the single order for this session (compare-and-set).
   const { value } = await updateWithRetry<Order>(deps.store, orderKey(sessionId), (current) => {
-    if (!current) return newOrder(snapshot, paid, now, trigger);
+    if (!current) return newOrder(snapshot, paid, now, trigger, modeOf(deps));
     if (paid && current.paymentStatus === "processing") {
       current.paymentStatus = "paid";
       current.status = "open";
@@ -134,6 +141,16 @@ export async function fulfillCheckoutSession(sessionId: string, deps: OrderDeps,
       return current;
     });
     order = result.value ?? order;
+  }
+
+  // Order emails: sent at most once each (the notifier claims each email before sending).
+  if (order.paymentStatus === "paid" && deps.afterPaid) {
+    try {
+      await deps.afterPaid(order);
+    } catch (err) {
+      // Never fail order processing because of email; the owner page shows what wasn't sent.
+      console.error("[orders] notification error", err instanceof Error ? err.name : "unknown");
+    }
   }
 
   // Paid orders stay "paid" for display even after a refund (the order shows the refund).
