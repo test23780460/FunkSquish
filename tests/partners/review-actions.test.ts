@@ -88,7 +88,7 @@ describe("review actions", () => {
   it("signs in with the right passphrase, then allows changes", async () => {
     expect((await loginAction({ error: null }, fd({ passphrase: "wrong passphrase" }))).error).toMatch(/didn't match/);
     expect(jar.has(SESSION_COOKIE)).toBe(false);
-    expect(await catchRedirect(loginAction({ error: null }, fd({ passphrase: PASS })))).toBe("/partners/review");
+    expect(await catchRedirect(loginAction({ error: null }, fd({ passphrase: PASS })))).toBe("/partners/review/today");
     expect(jar.has(SESSION_COOKIE)).toBe(true);
 
     const app = await seed();

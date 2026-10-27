@@ -4,7 +4,8 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { partnerSetup, reviewConfig } from "@/lib/partners/config";
 import { requireReviewer } from "@/lib/partners/review-auth";
-import { SESSION_COOKIE, SESSION_SECONDS, clientIp, hashIdentifier, issueSession, verifyPassphrase } from "@/lib/partners/security";
+import { SESSION_COOKIE, clientIp, hashIdentifier, verifyPassphrase } from "@/lib/partners/security";
+import { ownerSecurityStore, sessionAfterPassphrase } from "@/lib/owner/auth";
 import { ID_PATTERN, deleteApplication, getApplication, partnerStores, takeRateLimits, updateApplication, withStatus } from "@/lib/partners/store";
 import { notifyOwner } from "@/lib/partners/notify";
 import { siteOrigin } from "@/lib/partners/submit";
@@ -36,15 +37,11 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
     console.warn("[partners] review sign-in failed");
     return { error: "That passphrase didn't match." };
   }
-  (await cookies()).set(SESSION_COOKIE, issueSession(cfg.secret, cfg.passphraseHash), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/partners/review",
-    maxAge: SESSION_SECONDS,
-  });
-  console.info("[partners] review sign-in");
-  redirect("/partners/review");
+  // Step 1 done. With two-step sign-in on (or required), this is only a 10-minute
+  // session that can reach the code page and nothing else.
+  const status = await sessionAfterPassphrase(cfg, await ownerSecurityStore(cfg));
+  console.info(`[partners] review sign-in (passphrase ok, ${status})`);
+  redirect(status === "full" ? "/partners/review/today" : status === "needs-mfa" ? "/partners/review/verify" : "/partners/review/security");
 }
 
 export async function logoutAction() {

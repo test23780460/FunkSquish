@@ -7,6 +7,7 @@ import {
   hashPassphrase,
   issueFormToken,
   issueSession,
+  readSession,
   verifyPassphrase,
 } from "@/lib/partners/security";
 import { PASSPHRASE_HASH, partnerSetup, reviewConfig } from "@/lib/partners/config";
@@ -38,8 +39,23 @@ describe("review sessions and passphrase", () => {
     expect(checkSession(SECRET, hashB, s, now + 1000)).toBe(false);
     expect(checkSession(SECRET, hashA, s.replace(/.$/, (c) => (c === "A" ? "B" : "A")), now)).toBe(false);
     expect(checkSession(SECRET, hashA, undefined)).toBe(false);
-    const [exp, v, n, sig] = s.split(".");
-    expect(checkSession(SECRET, hashA, `${Number(exp) + 999999}.${v}.${n}.${sig}`, now)).toBe(false);
+    const [exp, v, aal, mfa, epoch, n, sig] = s.split(".");
+    expect(checkSession(SECRET, hashA, `${Number(exp) + 999999}.${v}.${aal}.${mfa}.${epoch}.${n}.${sig}`, now)).toBe(false);
+    // Upgrading a passphrase-only session to "second step done" (or rewinding the sign-out counter) breaks the signature.
+    expect(checkSession(SECRET, hashA, `${exp}.${v}.2.${mfa}.${epoch}.${n}.${sig}`, now)).toBe(false);
+    const later = issueSession(SECRET, hashA, now, { aal: 1, mfa: "0", epoch: 3 });
+    const p = later.split(".");
+    expect(checkSession(SECRET, hashA, [p[0], p[1], p[2], p[3], "2", p[5], p[6]].join("."), now)).toBe(false);
+    // The old 4-part format is no longer accepted.
+    expect(checkSession(SECRET, hashA, `${exp}.${v}.${n}.${sig}`, now)).toBe(false);
+  });
+
+  it("session claims round-trip", () => {
+    const now = Date.now();
+    const s = issueSession(SECRET, hashA, now, { aal: 2, mfa: "abcDEF123_-x", epoch: 7 }, 600);
+    expect(readSession(SECRET, hashA, s, now)).toMatchObject({ aal: 2, mfa: "abcDEF123_-x", epoch: 7 });
+    expect(readSession(SECRET, hashA, s, now + 601_000)).toBeNull();
+    expect(() => issueSession(SECRET, hashA, now, { aal: 2, mfa: "has.dot", epoch: 0 })).toThrow();
   });
 
   it("hashes and verifies passphrases (wrong ones fail)", async () => {

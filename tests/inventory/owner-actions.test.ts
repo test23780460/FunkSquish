@@ -86,7 +86,7 @@ describe("inventory actions", () => {
   });
 
   it("record a TikTok sale for a signed-in owner, and only for items in this catalog", async () => {
-    expect(await go(loginAction({ error: null }, fd({ passphrase: PASS })))).toBe("/partners/review");
+    expect(await go(loginAction({ error: null }, fd({ passphrase: PASS })))).toBe("/partners/review/today");
     const store = await getTestOrderStore();
     const r = await go(adjustAction(fd({ variant: "test-var-jelly-blue", kind: "tiktok-sale", quantity: "1", requestId: randomUUID() })));
     expect(r).toMatch(/^\/partners\/review\/inventory\?saved=TEST-JELLY-BLUE%3A\+5\+%E2%86%92\+4/);

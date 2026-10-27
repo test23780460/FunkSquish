@@ -60,6 +60,15 @@ here touches live keys, production settings or real customers.
 | V-19 | LIVE routine | Start a LIVE with two items (pause on website), record sales, end with TikTok numbers that differ by one, resume | Items paused only during the LIVE; difference recorded with "End-of-LIVE reconciliation"; counts correct |
 | V-20 | Shipping deducts once | Ship a paid test order, then update its tracking | Shelf count drops once; "Website order shipped" logged once |
 
+### Owner two-step sign-in (branch `claude/upbeat-hawking-aonyc6-mfa`)
+
+| # | Flow | Steps (preview) | PASS when |
+| --- | --- | --- | --- |
+| V-21 | Set up | Sign in → Security → set up with a real authenticator app → save recovery codes | Code accepted; other browser's session signed out |
+| V-22 | Two-step sign-in | Sign out, sign in: passphrase → code; try a wrong code; try the same code again | Wrong and reused codes refused; right code reaches Today |
+| V-23 | Bypass attempts | With only the passphrase done, open `/partners/review/orders`, `/inventory`, and replay a captured server-action request | No data shown; actions refused (redirect to sign-in) |
+| V-24 | Recovery + turn off | Sign in with a recovery code; turn two-step off; set up again | Code works once; turning off signs out everywhere |
+
 Record results (date, preview URL, Stripe event ids, PASS/FAIL) in the PR. Afterwards: remove `STRIPE_TEST_SEND_EMAILS`,
 delete test orders if desired, and close any temporary PR/branch deploy. **Production variables are never touched.**
 
