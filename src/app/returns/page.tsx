@@ -50,7 +50,7 @@ export default function ReturnsPage() {
       <h2>Changed your mind?</h2>
       <p>
         You can return <strong>unopened, unused items in their original packaging</strong> within <strong>30 days of delivery</strong>{" "}
-        for a refund of the item price. &ldquo;Unopened&rdquo; means the retail packaging or seal hasn&apos;t been opened. Because
+        for a refund of the item price and any sales tax charged on it. &ldquo;Unopened&rdquo; means the retail packaging or seal hasn&apos;t been opened. Because
         squishies are squeezed and handled, we can&apos;t accept change-of-mind returns of opened or used items.
       </p>
       <ul>
@@ -63,7 +63,7 @@ export default function ReturnsPage() {
         <li>
           If a change-of-mind return arrives opened, used, damaged after delivery, or isn&apos;t the item we sent, we&apos;ll tell you
           and either send it back to you (you pay postage) or, if you prefer, dispose of it safely. We won&apos;t refund it as a
-          change-of-mind return.
+          change-of-mind return. If we don&apos;t hear back within 30 days of our message, we may dispose of it safely.
         </li>
       </ul>
       <p>

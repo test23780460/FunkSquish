@@ -87,7 +87,7 @@ export default function ProductCarePage() {
             <a href="https://www.saferproducts.gov" target="_blank" rel="noopener noreferrer" className="font-semibold text-royal underline">
               SaferProducts.gov
             </a>
-            . There are no FunkSquish recalls — we haven&apos;t sold any products yet.
+            . If we ever issue a recall, the notice will appear here.
           </p>
 
           <Notice tone="sky" title="Where this guidance comes from" className="mt-12">

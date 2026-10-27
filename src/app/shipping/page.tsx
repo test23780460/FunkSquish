@@ -100,13 +100,15 @@ export default function ShippingPage() {
           number and, if you can, photos of the item and packaging. See our <Link href="/returns">Returns &amp; Refunds Policy</Link>.
         </li>
         <li>
-          <strong>Lost in transit:</strong> if tracking shows the package was lost or returned by the carrier before delivery, we&apos;ll
-          send a replacement or a full refund, your choice. You don&apos;t have to file a carrier claim.
+          <strong>Lost in transit:</strong> if the carrier loses the package or tracking shows it was destroyed before delivery,
+          we&apos;ll send a replacement or a full refund, your choice. You don&apos;t have to file a carrier claim. (Packages returned to
+          us as undeliverable are covered below.)
         </li>
         <li>
           <strong>Tracking says delivered but it isn&apos;t there:</strong> check with neighbors and your mail carrier, then email us
           within <strong>14 days of the delivery date</strong>. We&apos;ll investigate promptly with the carrier and work with you on an
-          appropriate replacement or refund. A carrier claim is never a condition of any right you have by law.
+          appropriate replacement or refund. Reporting later doesn&apos;t take away any right you have by law, but it makes a carrier
+          investigation harder. A carrier claim is never a condition of any right you have by law.
         </li>
         <li>
           <strong>Tracking hasn&apos;t moved in 10 days:</strong> email us and we&apos;ll contact the carrier.
@@ -117,8 +119,9 @@ export default function ShippingPage() {
       <p>
         Please check your address at checkout. If you need to change it, email us right away — we can usually help before the order
         ships. If a package comes back to us as undeliverable because of the address entered at checkout or a missed pickup, we can
-        reship it once you pay for new postage, or refund the items minus the original shipping cost. If it came back because of our
-        mistake or the carrier&apos;s, we&apos;ll reship it at no cost or refund it in full, your choice.
+        reship it once you pay for new postage, or refund the items minus the original shipping cost, within 5 business days after
+        it reaches us. If it came back because of our mistake or the carrier&apos;s, we&apos;ll reship it at no cost or refund it in full,
+        your choice.
       </p>
 
       <h2>Orders placed on TikTok Shop</h2>

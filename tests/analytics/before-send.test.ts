@@ -62,6 +62,11 @@ describe("analytics before-send hook", () => {
     expect(ext.referrer).toBe("https://www.tiktok.com/@funksquish");
   });
 
+  it("never sends a private page as the referrer", () => {
+    const out = send("event", page("https://funksquish.com/shop", "https://funksquish.com/partners/review/FS-P-20261026-ABCDEFGH")) as { referrer: string };
+    expect(out.referrer).toBe("");
+  });
+
   it("passes everything else through unchanged and doesn't mutate the original", () => {
     const original = { ...page("https://funksquish.com/quiz?result=jelly"), name: "quiz-complete", data: { step: 3 } };
     const out = send("event", original) as Record<string, unknown>;

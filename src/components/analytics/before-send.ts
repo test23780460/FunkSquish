@@ -8,7 +8,8 @@
  *    contain application references or Stripe session ids).
  *  - URL parameters are removed, except campaign tags (utm_*). Shared Squish Box
  *    links carry a box name the visitor typed, which could be a child's name.
- *  - Referrers keep only the site and path, never parameters.
+ *  - Referrers keep only the site and path, never parameters, and private pages
+ *    are never sent as a referrer either.
  *
  * It's a plain string so it can run inline before the tracker loads (Umami
  * requires the function to exist on `window` first). Tests evaluate this exact
@@ -56,7 +57,8 @@ export const UMAMI_BEFORE_SEND_SCRIPT = `(function () {
     var next = {};
     for (var k in payload) if (Object.prototype.hasOwnProperty.call(payload, k)) next[k] = payload[k];
     next.url = clean(payload.url, true);
-    if (payload.referrer) next.referrer = clean(payload.referrer, false);
+    // A private page as the referrer (owner moving on to a public page) is dropped too: its path can hold a reference.
+    if (payload.referrer) next.referrer = excluded(payload.referrer) ? "" : clean(payload.referrer, false);
     return next;
   };
 })();`;

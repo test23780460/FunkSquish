@@ -21,6 +21,7 @@ export const APPROVED_TIME_COMMITMENTS: Record<string, Record<string, string>> =
     "10 days": "Tracking not moving — contact us (approved text, 2026-10-24)",
     "30 days": "FTC Mail Order Rule delay thresholds (16 CFR 435.2(b)) — legal requirement",
     "7 business days": "Latest refund for canceled items: FTC 'prompt refund' (16 CFR 435.1) — legal maximum",
+    "5 business days": "Refund of an undeliverable package after it reaches us — mirrors owner decision R7 (proposed 2026-10-27, owner approval needed)",
   },
   returns: {
     "7 days": "Damage report window — a preference, not a cutoff (owner decision S4/R6)",

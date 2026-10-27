@@ -121,7 +121,7 @@ export default function PrivacyPage() {
       <p>
         If a business applies through our <a href="/partners">partner page</a>, we store its answers — such as name, work email,
         business and website details, country, and what it tells us about products, pricing, shipping, safety documentation and where
-        we may sell — privately with Netlify, so we can review the application and reply. Only FunkSquish&apos;s owner can see them,
+        we may sell — privately with Netlify, so we can review the application and reply. Within FunkSquish, only the owner can see them,
         after signing in. Applications are never approved automatically: a person reviews each one, and nothing is agreed until both
         sides sign a written agreement. Brevo sends us a short notice that an application arrived (its reference, business name and
         country, without contact details). Applicants are never added to marketing lists. We treat pricing, terms and safety answers
@@ -140,8 +140,8 @@ export default function PrivacyPage() {
         stage, or a note we add). If we start working together, we keep the application while the relationship is active, review it
         at least once a year, and delete it when it&apos;s no longer needed. We keep something longer only if the law requires it or
         there&apos;s an active legal dispute, and we record why. A short record of each deletion request (dates, a scrambled code of
-        the requester&apos;s email, the references deleted and the outcome) is kept for {RETENTION.deletionRecordMonths} months so we can
-        show it was handled.
+        the requester&apos;s email, the references deleted and the outcome) is kept for {RETENTION.deletionRecordMonths} months after the
+        request is completed, so we can show it was handled.
       </p>
 
       <h3>When you buy from us (not active yet)</h3>
@@ -163,7 +163,12 @@ export default function PrivacyPage() {
         ships directly from one of our suppliers, we share only what they need to deliver it — your name, shipping address and the
         items — with that supplier, and we require them to use it only for that delivery. We keep order records for{" "}
         <strong>[period to be decided]</strong> for tax, accounting, warranty, product-safety and fraud-prevention purposes, then
-        delete them. <Todo>attorney/accountant: required order-record retention period</Todo>
+        delete them. Stripe keeps its own payment records under its own policies.{" "}
+        <Todo>attorney/accountant: required order-record retention period</Todo>
+      </p>
+      <p>
+        If you buy through TikTok Shop and we ship the order, TikTok gives us the details needed to deliver it (your name, shipping
+        address and what you bought). We use them only for that order and its support, under TikTok Shop&apos;s rules.
       </p>
       <p>
         We email you about your order (confirmation, shipping and tracking, and anything that needs your attention, such as a delay
@@ -196,7 +201,8 @@ export default function PrivacyPage() {
           needed to respond.
         </li>
         <li>
-          Professional advisers (such as our attorney or accountant), and government authorities when the law requires it — for
+          Professional advisers (such as our attorney or accountant), our insurer if a claim is made, and government authorities
+          when the law requires it — for
           example a valid legal request, or a product-safety report to the U.S. Consumer Product Safety Commission.
         </li>
         <li>
@@ -265,8 +271,8 @@ export default function PrivacyPage() {
         Private application and order records are stored with Netlify and are meant to be reachable only through a signed-in owner
         area, not public pages. We avoid placing customer details in application logs and never in our public source code. Card
         payments are entered on Stripe&apos;s encrypted checkout page. No method of storing or sending information is perfectly
-        secure, but we work to protect it. If a security incident affects your personal information, we&apos;ll notify you and any
-        authorities as the law requires.
+        secure, but we work to protect it. If a security incident affects your personal information, we&apos;ll give you, and any
+        authorities, the notices the law requires.
       </p>
 
       <h2>Do Not Track and Global Privacy Control</h2>

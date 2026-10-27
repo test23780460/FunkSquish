@@ -76,8 +76,8 @@ export default function TermsPage() {
         <li>
           <strong>Pricing and listing errors.</strong> We won&apos;t charge you more than the price you agreed to at checkout without your
           express permission. If we find a genuine price or listing error before an item ships, we&apos;ll tell you and let you choose
-          between buying it at the corrected price or canceling for a full refund of that item. If you don&apos;t choose, we&apos;ll cancel
-          and refund it. Once an item has shipped, we won&apos;t ask you to pay more for it.
+          between buying it at the corrected price or canceling for a full refund of that item. If you don&apos;t choose before the
+          item&apos;s ship-by date, we&apos;ll cancel and refund it. Once an item has shipped, we won&apos;t ask you to pay more for it.
         </li>
         <li>
           <strong>Quantity limits.</strong> Checkout limits how many of each item one order can contain (the limit is shown in your
@@ -124,7 +124,8 @@ export default function TermsPage() {
         </li>
         <li>
           We may refuse or cancel orders, and decline future orders, where we reasonably believe there&apos;s fraud, use of a payment
-          card without permission, or abuse of our policies (for example, returning a different item than the one we sent).
+          card without permission, or abuse of our policies (for example, returning a different item than the one we sent). This
+          never takes away a refund or other remedy you&apos;re entitled to for an order you&apos;ve already paid for.
         </li>
       </ul>
 
@@ -189,7 +190,6 @@ export default function TermsPage() {
       <ul>
         <li>If any part of these Terms can&apos;t be enforced, the rest still applies.</li>
         <li>If we don&apos;t enforce a part of these Terms right away, we haven&apos;t given up the right to enforce it later.</li>
-        <li>These Terms, together with the Shipping and Returns policies, are the whole agreement between you and us about using the Site and buying from it.</li>
         <li>If the FunkSquish business is sold or transferred, we may transfer these Terms to the new owner, and your existing orders stay protected.</li>
       </ul>
 
