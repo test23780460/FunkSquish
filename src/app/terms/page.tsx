@@ -17,8 +17,8 @@ export default function TermsPage() {
       <p>
         These Terms of Service (&ldquo;Terms&rdquo;) apply to your use of <a href={siteConfig.url}>funksquish.com</a>{" "}
         (the &ldquo;Site&rdquo;) and to purchases from it, operated by {siteConfig.legalOperator} (&ldquo;FunkSquish,&rdquo;
-        &ldquo;we,&rdquo; &ldquo;us&rdquo;). By using the Site or placing an order, you agree to these Terms and to our{" "}
-        <Link href="/privacy">Privacy Policy</Link>.
+        &ldquo;we,&rdquo; &ldquo;us&rdquo;). By using the Site or placing an order, you agree to these Terms. Our{" "}
+        <Link href="/privacy">Privacy Policy</Link> separately explains our personal-information practices; it is a notice, not an additional contract you must agree to.
       </p>
 
       <h2>Pre-launch Site</h2>
@@ -43,29 +43,26 @@ export default function TermsPage() {
       <ul>
         <li>
           <strong>Payment.</strong> Payments are processed by Stripe on Stripe&apos;s secure checkout page. At launch we accept
-          major credit and debit cards. Your card is charged when you place the order.
+          major credit and debit cards. Your payment method is charged when checkout is completed successfully; submitting a cart alone does not charge you.
         </li>
         <li>
           <strong>Order confirmation and acceptance.</strong> After you pay, we email you an order confirmation. That email
           confirms we received your order and payment; we accept the order when we ship it. We may cancel an order — for
           example, if an item turns out to be out of stock, the address is outside the area we ship to, or the order looks
-          fraudulent. If we do, we&apos;ll tell you and refund everything you paid for the canceled items, including their
-          shipping, to your original payment method.
+          fraudulent. If we do, we&apos;ll tell you and promptly refund amounts paid for the canceled items and any associated shipping charges. If an entire order is canceled, we&apos;ll refund the entire order, including shipping and taxes.
         </li>
         <li>
           <strong>Prices, shipping and tax.</strong> Prices are in U.S. dollars. Shipping options and their prices, and any sales
           tax, are shown at checkout before you pay. <Decision>sales-tax collection setup (e.g. Stripe Tax registrations)</Decision>
         </li>
         <li>
-          <strong>Pricing errors.</strong> If a product is listed at the wrong price, we&apos;ll contact you before shipping and let
-          you choose to pay the correct price or cancel for a full refund.
+          <strong>Pricing errors.</strong> We won&apos;t charge a higher price without your express authorization. If we discover a genuine price or listing error before shipment, we may offer the item at the corrected price or cancel and promptly refund the affected order. These terms do not permit misleading prices or post-purchase price changes.
         </li>
         <li>
-          <strong>Quantity limits.</strong> We may limit quantities per order, especially for limited drops, to keep things fair.
+          <strong>Quantity limits.</strong> We may publish reasonable quantity limits before checkout, including for limited drops. A limit will not change an already accepted and paid order without notice and an appropriate refund.
         </li>
         <li>
-          <strong>Product information.</strong> We try to describe products and colors accurately. Real items may look slightly
-          different from photos or illustrations.
+          <strong>Product information.</strong> We try to describe products and colors accurately. Minor variations in color or appearance may occur, but product listings must accurately state the item, material, size, age guidance and material safety warnings. We won&apos;t substitute a materially different product without your agreement.
         </li>
         <li>
           <strong>Shipping, returns and refunds</strong> are covered by our <Link href="/shipping">Shipping Policy</Link> and{" "}
