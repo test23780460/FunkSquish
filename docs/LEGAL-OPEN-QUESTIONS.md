@@ -138,13 +138,15 @@ and noindex), Shipping and Returns policies (owner-approved Oct 24, 2026; clarif
 
 ### Q-INV-1. "Only a few left" with manually shared stock (Attorney) — new 2026-10-27
 - **Facts:** website and TikTok Shop sell one physical stock; TikTok sales are recorded by hand, so for a few minutes
-  the website's count can be higher than reality (checkout then refuses or flags the order). Product pages show the
-  catalog's stock label; the cart and checkout use the live count.
+  the website's count can be higher than reality (checkout then refuses or flags the order). Since the 2026-10-27
+  follow-up (#17), product pages, cards and search-engine data use the same live shared count as the cart and
+  checkout ("Only a few left" at 3 or fewer; paused or unreadable stock shows "Unavailable"); a sale not yet recorded
+  can still make a label briefly wrong.
 - **Questions:** Any risk in "In stock" / "Only a few left" labels that can briefly be wrong? Should the Terms say more
   about canceling oversold orders (they already allow cancel + full refund when an item is out of stock)?
 
 ### Q-SEC-1. Is our owner-area security "reasonable"? (Attorney) — new 2026-10-27
-- **Facts:** one owner login (passphrase + authenticator-app code, required once live checkout is on), rate limits,
+- **Facts:** one owner login (passphrase + authenticator-app code, required once live checkout or partner applications are on — and those features stay closed until it's set up), rate limits,
   encrypted second-factor secret, 8-hour sessions, no per-person accounts, no access log of who viewed which order.
 - **Questions:** Enough for the FTC's "reasonable security" expectations and state breach-law safe harbors at our size?
   Anything to add before scaling (access logs, separate accounts)?
