@@ -15,6 +15,7 @@ import {
 } from "@/lib/owner/auth";
 import { SESSION_COOKIE, clientIp, hashIdentifier } from "@/lib/partners/security";
 import { takeRateLimits } from "@/lib/partners/store";
+import { sendSecurityEmail } from "@/lib/owner/security-email";
 
 /*
  * Two-step sign-in actions. Public endpoints like every server action, so each
@@ -33,33 +34,9 @@ async function ipHashFor(secret: string) {
   return hashIdentifier(secret, "ip", clientIp(await headers()));
 }
 
-/**
- * Tell the owner (at most once an hour) that someone got past the passphrase
- * but not the second step — a strong sign the passphrase has leaked.
- */
-async function alertOwner(limits: Parameters<typeof takeRateLimits>[0]) {
-  if (!(await takeRateLimits(limits, [{ key: "mfa-alert", max: 1, windowSeconds: 3600 }]))) return;
-  const to = process.env.PARTNER_NOTIFY_EMAIL;
-  const from = process.env.PARTNER_NOTIFY_FROM;
-  const key = process.env.BREVO_API_KEY;
-  if (!to || !from || !key) return;
-  try {
-    await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: { "api-key": key, "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({
-        sender: { name: "FunkSquish website", email: from },
-        to: [{ email: to }],
-        subject: "Security: wrong two-step code after a correct passphrase",
-        htmlContent:
-          '<!doctype html><html><body style="font-family:Arial,sans-serif;color:#0e2a5c"><h2>Owner sign-in alert</h2><p>Someone entered the correct owner passphrase but then a wrong two-step code. If this wasn\'t you, change the passphrase now (docs/OWNER-SECURITY.md, "Change the passphrase").</p></body></html>',
-        tags: ["owner-security"],
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
-  } catch {
-    /* the log line below is the fallback */
-  }
+/** Tell the owner (at most once an hour) that someone got past the passphrase but not the second step. */
+async function alertWrongCode(limits: Parameters<typeof takeRateLimits>[0]) {
+  if (await takeRateLimits(limits, [{ key: "mfa-alert", max: 1, windowSeconds: 3600 }])) await sendSecurityEmail("wrong-code");
 }
 
 /** Second step of sign-in: a 6-digit app code or a recovery code. */
@@ -85,7 +62,7 @@ export async function verifyMfaAction(_prev: CodeState, fd: FormData): Promise<C
   const r = await checkSecondFactor(auth.security, auth.cfg.secret, code);
   if (!r.ok) {
     console.warn(`[owner-auth] mfa failed (${r.reason})`);
-    if (r.reason === "wrong") await alertOwner(auth.stores.limits);
+    if (r.reason === "wrong") await alertWrongCode(auth.stores.limits);
     return {
       error:
         r.reason === "unreadable"
@@ -95,6 +72,7 @@ export async function verifyMfaAction(_prev: CodeState, fd: FormData): Promise<C
   }
   await setSessionCookie(auth.cfg, { aal: 2, mfa: mfaVersion(auth.cfg.secret, auth.enrollment!), epoch: auth.state.epoch });
   console.info(`[owner-auth] mfa ok via ${r.via}`);
+  if (r.via === "recovery") await sendSecurityEmail("recovery-used");
   redirect(r.via === "recovery" ? `${SECURITY}?recovery=${r.recoveryLeft}` : HOME);
 }
 
@@ -120,6 +98,7 @@ export async function confirmEnrollmentAction(_prev: CodesState, fd: FormData): 
   // Every other device is signed out; this one continues with both steps done.
   await setSessionCookie(auth.cfg, { aal: 2, mfa: mfaVersion(auth.cfg.secret, r.enrollment), epoch: r.epoch });
   console.info("[owner-auth] mfa enrolled");
+  await sendSecurityEmail("mfa-on");
   return { error: null, codes: r.codes };
 }
 
@@ -147,6 +126,7 @@ export async function disableMfaAction(_prev: CodeState, fd: FormData): Promise<
   if (!r.ok) return { error: r.error };
   (await cookies()).delete({ name: SESSION_COOKIE, path: "/partners/review" });
   console.info("[owner-auth] mfa turned off");
+  await sendSecurityEmail("mfa-off");
   redirect(`${LOGIN}?signedout=mfa-off`);
 }
 
@@ -156,5 +136,6 @@ export async function signOutEverywhereAction() {
   await signOutEverywhere(auth.security);
   (await cookies()).delete({ name: SESSION_COOKIE, path: "/partners/review" });
   console.info("[owner-auth] signed out everywhere");
+  await sendSecurityEmail("signed-out-everywhere");
   redirect(`${LOGIN}?signedout=everywhere`);
 }
