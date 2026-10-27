@@ -1,5 +1,16 @@
 # Items flagged for explicit owner review
 
+> **Update 2026-10-27 (Phase 2): all four were decided by the owner.**
+> 1. Mixed-order shipping → **allowed at launch**, built as cart-dependent per-package shipping from verified rates
+>    (PR #16, `docs/MIXED-ORDER-SHIPPING.md`). Option A is withdrawn.
+> 2. 30-day disposal → **removed**; ineligible returns are explained, offered back at the buyer's cost, kept safe and
+>    never disposed of because time passed (PR #19; Returns kept Draft for legal review — Q-RET-2).
+> 3. Owner MFA → **required before real orders**, built (PR #18, `docs/OWNER-SECURITY.md`).
+> 4. Deploy preview → **DO NOT MERGE PR #15** built and passed CI; the sandbox run itself is still to do
+>    (`docs/PREVIEW-VERIFICATION-RESULTS.md`).
+>
+> The analysis below is kept for the record.
+
 _2026-10-27 · Not legal advice. Each item needs a written decision from the owner (and, where marked, an attorney or
 accountant) before the related feature is switched on. Nothing here changes code, settings or the owner-approved policies._
 

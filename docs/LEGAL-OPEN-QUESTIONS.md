@@ -113,13 +113,41 @@ and noindex), Shipping and Returns policies (owner-approved Oct 24, 2026; clarif
 - Assumed-name certificate for "FunkSquish" with the Hardin County clerk (KRS 365.015); whether an LLC is advisable before
   selling children's products.
 
-### Q-RET-2. Disposing of nonconforming returns (Attorney)
-- **Facts:** proposed Returns text: if a change-of-mind return arrives opened, used, damaged after delivery or isn't the
-  item we sent, we tell the customer and send it back (they pay postage) or dispose of it at their choice; "If we don't
-  hear back within 30 days of our message, we may dispose of it safely." Planned safeguards: two emails, photos, no
-  disposal during a dispute/chargeback/fraud review.
-- **Questions:** Is 30 days with these notices reasonable in Kentucky (and generally) for goods a customer sent us? Any
-  bailment/abandoned-goods rule that requires longer, a specific notice, or a different method?
+### Q-RET-2. Returns that don't qualify — unclaimed customer property (Attorney) — updated 2026-10-27
+- **Owner decision:** no automatic disposal. Draft Returns text (kept Draft for this review): if a voluntary return
+  doesn't qualify, we email the customer explaining why and offer to send it back at their expense, keep it safe while
+  we wait, "won't throw it away just because time has passed: if it's never claimed, we'll handle it as the law
+  requires", and keep items tied to an open dispute, chargeback or legal claim.
+- **Questions:** Under Kentucky law (bailment, unclaimed/abandoned property), what notice and waiting period make an
+  item legally "unclaimed", and what may we then do with it (donate, destroy, sell)? Any recordkeeping required? Does
+  the wording above promise anything we can't keep? What if the customer is in another state?
+
+### Q-TAX-3. Partial refunds per package and Stripe Tax reporting (Accountant) — new 2026-10-27
+- **Facts:** mixed orders ship as several packages, each with its own shipping charge. Canceling or refunding one
+  package refunds its items (incl. their tax), its shipping and its share of the tax on shipping, as one Stripe refund.
+  Stripe Tax calculates tax on items and on shipping (shipping tax code) when it's switched on.
+- **Questions:** Do these partial refunds reduce Kentucky (and other states') reported tax correctly through Stripe Tax,
+  or do refunds need tax-transaction reversals or manual adjustments? Is shipping taxable in Kentucky for these items?
+
+### Q-SHIP-2. Per-package shipping disclosures (Attorney) — new 2026-10-27
+- **Facts:** the cart and Stripe's page show each package's charge (cart), the combined shipping, tax and total before
+  payment; the Shipping Policy says mixed orders can cost more and no shipping is added later. Supplier items that can't
+  go to APO/FPO/DPO are disclosed on Stripe's page; such orders are refunded for those items.
+- **Questions:** Is this enough under the FTC Act and Kentucky law for drip-pricing/hidden-fee concerns? Do we need the
+  per-package breakdown on Stripe's page too (today it shows the combined amount and a text note)?
+
+### Q-INV-1. "Only a few left" with manually shared stock (Attorney) — new 2026-10-27
+- **Facts:** website and TikTok Shop sell one physical stock; TikTok sales are recorded by hand, so for a few minutes
+  the website's count can be higher than reality (checkout then refuses or flags the order). Product pages show the
+  catalog's stock label; the cart and checkout use the live count.
+- **Questions:** Any risk in "In stock" / "Only a few left" labels that can briefly be wrong? Should the Terms say more
+  about canceling oversold orders (they already allow cancel + full refund when an item is out of stock)?
+
+### Q-SEC-1. Is our owner-area security "reasonable"? (Attorney) — new 2026-10-27
+- **Facts:** one owner login (passphrase + authenticator-app code, required once live checkout is on), rate limits,
+  encrypted second-factor secret, 8-hour sessions, no per-person accounts, no access log of who viewed which order.
+- **Questions:** Enough for the FTC's "reasonable security" expectations and state breach-law safe harbors at our size?
+  Anything to add before scaling (access logs, separate accounts)?
 
 ## Priority 3 — can wait, but decide before scaling
 
