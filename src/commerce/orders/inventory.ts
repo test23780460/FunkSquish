@@ -1,12 +1,21 @@
 import { updateWithRetry, type KvStore } from "./store";
 
 /**
- * Overselling protection.
+ * Overselling protection — and the single source of truth for stock.
  *
- * On-hand stock comes from the catalog (what's physically on the shelf or
- * confirmed with a supplier). This ledger records, per variant, every
- * checkout that is holding or has bought units:
- *   available = onHand − sold − (holds that haven't expired)
+ * One record per variant (`stock/<variantId>`) holds everything that decides
+ * whether a unit can be sold, so one compare-and-set write can check and
+ * change it atomically:
+ *  - `onHand`: units you physically have (or a supplier has confirmed) that
+ *    aren't promised to a TikTok buyer. Set and changed by the owner on the
+ *    inventory page (stock arrived, TikTok sale, damaged, count…) and reduced
+ *    automatically when a website package ships. Until the owner first touches
+ *    a variant, it's the catalog's count.
+ *  - `entries`: website checkouts holding units ("held") or paid and waiting to
+ *    ship ("sold").
+ *  - `paused`: website purchasing paused (e.g. during a TikTok LIVE).
+ *   available on the website = onHand − sold − (holds that haven't expired)
+ * See docs/INVENTORY.md.
  *
  * - reserve():  before a Stripe Checkout Session is created. All-or-nothing.
  * - commit():   when payment is verified. Idempotent: running it twice (or
@@ -28,6 +37,18 @@ export interface LedgerEntry {
 export interface VariantLedger {
   variantId: string;
   entries: Record<string, LedgerEntry>;
+  /** Owner-managed physical count. Missing = never changed here, so the catalog's count applies. */
+  onHand?: number;
+  /** Website packages already taken off `onHand` when they shipped (idempotency; pruned after 180 days). */
+  shipped?: Record<string, { units: number; at: string }>;
+  /** Website purchasing paused for this variant. */
+  paused?: { at: string; reason: string; by: "owner" | "live" } | null;
+  /** The owner marked this variant as listed on TikTok Shop (sold from the same shelf). */
+  tiktokListed?: boolean;
+  /** Last physical count. */
+  lastCountedAt?: string | null;
+  /** Most recent changes to this variant, newest first (the full log is in the activity log). */
+  recent?: import("./stock-admin").InventoryAdjustment[];
 }
 
 export interface ReservationRecord {
@@ -40,13 +61,33 @@ export interface ReservationRecord {
 const ledgerKey = (variantId: string) => `stock/${variantId}`;
 const reservationKey = (checkoutId: string) => `reservation/${checkoutId}`;
 
+/** The count that applies: the owner's managed count once it exists, otherwise the catalog's. */
+export function effectiveOnHand(ledger: VariantLedger | null, catalogOnHand: number | null): number | null {
+  return typeof ledger?.onHand === "number" ? ledger.onHand : catalogOnHand;
+}
+
+/** Units sold on the website and not shipped yet (still on the shelf, but promised). */
+export function soldUnits(ledger: VariantLedger | null): number {
+  return Object.values(ledger?.entries ?? {}).reduce((n, e) => n + (e.state === "sold" ? e.quantity : 0), 0);
+}
+
+/** Units in shoppers' open checkouts right now. */
+export function heldUnits(ledger: VariantLedger | null, now: number): number {
+  return Object.values(ledger?.entries ?? {}).reduce((n, e) => n + (e.state === "held" && e.expiresAt > now ? e.quantity : 0), 0);
+}
+
+/**
+ * Units the website can still sell. `onHand` is the catalog's count; the
+ * owner-managed count in the ledger takes over once it exists.
+ */
 export function availableUnits(onHand: number, ledger: VariantLedger | null, now: number, excludeCheckoutId?: string): number {
+  const base = effectiveOnHand(ledger, onHand) ?? 0;
   let used = 0;
   for (const [id, entry] of Object.entries(ledger?.entries ?? {})) {
     if (id === excludeCheckoutId) continue;
     if (entry.state === "sold" || entry.expiresAt > now) used += entry.quantity;
   }
-  return Math.max(0, onHand - used);
+  return Math.max(0, base - used);
 }
 
 function pruneExpired(ledger: VariantLedger, now: number) {
@@ -55,7 +96,7 @@ function pruneExpired(ledger: VariantLedger, now: number) {
   }
 }
 
-export type ReserveResult = { ok: true } | { ok: false; variantId: string; available: number };
+export type ReserveResult = { ok: true } | { ok: false; variantId: string; available: number; paused?: true };
 
 export async function reserveStock(
   store: KvStore,
@@ -68,8 +109,15 @@ export async function reserveStock(
   const sorted = [...lines].sort((a, b) => a.variantId.localeCompare(b.variantId));
   for (const line of sorted) {
     let shortBy: number | null = null;
+    let paused = false;
     await updateWithRetry<VariantLedger>(store, ledgerKey(line.variantId), (current) => {
       const ledger = current ?? { variantId: line.variantId, entries: {} };
+      // Paused on the website (e.g. selling it on TikTok LIVE right now): nothing can be held.
+      if (ledger.paused) {
+        paused = true;
+        shortBy = 0;
+        return undefined;
+      }
       pruneExpired(ledger, now);
       const available = availableUnits(line.onHand, ledger, now, checkoutId);
       if (line.quantity > available) {
@@ -82,7 +130,7 @@ export async function reserveStock(
     });
     if (shortBy !== null) {
       await releaseHolds(store, checkoutId, placed);
-      return { ok: false, variantId: line.variantId, available: shortBy };
+      return paused ? { ok: false, variantId: line.variantId, available: 0, paused: true } : { ok: false, variantId: line.variantId, available: shortBy };
     }
     placed.push(line.variantId);
   }
@@ -119,8 +167,10 @@ export async function releaseStock(store: KvStore, checkoutId: string): Promise<
 /**
  * Turn a checkout's holds into sales. Safe to call repeatedly/concurrently.
  * Returns `oversold: true` if a hold had already expired and the units were
- * sold to someone else in the meantime — the order then needs manual review
- * (contact the customer / refund) instead of being shipped automatically.
+ * sold to someone else in the meantime — or the owner's count dropped below
+ * what the website has sold (e.g. a TikTok sale recorded during checkout) —
+ * so the order needs manual review (contact the customer / refund) instead of
+ * being shipped automatically.
  */
 export async function commitStock(
   store: KvStore,
@@ -137,6 +187,8 @@ export async function commitStock(
       const stillHeld = entry?.state === "held" && entry.expiresAt > now;
       if (!stillHeld && availableUnits(line.onHand, ledger, now, checkoutId) < line.quantity) oversold = true;
       ledger.entries[checkoutId] = { quantity: line.quantity, expiresAt: entry?.expiresAt ?? now, state: "sold" };
+      // Even a valid hold can't be filled if the shelf now has fewer units than the website has sold.
+      if (soldUnits(ledger) > (effectiveOnHand(ledger, line.onHand) ?? 0)) oversold = true;
       return ledger;
     });
   }
@@ -163,3 +215,61 @@ export async function unsellStock(store: KvStore, checkoutId: string, variantIds
     });
   }
 }
+
+/**
+ * A website package shipped: its units leave the shelf. Takes them off the
+ * managed count and out of "sold, waiting to ship" in one write per variant.
+ * Idempotent per package shipment (`shipmentKey`), so pressing "Mark shipped"
+ * again, or updating the tracking number, never deducts twice. A replacement
+ * shipment has its own key (the original units were already deducted).
+ * Returns the shortfall if the count was lower than what shipped (the count
+ * was wrong) — the count is then set to 0 and the owner is told.
+ */
+export async function deductShippedStock<A>(
+  store: KvStore,
+  checkoutId: string,
+  shipmentKey: string,
+  lines: { variantId: string; sku: string; quantity: number; onHand: number | null }[],
+  /** Builds the log entry for this write and stores it on the record (same write, so it's atomic). */
+  record: (ledger: VariantLedger, line: { variantId: string; sku: string; quantity: number }, before: number, after: number) => A,
+  now: Date,
+): Promise<{ shortfall: { variantId: string; units: number }[]; applied: A[] }> {
+  const shortfall: { variantId: string; units: number }[] = [];
+  const applied: A[] = [];
+  const cutoff = now.getTime() - 180 * 86_400_000;
+  for (const line of lines) {
+    let attempt: { entry: A; short: number } | null = null;
+    const { changed } = await updateWithRetry<VariantLedger>(store, ledgerKey(line.variantId), (current) => {
+      attempt = null;
+      const ledger = current ?? { variantId: line.variantId, entries: {} };
+      ledger.shipped ??= {};
+      if (ledger.shipped[shipmentKey]) return undefined; // already deducted
+      for (const [k, v] of Object.entries(ledger.shipped)) if (Date.parse(v.at) < cutoff) delete ledger.shipped[k];
+      const before = effectiveOnHand(ledger, line.onHand) ?? 0;
+      const after = Math.max(0, before - line.quantity);
+      ledger.onHand = after;
+      const entry = ledger.entries[checkoutId];
+      if (entry?.state === "sold") {
+        const left = entry.quantity - line.quantity;
+        if (left > 0) entry.quantity = left;
+        else delete ledger.entries[checkoutId];
+      }
+      ledger.shipped[shipmentKey] = { units: line.quantity, at: now.toISOString() };
+      attempt = { entry: record(ledger, line, before, after), short: Math.max(0, line.quantity - before) };
+      return ledger;
+    });
+    // Only the attempt that was actually saved counts (a retried attempt is discarded).
+    const saved = attempt as { entry: A; short: number } | null;
+    if (changed && saved) {
+      applied.push(saved.entry);
+      if (saved.short) shortfall.push({ variantId: line.variantId, units: saved.short });
+    }
+  }
+  return { shortfall, applied };
+}
+
+export async function getLedger(store: KvStore, variantId: string): Promise<VariantLedger | null> {
+  return (await store.get<VariantLedger>(ledgerKey(variantId)))?.value ?? null;
+}
+
+export { ledgerKey };

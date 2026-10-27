@@ -8,7 +8,7 @@ import { normalizeCartLines, validateCartAgainstCatalog, type CheckedLine } from
 import { quoteShipping, type BlockedLine, type QuoteResult } from "./shipping-quote";
 import { SHIPPING_ORIGINS, type ShippingOrigin } from "../origins";
 import { assertSession, buildCheckoutSessionParams, createStripeLiveClient, createStripeTestClient, SESSION_LIFETIME_SECONDS, type StripeMode } from "./stripe";
-import { releaseStock, reserveStock } from "../orders/inventory";
+import { availableUnits, getLedger, releaseStock, reserveStock } from "../orders/inventory";
 import { getLiveOrderStore, getTestOrderStore, type KvStore } from "../orders/store";
 import { snapshotFromStripeSession } from "../orders/session-snapshot";
 import { brevoMailer, notifyPaidOrder, type NotifyConfig } from "../orders/notify";
@@ -167,8 +167,24 @@ async function quoteCartIn(rt: ModeRuntime, rawLines: unknown): Promise<CartQuot
   if (!normalized.ok) return { ok: false, error: normalized.message, blocked: [] };
   const checked = validateCartAgainstCatalog(normalized.value, rt.products, rt.isSellable);
   if (!checked.ok) return { ok: false, error: checked.message, blocked: [] };
+  // Live stock: the same record checkout reserves from, so a TikTok sale the owner just
+  // recorded (or a pause during a TikTok LIVE) shows here immediately.
+  const onHand = onHandIn(rt.products);
+  const nowSec = Math.floor(Date.now() / 1000);
+  const stockBlocked: { variantId: string; message: string }[] = [];
+  for (const l of checked.value) {
+    const ledger = await getLedger(rt.store, l.variantId);
+    if (ledger?.paused) stockBlocked.push({ variantId: l.variantId, message: `${l.name} is paused on the website right now. Please remove it to continue.` });
+    else {
+      const left = availableUnits(onHand(l.variantId) ?? 0, ledger, nowSec);
+      if (l.quantity > left)
+        stockBlocked.push({ variantId: l.variantId, message: left > 0 ? `Only ${left} of ${l.name} left. Please lower the quantity.` : `${l.name} just sold out. Please remove it to continue.` });
+    }
+  }
   const q: QuoteResult = quoteShipping(quoteLines(checked.value), rt.origins, new Date());
-  if (!q.ok) return { ok: false, error: q.message, blocked: q.blocked.map((b) => ({ variantId: b.variantId, message: b.message })) };
+  const blocked = [...stockBlocked, ...(q.ok ? [] : q.blocked.map((b) => ({ variantId: b.variantId, message: b.message })))];
+  if (blocked.length) return { ok: false, error: blocked[0].message, blocked };
+  if (!q.ok) return { ok: false, error: "Shipping isn't available for this cart.", blocked: [] };
   const subtotal = checked.value.reduce((s, l) => s + l.unitAmount * l.quantity, 0);
   return {
     ok: true,
@@ -215,8 +231,9 @@ async function startCheckoutIn(rt: ModeRuntime, rawLines: unknown): Promise<Star
     const line = checked.value.find((l) => l.variantId === reserved.variantId);
     return {
       ok: false,
-      error:
-        reserved.available > 0
+      error: reserved.paused
+        ? `${line?.name ?? "An item"} is paused on the website right now. Please remove it to continue.`
+        : reserved.available > 0
           ? `Only ${reserved.available} of ${line?.name ?? "an item"} can be ordered right now. Please lower the quantity.`
           : `${line?.name ?? "An item"} just sold out. Please remove it to continue.`,
     };

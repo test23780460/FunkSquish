@@ -51,6 +51,15 @@ here touches live keys, production settings or real customers.
 | V-15 | Blocked supplier | Add the Lime item (unverified supplier) | Cart marks it "Shipping … isn't set up yet" and disables checkout; the harness "Try it" row is rejected; no Stripe session created |
 | V-16 | One package canceled / lost | On the V-14 order: cancel the Peach package; mark the Jelly package shipped, then "Carrier confirmed it lost" → "Send a free replacement" → ship again | Stripe shows one refund equal to the Peach package total; the order keeps the other packages; the replacement gets a new ship-by date and its own "(replacement)" email |
 
+### Shared inventory (branch `claude/upbeat-hawking-aonyc6-inventory`)
+
+| # | Flow | Steps (sandbox) | PASS when |
+| --- | --- | --- | --- |
+| V-17 | TikTok sale limits the website | `/partners/review/inventory`: tap "Sold 1 on TikTok" on TEST Jelly Pink (1 left); then try to buy it on `/checkout/test` | Shelf 1 → 0; cart says sold out; checkout refused; activity log shows the sale |
+| V-18 | Concurrent last unit | Two browsers: one opens Stripe checkout for the last TEST Jelly Blue unit; the other records a TikTok sale of it | The sale asks for confirmation ("in shoppers' checkouts"); if confirmed and the first shopper pays, the order is flagged "oversold" |
+| V-19 | LIVE routine | Start a LIVE with two items (pause on website), record sales, end with TikTok numbers that differ by one, resume | Items paused only during the LIVE; difference recorded with "End-of-LIVE reconciliation"; counts correct |
+| V-20 | Shipping deducts once | Ship a paid test order, then update its tracking | Shelf count drops once; "Website order shipped" logged once |
+
 Record results (date, preview URL, Stripe event ids, PASS/FAIL) in the PR. Afterwards: remove `STRIPE_TEST_SEND_EMAILS`,
 delete test orders if desired, and close any temporary PR/branch deploy. **Production variables are never touched.**
 

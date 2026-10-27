@@ -13,6 +13,7 @@ import { formatMoney } from "@/commerce/availability";
 import { Container } from "@/components/ui/Primitives";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { ArrowLeftIcon } from "@/components/icons/Icons";
+import { OwnerNav } from "@/components/owner/OwnerNav";
 import {
   cancelAction,
   cancelPackageAction,
@@ -85,6 +86,7 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
 
   return (
     <div className="space-y-6">
+      <OwnerNav current="/partners/review/orders" />
       <Link href="/partners/review/orders" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 font-display font-semibold text-ink ring-1 ring-inset ring-sky-200">
         <ArrowLeftIcon className="size-4" /> All orders
       </Link>

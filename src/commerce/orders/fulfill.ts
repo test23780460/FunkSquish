@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { commitStock, getReservation, releaseStock } from "./inventory";
+import { commitStock, getReservation, releaseStock, unsellStock } from "./inventory";
 import { updateWithRetry, type KvStore } from "./store";
 import type { SessionSnapshot } from "./session-snapshot";
 import { isAllowedDestination, isMilitaryAddress } from "./shipping-restrictions";
@@ -252,6 +252,12 @@ export async function recordRefund(
     addHistory(current, { source, type: "charge.refunded", at: now.toISOString() });
     return current;
   });
+  // Refunded in full before anything shipped (e.g. from the Stripe Dashboard): the units never left
+  // the shelf, so they're free again. Refunds after shipping never change stock — a returned item is
+  // put back by hand once it's inspected.
+  const order = await getOrderBySession(deps.store, link.value.sessionId);
+  if (order?.status === "canceled" && order.inventoryCommitted && order.fulfillments.every((f) => !f.shippedAt))
+    await unsellStock(deps.store, order.checkoutId, order.lineItems.map((l) => l.variantId));
   return true;
 }
 
