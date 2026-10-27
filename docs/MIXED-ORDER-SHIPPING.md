@@ -110,6 +110,34 @@ Stripe's `charge.refunded` webhook arrives first.
 - Supplier ship-by dates are only as good as the supplier's performance — the delay-notice process still applies.
 - Signature confirmation is not offered to customers (see §7).
 
+### Abuse limits on the quote and on "Secure checkout" (`src/commerce/checkout/rate-limit.ts`)
+
+The cart's shipping quote reads the catalog and stock on every call, and "Secure checkout" holds stock for ~31 minutes
+and creates a Stripe session, so both are limited **per shopper network** (never site-wide, so one abuser can't close
+checkout for everyone):
+
+| Request | Burst guard (memory, per server instance) | Stored limits (all instances) |
+| --- | --- | --- |
+| Shipping quote | 40 per minute | 150 per 10 minutes |
+| Start checkout | 6 per minute | 10 per 30 minutes, 30 per day |
+
+- Quotes and checkout starts are counted **separately**: a shopper who edits the cart a lot can still pay. A limited
+  quote says the shipping and total will be shown on Stripe's page before paying, and doesn't disable the button.
+- Limits are far above real use (tested: 40 cart edits + checkout; 8 round trips to Stripe; 5 shoppers on one shared
+  school/office/phone-carrier address, 25 edits each).
+- The network is Netlify's `x-nf-client-connection-ip` (a spoofed `X-Forwarded-For` is ignored); IPv6 is grouped by
+  `/64`. Nothing is counted while checkout is closed; inputs are shape-checked (max 20 lines, 1–10 each) before any
+  storage read; Next.js server actions also refuse cross-site posts.
+- **Privacy:** the address is used in memory and as a keyed, truncated hash (`PARTNER_SECRET`); it's never stored or
+  logged. Counters live in the existing `partner-rate-limits` store, whose daily cleanup deletes them 2 days after
+  their window (tested). Proposed Privacy Policy sentence: see PR #19 (`docs/POLICY-COMPARISON.md`).
+- **Failure modes:** a storage outage lets requests through (checkout then succeeds or fails on its own); a flood of
+  parallel requests from one network that keeps colliding on its own counter is refused. Without `PARTNER_SECRET`
+  only the in-memory guard applies (a warning is logged).
+- **Residual risk:** an attacker with many addresses can still hold stock for up to ~31 minutes per checkout. The
+  owner sees units "in shoppers' checkouts" on the Inventory page and can pause a SKU; Netlify's platform rate limits
+  (plan-dependent) can be added later without code changes.
+
 ## 7. Signature confirmation (proposed $150 threshold)
 
 `src/commerce/signature.ts`: the owner order page **recommends** buying signature confirmation for orders of $150 or
@@ -129,6 +157,11 @@ experience. **Decision D-OPS-2b.**
 | SUP-5 | Our own packed weights and USPS costs → `funksquish` rule | Not started |
 
 ## 9. Tests
+
+`tests/checkout/rate-limit.test.ts` (22 tests): real shoppers still check out (heavy cart editing, repeated trips to
+Stripe, a shared network, rapid taps); quote floods, checkout-start floods (30-minute and daily caps; nothing held or
+sent to Stripe when refused), spoofed headers, IPv6 /64 grouping, colliding parallel requests, bounded memory; keyed
+hashes only, deleted by the daily cleanup, never logged; storage outage; nothing counted while closed.
 
 `tests/shipping/` (58 tests): single-origin weight tiers; one base charge per origin; supplier-only with two suppliers;
 mixed carts; blocked unverified/expired/agreement-less/unknown origins; $0 rates; promise mismatch; too-large and
