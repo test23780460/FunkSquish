@@ -37,7 +37,7 @@ describe.each(["test", "live"] as const)("Checkout configuration (%s mode) match
     expect(p.automatic_tax).toEqual({ enabled: true });
     expect(p.shipping_options).toHaveLength(1);
     expect(p.custom_text?.submit).toEqual({ message: TERMS_NOTICE });
-    expect(p.custom_text?.shipping_address?.message).toContain(SHIPPING_AREA_NOTE);
+    expect((p.custom_text?.shipping_address as { message: string } | undefined)?.message).toContain(SHIPPING_AREA_NOTE);
     for (const li of p.line_items ?? []) expect(li.price_data?.tax_behavior).toBe("exclusive");
   });
 
