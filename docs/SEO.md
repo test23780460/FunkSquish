@@ -32,3 +32,13 @@ Search Console showed 5 indexed and 5 not-indexed URLs:
 Production check (`npm run seo:check`, 2026-10-26): 63 of 64 checks passed. The one failure is the Netlify subdomain
 serving a duplicate copy with status 200 (canonical tags already pointed at funksquish.com); the redirect above fixes it
 once deployed. A local production build of this branch passed all 90 checks.
+
+## Production verification 2026-10-26 (after the PR #7–#10 deploy)
+
+- `npm run seo:check` on https://funksquish.com: 15 sitemap URLs, **97/97 checks pass** — including
+  `http://` → `https://`, `www` → apex, and the old Netlify hostname → `https://funksquish.com/` (308).
+- Search Console: **Validate fix** started for "Indexed, though blocked by robots.txt" (`http://funksquish.com/`);
+  **Request indexing** accepted for `/returns`, `/shipping`, `/squish-lab`, `/quiz`, `/squish-box`, `/drops`, `/partners`;
+  sitemap resubmitted (read immediately: 15 pages). Not submitted on purpose: `/privacy`, `/terms` (drafts) and the
+  noindex "Excluded by 'noindex'" report (it would fail on those two drafts until they're approved).
+- Expect recrawls over days to a few weeks; the reports update after Google re-crawls.

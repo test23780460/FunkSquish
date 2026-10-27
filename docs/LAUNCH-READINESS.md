@@ -26,3 +26,10 @@ evaluation (`private/suppliers/`), never here.
 - Product liability insurance (recommended before selling children's products).
 - Supplier verification and exact-model CPCs and lab reports before any product goes on sale.
 - Checkout provider decision and live Stripe activation (owner only; not part of this project).
+
+## Deploy note (2026-10-26)
+
+The first production build after merging reused a stale stylesheet from Netlify's build cache: the CSS added by the
+upgrades (phone-width fieldset fix, Squish Lab/Box animations) was missing, so `/squish-lab` rendered 792px wide on
+phones. A **"Clear cache and deploy"** rebuild fixed it (same commit). If a deploy ever looks unstyled or wider than the
+screen while a local `npm run build` looks right, compare the CSS file names and rebuild with the cache cleared.

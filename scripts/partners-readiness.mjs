@@ -18,7 +18,9 @@ const results = [];
 const check = (ok, label, detail = "") => results.push({ ok, label, detail });
 
 function netlifyApi(method, data) {
-  const r = spawnSync("npx", ["-y", "netlify", "api", method, "--data", JSON.stringify(data)], { encoding: "utf8", shell: process.platform === "win32" });
+  // One command string, with the JSON quoted the same way for cmd.exe and POSIX shells.
+  const json = JSON.stringify(data).replace(/"/g, '\\"');
+  const r = spawnSync(`npx -y netlify api ${method} --data "${json}"`, { encoding: "utf8", shell: true });
   if (r.status !== 0) throw new Error(`netlify api ${method} failed`);
   return JSON.parse(r.stdout);
 }

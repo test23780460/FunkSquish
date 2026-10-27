@@ -155,4 +155,10 @@ Local testing only: `PARTNER_DEV_MEMORY_STORE=true` in a git-ignored `.env.devel
   a deletion request entered with different capitalisation matched exactly one application, showed a 30-day due date,
   never displayed the email, and "Delete and complete" removed it and recorded the outcome; dry run and real cleanup
   ran against Netlify Blobs (0 due — everything was new); all test applications deleted.
+- **Production (2026-10-26, deploy of `4c3d3a7`):** `npm run partners:readiness` — all automated checks pass:
+  Production has PARTNER_SECRET, PARTNER_REVIEW_PASSPHRASE_HASH, PARTNER_NOTIFY_EMAIL/FROM and BREVO_API_KEY;
+  `partner-retention` deployed with cron `0 8 * * *` UTC; /partners/review and /requests are private (noindex, no-store);
+  the published notice and privacy policy describe the enforced schedule. **Public form: closed** (PARTNER_APPLICATIONS_ENABLED
+  deliberately not set for Production until legal review). No production test application was submitted (form closed;
+  review sign-in needs the owner's production passphrase).
 - **Not verified yet:** production (needs `--netlify=production` setup and your approval).
