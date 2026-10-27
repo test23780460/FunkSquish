@@ -1,5 +1,10 @@
 # Final audit summary — FunkSquish legal & compliance audit (2026-10-27)
 
+> **Phase 2 update (2026-10-27):** the owner decided the open items (mixed-order shipping at launch, no automatic
+> disposal of returns, MFA required, shared manual inventory, cards only) and they're built in draft PRs #16–#20, with a
+> combined DO NOT MERGE preview in #15. Current status and blockers: `LAUNCH-READINESS-PHASE2.md`; owner steps:
+> `OWNER-ACTIONS.md`. The text below is the Phase 1 record.
+
 **Bottom line:** the policies are substantially more accurate, consistent and backed by working code, but **FunkSquish
 is not ready to take payments, open partner applications or run email lists.** Of nine high-severity (P1) findings,
 six are fixed or partly fixed on draft branches and three remain open (children's-privacy classification, a second

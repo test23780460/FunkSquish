@@ -7,6 +7,10 @@ _2026-10-27 · Not legal advice. Every gate is a yes/no check with evidence. A f
 Status today: **all features below are OFF.** `features.commerce = false`, `checkoutMode = "disabled"`,
 `partnerApplications = false`, newsletter and drop alerts not enabled in Production, Stripe live locked.
 
+**Phase 2 update (2026-10-27):** owner decisions applied and built in draft PRs — mixed-order shipping (#16), shared
+manual inventory (#17), owner two-step sign-in (#18), policy directions (#19), CI (#20), combined preview (#15, do not
+merge). Gate statuses: `docs/LAUNCH-READINESS-PHASE2.md`.
+
 Legend: 🔧 = automated check exists · 👤 = owner action · ⚖️ = needs attorney/accountant answer (see
 `LEGAL-OPEN-QUESTIONS.md`).
 
@@ -14,13 +18,14 @@ Legend: 🔧 = automated check exists · 👤 = owner action · ⚖️ = needs a
 
 | # | Gate | Pass when | How to verify |
 | --- | --- | --- | --- |
-| G-1 | Automated checks green | `npm test`, `npm run lint` (0 errors), `npm run typecheck` (after a build), `npm run build` all pass on the exact commit being deployed | 🔧 run them; paste the summary lines |
+| G-1 | Automated checks green | The CI check "Tests, lint, types, build and safeguards" (`.github/workflows/ci.yml`, PR #20) passes on the exact commit being deployed — tests, lint (0 errors), typecheck, build, catalog check | 🔧 GitHub check on the PR |
 | G-2 | Policy consistency | `tests/legal/*` pass: no contradictory deadlines, only approved time commitments, no banned claims, links resolve | 🔧 `npx vitest run tests/legal` |
-| G-3 | Draft labels honest | Privacy/Terms show the Draft banner and `noindex` **until** G-4; Shipping/Returns show the date in `src/content/policies.ts` | 🔧 `tests/legal/rendered-policies.test.ts` |
+| G-3 | Draft labels honest | Privacy, Terms and (until its legal review) Returns show the Draft banner and `noindex` **until** G-4; Shipping shows the date in `src/content/policies.ts` | 🔧 `tests/legal/rendered-policies.test.ts`, `phase2-decisions.test.ts` |
 | G-4 | Legal review done | Attorney answers recorded for every Priority 1 question that the feature depends on; owner approves the final text; `POLICIES.<id>.status` changed and date set to the merge date | 👤⚖️ signed-off list in the PR |
 | G-5 | Owner approvals recorded | Every "owner approval needed" row in `POLICY-COMPARISON.md` is ✅ or the text is reverted | 👤 |
-| G-6 | No secrets in git | Secret scan of the deploy commit finds nothing (patterns in `MASTER-LEGAL-AUDIT.md` §6.3); `.env*` not tracked | 🔧 regex scan |
-| G-7 | Dependency audit | `npm audit --omit=dev` reports 0 high/critical | 🔧 |
+| G-6 | No secrets in git | `scripts/secret-scan.mjs` (CI) finds nothing; `.env*` not tracked; GitHub secret scanning + push protection on | 🔧 CI + 👤 GitHub setting (`docs/CI.md`) |
+| G-7 | Dependency audit | `npm audit --omit=dev --audit-level=high` passes (CI); Dependabot alerts on | 🔧 CI + 👤 |
+| G-9 | Safeguards changed on purpose | The launch PR is the only PR that changes `EXPECTED` in `scripts/safeguards-check.mjs`, and it says which switch it turns on | 🔧 CI step fails otherwise |
 | G-8 | Analytics scrubbing | Production build with analytics: Umami hook defined before the tracker; Squish Box `name` stripped; `/partners/review*` and `/checkout*` not sent | 🔧 `tests/analytics/*` + browser check (`MASTER` §6.4) |
 
 ## PA. Partner applications can open
@@ -55,7 +60,7 @@ Legend: 🔧 = automated check exists · 👤 = owner action · ⚖️ = needs a
 | P-3 | Water beads | No product contains water beads unless lab reports show compliance with **16 CFR 1250.4** (products made after March 12, 2026); no product appears on a CPSC recall | 👤 check cpsc.gov/Recalls on listing day |
 | P-4 | Warnings above the buy button | For each product with label warnings, the product page shows them in the buy box before the button; cards show "See details to buy" | 🔧 `tests/shop/disclosures.test.ts` + 👤 look at the live page |
 | P-5 | Final sale disclosed | Every mystery/blind-bag product has `final_sale_once_opened` set (true or false) | 🔧 `catalog:check` blocks otherwise |
-| P-6 | Stock is real | Physical count matches `inventory_available` on the day of listing; separate allocation (or sync) for TikTok Shop | 👤 count sheet |
+| P-6 | Stock is real | Starting count set on the production inventory page (one shared stock for the website and TikTok Shop — owner decision, no separate allocation); TikTok LIVE routine followed (`docs/INVENTORY.md`) | 👤 inventory page |
 | P-7 | Prices honest | No compare-at price without `private_compare_at_basis` | 🔧 `catalog:check` |
 | P-8 | Processing time supportable | Any `processing_business_days` other than 2 is backed by a supplier SLA or stock on hand | 👤 |
 | P-9 | Manufacturer status | Attorney answer to **Q-SAFE-1** if repacking, private-labelling or importing | ⚖️ |
@@ -68,26 +73,30 @@ Everything in `docs/STRIPE-PRODUCTION.md` ("Exactly what must happen before the 
 | --- | --- | --- | --- |
 | C-1 | Policies final | Privacy + Terms approved (G-4), including order retention (**Q-RET-1**) | 👤⚖️ |
 | C-2 | Tax | KY permit; Stripe Tax registration; a test order shows the tax line (**Q-TAX-1**) | 👤 |
-| C-3 | Checkout compliance branch merged | `claude/upbeat-hawking-aonyc6-checkout` (refund race fix, ship-by, delay notices, disputes, policy versions, Terms notice) reviewed and merged into the checkout PR | 🔧 its tests (249) pass |
+| C-3 | Checkout branches merged | PR #14 (compliance fixes), #16 (mixed-order shipping), #17 (inventory) and #18 (two-step sign-in) reviewed and merged in stack order | 🔧 CI green on each |
 | C-4 | Webhook events | Live endpoint subscribed to the 5 order events **and** `charge.dispute.created/updated/closed` | 👤 Stripe Dashboard screenshot |
 | C-5 | Reconciliation | "Check Stripe for missed orders" run daily for the first 2 weeks and after any outage | 👤 log |
-| C-6 | Payment methods | Link (and its Bank/Klarna offers) off, or the Privacy Policy updated to mention it; cards only | 👤 |
+| C-6 | Payment methods | **Decided: cards and card wallets only, Link off.** Link turned off in sandbox and live (`docs/OWNER-ACTIONS.md`); preview check V-25 passes | 👤 + 🔧 `tests/checkout/policy-config.test.ts` |
 | C-7 | Dispute evidence pack | Owner knows where to find: order record, policy versions, tracking/delivery proof, emails sent (confirmation, shipping, delay), customer messages; response within Stripe's deadline | 👤 dry run on a test dispute |
-| C-8 | Owner area second factor | MFA or equivalent protection for the owner area before real customer addresses are stored (proposal **P-SEC-1**) — or a written owner decision to accept the risk (**D-SEC-1**; MFA recommended, see `OWNER-REVIEW-FLAGS.md` §3) | 👤 |
+| C-8 | Owner area second factor | **Decided: required.** Two-step sign-in set up on production, `OWNER_MFA_REQUIRED=true` set for Production, recovery codes stored offline. (The code also requires it automatically once live checkout is on.) | 👤 + 🔧 `tests/owner/*` |
 | C-9 | Live smoke test | One real low-value purchase, confirmation + shipping emails received, refunded from the owner page, refund recorded once | 👤 |
-| C-10 | Deploy-preview sandbox run | Every check V-1 … V-12 in `docs/PREVIEW-VERIFICATION-PLAN.md` (PR #14) recorded as PASS on a deploy preview or branch deploy, sandbox keys only (**D-QA-1**) | 👤 results in the PR |
+| C-10 | Deploy-preview sandbox run | Every check V-1 … V-25 in `docs/PREVIEW-VERIFICATION-PLAN.md` recorded as PASS on PR #15's deploy preview, sandbox keys only | 👤 results on PR #15 (status: **not run** — `PREVIEW-VERIFICATION-RESULTS.md`) |
+| C-11 | Shipping rates verified | The `funksquish` origin has a verified rule from real packed weights and carrier costs; every supplier origin has a signed agreement, a verified rate card and a committed processing time (`docs/MIXED-ORDER-SHIPPING.md` §3). Until then the code refuses those items | 👤 + 🔧 `tests/shipping/*` |
+| C-12 | CI required | Branch protection on `main` requires the CI check and a pull request | 👤 GitHub setting |
 
 ## F. FunkSquish can begin fulfilling orders
 
 | # | Gate | Pass when | How to verify |
 | --- | --- | --- | --- |
 | F-1 | Ship-by discipline | Owner checks the orders list every business day; nothing shows "ship-by passed" without a delay notice or refund | 👤 |
-| F-2 | Supplier agreement | Each supplier who ships to customers has a signed agreement covering: ship-by SLA, tracking, safety documents per SKU, recall cooperation, and **use of customer data only for delivery** | 👤⚖️ |
-| F-3 | Supplier-shipped items | No supplier-shipped product is published until F-2 passes and its `processing_business_days` is set | 👤 |
-| F-4 | Packaging & returns | Return address, photo-on-arrival routine for returns, label-voiding routine for cancellations; for nonconforming returns: two emails before any disposal, **no disposal while a dispute, chargeback or fraud review is open**, disposal recorded (**D-RET-1**) | 👤 |
+| F-2 | Supplier agreement | Each supplier who ships to customers has a signed agreement covering: processing time, rate card, tracking, APO/FPO capability, safety documents per SKU, recall cooperation, returns/defects, and **use of customer data only to fulfill and support our orders** (Privacy Policy) | 👤⚖️ (code: `agreementOnFile` required) |
+| F-3 | Supplier-shipped items | No supplier-shipped product is sold until F-2 passes and its origin is entered with verified rates; its product-page processing time is never faster than the supplier's commitment | 🔧 checkout refuses otherwise |
+| F-4 | Packaging & returns | Return address; photo-on-arrival routine; label-voiding routine for cancellations. **Returns that don't qualify (owner decision): email explaining why and offering return at the buyer's cost, item kept safe, never disposed of because time passed, unclaimed items handled as the attorney advises (Q-RET-2), items tied to disputes/chargebacks/legal claims kept** | 👤⚖️ |
 | F-5 | Recall readiness | Recall/Section 15(b) runbook (`MASTER` §7.5) read; order records retained long enough to contact buyers | 👤 |
 | F-6 | Territory/oversold SLA | Orders flagged territory/oversold refunded within 1 business day | 👤 |
-| F-7 | Mixed-order shipping | Written decision **D-SHIP-1** (own stock only at launch, worst-case flat rate, cart-dependent rate, or no mixed carts) before any supplier-shipped product can share a cart with our stock | 👤 (`OWNER-REVIEW-FLAGS.md` §1) |
+| F-7 | Mixed-order shipping | **Decided: mixed orders allowed** (cart-dependent, per-package, built in #16). Passes when C-11 passes and preview checks V-13 … V-16 pass | 👤 + 🔧 |
+| F-8 | Shared inventory | Starting counts on production; the owner records TikTok sales as they happen and follows the LIVE routine; "Stock to check" on Today reviewed each business day | 👤 (`docs/INVENTORY.md`) |
+| F-9 | Signature confirmation | Advisory only ($150 owner recommendation) until carrier service and price are verified; never charged to customers or advertised without a policy change (**D-OPS-2b**) | 👤 |
 
 ## O. Ongoing operations (monthly)
 
