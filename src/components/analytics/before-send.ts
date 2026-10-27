@@ -13,6 +13,11 @@
  * It's a plain string so it can run inline before the tracker loads (Umami
  * requires the function to exist on `window` first). Tests evaluate this exact
  * string, so what's tested is what ships.
+ *
+ * The tracker is inserted by the same inline script (`umamiLoaderScript`), right
+ * after the hook is defined. Next's `beforeInteractive` strategy was NOT enough:
+ * it's dropped on pages that render a not-found boundary while the tracker
+ * still loaded (found in browser QA, 2026-10-27).
  */
 export const UMAMI_BEFORE_SEND_NAME = "fsUmamiBeforeSend";
 
@@ -55,3 +60,29 @@ export const UMAMI_BEFORE_SEND_SCRIPT = `(function () {
     return next;
   };
 })();`;
+
+export const UMAMI_SCRIPT_SRC = "https://cloud.umami.is/script.js";
+export const UMAMI_DOMAINS = "funksquish.com,www.funksquish.com";
+
+/** JSON for embedding inside an inline <script>: "<" is escaped so "</script>" can never close the tag. */
+const js = (v: string) => JSON.stringify(v).replace(/</g, "\\u003c");
+
+/** Umami website ids are UUIDs; anything else is treated as "not configured". */
+export const isUmamiWebsiteId = (v: string | undefined): v is string => !!v && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+
+/** Defines the hook, then inserts Umami's tracker — in that order, in one script. */
+export function umamiLoaderScript(websiteId: string): string {
+  return `${UMAMI_BEFORE_SEND_SCRIPT}
+(function () {
+  if (document.querySelector('script[data-fs-umami]')) return;
+  var s = document.createElement("script");
+  s.src = ${js(UMAMI_SCRIPT_SRC)};
+  s.defer = true;
+  s.setAttribute("data-fs-umami", "");
+  s.setAttribute("data-website-id", ${js(websiteId)});
+  s.setAttribute("data-domains", ${js(UMAMI_DOMAINS)});
+  s.setAttribute("data-do-not-track", "true");
+  s.setAttribute("data-before-send", ${js(UMAMI_BEFORE_SEND_NAME)});
+  document.head.appendChild(s);
+})();`;
+}

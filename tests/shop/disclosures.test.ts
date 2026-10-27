@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
+// PR #12's cart imports server-only checkout code; harmless to mock here.
+vi.mock("server-only", () => ({}));
 
 // Pretend the shop is open (external "Buy now" links), so purchase controls render live.
 vi.mock("@/lib/features", () => ({

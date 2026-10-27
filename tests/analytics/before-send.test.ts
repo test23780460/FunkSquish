@@ -75,3 +75,33 @@ describe("analytics before-send hook", () => {
     expect(send("event", { url: "::not a url::" })).not.toBe(false);
   });
 });
+
+describe("tracker loader", () => {
+  it("defines the hook before inserting the tracker, with the documented settings", async () => {
+    const { umamiLoaderScript, UMAMI_SCRIPT_SRC } = await import("@/components/analytics/before-send");
+    const appended: { attrs: Record<string, string>; src?: string; hookDefinedAtAppend: boolean }[] = [];
+    const win: Record<string, unknown> = {};
+    const doc = {
+      querySelector: () => (appended.length ? {} : null),
+      createElement: () => {
+        const el: { attrs: Record<string, string>; src?: string; defer?: boolean; setAttribute: (k: string, v: string) => void } = { attrs: {}, setAttribute(k, v) { this.attrs[k] = v; } };
+        return el;
+      },
+      head: { appendChild: (el: { attrs: Record<string, string>; src?: string }) => appended.push({ ...el, hookDefinedAtAppend: typeof win[UMAMI_BEFORE_SEND_NAME] === "function" }) },
+    };
+    const code = umamiLoaderScript('abc"</script><script>alert(1)//');
+    new Function("window", "document", code)(win, doc);
+    new Function("window", "document", code)(win, doc); // a second run doesn't add a second tracker
+    expect(appended).toHaveLength(1);
+    expect(appended[0].hookDefinedAtAppend).toBe(true);
+    expect(appended[0].src).toBe(UMAMI_SCRIPT_SRC);
+    expect(appended[0].attrs).toMatchObject({ "data-do-not-track": "true", "data-before-send": UMAMI_BEFORE_SEND_NAME, "data-domains": "funksquish.com,www.funksquish.com", "data-website-id": 'abc"</script><script>alert(1)//' });
+    expect(code).not.toContain("</script>");
+  });
+
+  it("only accepts UUID website ids", async () => {
+    const { isUmamiWebsiteId } = await import("@/components/analytics/before-send");
+    expect(isUmamiWebsiteId("00000000-0000-0000-0000-000000000000")).toBe(true);
+    for (const bad of [undefined, "", "abc", "00000000-0000-0000-0000-000000000000</script>"]) expect(isUmamiWebsiteId(bad)).toBe(false);
+  });
+});

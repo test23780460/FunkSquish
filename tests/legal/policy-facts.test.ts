@@ -63,9 +63,10 @@ describe("privacy policy matches the code", () => {
 
   it("says analytics strip URL parameters and skip private pages — and the code does", () => {
     const analytics = read("src/components/analytics/Analytics.tsx");
-    expect(analytics).toMatch(/data-before-send=\{UMAMI_BEFORE_SEND_NAME\}/);
-    expect(analytics).toMatch(/strategy="beforeInteractive"/);
-    expect(analytics).toMatch(/data-do-not-track="true"/);
+    expect(analytics).toMatch(/umamiLoaderScript\(websiteId\)/);
+    const loader = read("src/components/analytics/before-send.ts");
+    expect(loader).toMatch(/s\.setAttribute\("data-do-not-track", "true"\)/);
+    expect(loader).toMatch(/s\.setAttribute\("data-before-send"/);
     expect(privacy).toMatch(/only marketing campaign tags/);
     expect(privacy).toMatch(/private owner\s+pages and checkout pages aren&apos;t counted/);
     expect(privacy).toMatch(/don&apos;t run if your browser sends a Do Not Track signal/);
