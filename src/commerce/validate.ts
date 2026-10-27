@@ -82,6 +82,17 @@ export function validateProducts(input: unknown): Product[] {
     if (p.textures !== undefined && !(Array.isArray(p.textures) && p.textures.every((t) => TEXTURES.includes(t as string))))
       errors.push(`${at}.textures: list of ${TEXTURES.join(", ")}`);
 
+    if (p.salesTerms !== undefined) {
+      const st = p.salesTerms;
+      if (!isObj(st) || Object.keys(st).some((k) => !["finalSaleOnceOpened", "processingBusinessDays"].includes(k)))
+        errors.push(`${at}.salesTerms: only finalSaleOnceOpened and processingBusinessDays are allowed`);
+      else {
+        if (st.finalSaleOnceOpened !== undefined && typeof st.finalSaleOnceOpened !== "boolean") errors.push(`${at}.salesTerms.finalSaleOnceOpened: true or false`);
+        if (st.processingBusinessDays !== undefined && !(Number.isInteger(st.processingBusinessDays) && (st.processingBusinessDays as number) >= 1 && (st.processingBusinessDays as number) <= 30))
+          errors.push(`${at}.salesTerms.processingBusinessDays: whole number of business days, 1–30`);
+      }
+    }
+
     const specs = p.specs;
     if (!isObj(specs) || !["material", "fill", "texture", "sizeDescription"].every((k) => isNullableStr(specs[k])))
       errors.push(`${at}.specs: material, fill, texture, sizeDescription (text or null)`);

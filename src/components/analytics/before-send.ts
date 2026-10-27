@@ -1,0 +1,57 @@
+/**
+ * Umami "before send" hook (https://docs.umami.is/docs/tracker-configuration,
+ * `data-before-send`). Umami calls it with every page view and event before
+ * anything leaves the browser. It keeps analytics to what the Privacy Policy
+ * describes:
+ *
+ *  - Private owner pages and checkout pages are never recorded (their URLs can
+ *    contain application references or Stripe session ids).
+ *  - URL parameters are removed, except campaign tags (utm_*). Shared Squish Box
+ *    links carry a box name the visitor typed, which could be a child's name.
+ *  - Referrers keep only the site and path, never parameters.
+ *
+ * It's a plain string so it can run inline before the tracker loads (Umami
+ * requires the function to exist on `window` first). Tests evaluate this exact
+ * string, so what's tested is what ships.
+ */
+export const UMAMI_BEFORE_SEND_NAME = "fsUmamiBeforeSend";
+
+/** Never recorded. Prefix match on whole path segments. */
+export const ANALYTICS_EXCLUDED_PATHS = ["/partners/review", "/checkout"] as const;
+
+/** The only URL parameters analytics may keep (marketing campaign tags). */
+export const ANALYTICS_KEPT_PARAMS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"] as const;
+
+export const UMAMI_BEFORE_SEND_SCRIPT = `(function () {
+  var EXCLUDED = ${JSON.stringify(ANALYTICS_EXCLUDED_PATHS)};
+  var KEEP = ${JSON.stringify(ANALYTICS_KEPT_PARAMS)};
+  var BASE = "https://funksquish.com";
+  function parse(u) {
+    try { return new URL(u, BASE); } catch (e) { return null; }
+  }
+  function excluded(u) {
+    var x = typeof u === "string" ? parse(u) : null;
+    if (!x) return false;
+    return EXCLUDED.some(function (p) { return x.pathname === p || x.pathname.indexOf(p + "/") === 0; });
+  }
+  function clean(u, keepCampaign) {
+    if (typeof u !== "string" || u === "") return u;
+    var x = parse(u);
+    if (!x) return u.split("?")[0].split("#")[0];
+    var kept = [];
+    if (keepCampaign) {
+      x.searchParams.forEach(function (v, k) { if (KEEP.indexOf(k) !== -1) kept.push(encodeURIComponent(k) + "=" + encodeURIComponent(v)); });
+    }
+    var absolute = /^[a-z][a-z0-9+.-]*:/i.test(u);
+    return (absolute ? x.origin : "") + x.pathname + (kept.length ? "?" + kept.join("&") : "");
+  }
+  window.${UMAMI_BEFORE_SEND_NAME} = function (type, payload) {
+    if (!payload || typeof payload !== "object") return payload;
+    if (excluded(payload.url)) return false;
+    var next = {};
+    for (var k in payload) if (Object.prototype.hasOwnProperty.call(payload, k)) next[k] = payload[k];
+    next.url = clean(payload.url, true);
+    if (payload.referrer) next.referrer = clean(payload.referrer, false);
+    return next;
+  };
+})();`;

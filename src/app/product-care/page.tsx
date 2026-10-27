@@ -70,7 +70,24 @@ export default function ProductCarePage() {
           <h2 className="mt-12 font-display text-3xl font-bold text-ink">If a squishy gets damaged</h2>
           <p className="mt-3 text-lg text-ink-soft">
             Stop using it if it&apos;s torn, punctured, leaking, sticky, oily, discolored, or smells strongly of chemicals. Keep
-            the filling away from little ones and pets. If you bought it from us, <Link href="/order-help" className="font-semibold text-royal underline">let us know</Link>.
+            the filling away from little ones and pets. If you ever find tiny gel beads (&ldquo;water beads&rdquo;) inside a squishy, keep
+            them away from children — they can be dangerous if swallowed. If you bought it from us,{" "}
+            <Link href="/order-help" className="font-semibold text-royal underline">let us know</Link>, even if it&apos;s been a while since
+            delivery.
+          </p>
+
+          <h2 className="mt-12 font-display text-3xl font-bold text-ink">Recalls and safety notices</h2>
+          <p className="mt-3 text-lg text-ink-soft">
+            If we learn of a recall or safety issue affecting something we sold, we&apos;ll email the buyers using the contact details
+            on their orders and post a notice on this page. You can also check the{" "}
+            <a href="https://www.cpsc.gov/Recalls" target="_blank" rel="noopener noreferrer" className="font-semibold text-royal underline">
+              CPSC recalls list
+            </a>{" "}
+            and report a product-safety problem to the CPSC at{" "}
+            <a href="https://www.saferproducts.gov" target="_blank" rel="noopener noreferrer" className="font-semibold text-royal underline">
+              SaferProducts.gov
+            </a>
+            . There are no FunkSquish recalls — we haven&apos;t sold any products yet.
           </p>
 
           <Notice tone="sky" title="Where this guidance comes from" className="mt-12">
@@ -78,8 +95,8 @@ export default function ProductCarePage() {
             <a href={CPSC_SQUISHY_ALERT_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-royal underline">
               consumer safety alert about squishy toys
             </a>
-            . In an emergency, call 911. For burns, the CPSC advises cooling the skin under running water and getting medical
-            help for severe burns.
+            . In an emergency, call 911. For burns, the CPSC advises cooling the skin under cool running water for at least 20
+            minutes (no ice), and getting medical care for severe burns or any burn on a young child.
           </Notice>
         </Container>
       </section>

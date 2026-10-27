@@ -43,6 +43,7 @@ const errors: Record<string, string> = {
   date: "Please enter the date the request arrived (within the last year).",
   confirm: "The request number didn't match, so nothing was deleted.",
   reason: "Please write the legal reason.",
+  held: "Nothing was deleted: a matching application is on legal hold. Release the hold (after getting advice) or record a legal exception.",
 };
 
 async function Requests({ searchParams }: { searchParams: PageProps<"/partners/review/requests">["searchParams"] }) {
@@ -110,6 +111,7 @@ async function Requests({ searchParams }: { searchParams: PageProps<"/partners/r
                       {matches.map((m) => (
                         <li key={m.id}>
                           <Link href={`/partners/review/${m.id}`} className="font-semibold text-royal underline">{m.id}</Link> · {m.business} · {STAGE_LABELS[m.status]}
+                          {m.held && <span className="ml-2 rounded-full bg-grape-soft px-2 py-0.5 text-xs font-bold text-ink">Legal hold — won&apos;t be deleted</span>}
                         </li>
                       ))}
                     </ul>

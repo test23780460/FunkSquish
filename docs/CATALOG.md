@@ -54,19 +54,26 @@ While no product is `published`, the site keeps showing the illustrated preview 
 | `media` | ✅ | `src::alt::width::height`, videos add `::video::poster.jpg`; items separated by `\|`. Put files in `public/products/<slug>/` — only our own photos/videos are accepted (no links to other sites). For a squeeze video, add captions as a `.vtt` file with the same name (e.g. `squeeze.mp4` + `squeeze.vtt`); the import picks it up. |
 | `variant_sku` | ✅ | **Unique** per variant (e.g. `FS-SLUSH-STRAW`) |
 | `variant_name`, `swatch_hex` | ✅ | Color name and `#rrggbb` |
-| `price_usd`, `compare_at_usd` | ✅ | Leave empty until decided. Compare-at must be higher than price. |
+| `price_usd`, `compare_at_usd` | ✅ | Leave empty until decided. Compare-at ("was") price must be higher than price **and** backed by `private_compare_at_basis` — a price you really offered openly for a reasonably substantial period (FTC Guides Against Deceptive Pricing, 16 CFR 233.1). Never invent a "was" price. |
 | `inventory_tracked`, `inventory_available` | ✅ | `true` + real count. Unknown = empty. 0 = sold out. |
 | `weight_grams`, `length_cm`, `width_cm`, `height_cm` | ✅ | Packed unit, for shipping |
 | `external_purchase_url` | ✅ | TikTok Shop listing link (used in "external-links" mode) |
+| `final_sale_once_opened` | ✅ | `true` for mystery / blind-bag items whose opened units can't be returned for a change of mind. Shown in the buy box before purchase (the Returns Policy only allows this exclusion when it's disclosed first). Leave empty otherwise. |
+| `processing_business_days` | ✅ | Only if this product ships slower than our standard 2 business days (e.g. supplier-shipped). Whole number 1–30, shown in the buy box. You must have a reasonable basis for it (FTC Mail Order Rule). |
 | `private_cost_per_unit_usd` | 🔒 | Landed cost per unit |
 | `private_supplier_name`, `private_supplier_sku`, `private_supplier_reference` | 🔒 | |
 | `private_invoice_ref` | 🔒 | Purchase invoice number/file |
 | `private_compliance_status` | 🔒 | `missing` → `requested` → `received` → `verified` |
 | `private_cpc_file`, `private_test_report_file`, `private_test_lab`, `private_test_date`, `private_tracking_label_photo` | 🔒 | Paths/names of the documents in your private files. Date as `YYYY-MM-DD`. |
+| `private_compare_at_basis` | 🔒 | Required when `compare_at_usd` is set: where and when the item was actually offered at that price (e.g. "funksquish.com 2027-01-05 → 2027-02-20, 41 sold"). |
 | `private_notes` | 🔒 | Anything internal |
 
 🔒 columns are written only to `private/catalog-internal.json`. The public JSON is validated on every build: the build **fails** if it contains private-looking fields (cost, supplier, invoice, compliance, notes…), duplicate SKUs/slugs, or malformed data.
 
 ## Launch gate
 
-`npm run catalog:check` exits with an error if any **published** product is missing: photos, age grading, manufacturer/importer, price, weight, tracked inventory, unit cost, invoice, or a `verified` CPC + lab report + test date + tracking-label photo. Draft products show the same list as a to-do.
+`npm run catalog:check` exits with an error if any **published** product is missing: photos, age grading, manufacturer/importer, price, weight, tracked inventory, unit cost, invoice, a `verified` CPC + lab report + test date + tracking-label photo, or evidence for a compare-at price. Draft products show the same list as a to-do. It also flags likely mystery/blind-bag items without `final_sale_once_opened`, and any non-standard processing time.
+
+`npm test` separately checks the **public** catalog (`tests/catalog/published-products.test.ts`): a published product can't ship without photos, age grading, manufacturer/importer, price, weight and tracked stock, even if nobody ran `catalog:check`.
+
+**What shoppers see before buying:** label warnings, "final sale once opened" and any non-standard processing time appear in the product page's buy box, right above the buy button. Product cards for such products link to the product page instead of showing a buy button (`src/commerce/sales-terms.ts`).
