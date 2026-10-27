@@ -65,6 +65,20 @@ Built on top of this PR's head; nothing here unlocks live payments.
 | Terms notice above Stripe's Pay button (`custom_text.submit`) | Turns "by placing an order you agree" into a visible notice at the moment of purchase | `TERMS_NOTICE` |
 | Shipping email: the 7-day damage window is "ideally", not a cutoff; confirmation email promises a delay email with a refund option | Matched to the Returns and Shipping policies (PR #11) | `orders/notify.ts` |
 
+### Open review items (need an explicit owner decision before live payments)
+
+1. **One shipping charge per mixed order.** Checkout offers the same fixed `shr_…` rates whatever the cart holds
+   (`buildCheckoutSessionParams` → `shipping_options`). A cart with our stock *and* supplier-shipped items ships as two
+   packages but pays one shipping charge, so FunkSquish absorbs the second shipment's cost. Options: launch with our own
+   stock only (no mixed carts possible); price the flat rate to cover the worst case; or compute a cart-dependent rate at
+   checkout (Stripe accepts inline `shipping_rate_data`; small change, not built). The Shipping Policy only promises no
+   extra charge *after* checkout, which holds under all three.
+2. **MFA for the owner area.** Orders (names, emails, addresses) sit behind the same single passphrase as partner review
+   (rate-limited, 8-hour sessions). Recommended: a TOTP second factor before real customer data (proposal P-SEC-1 in the
+   legal audit), plus 2-step verification on Stripe, Netlify, Google and Brevo accounts.
+3. **Deploy-preview verification is not done.** Refund, delay-notice and dispute flows have automated tests only; see
+   `docs/PREVIEW-VERIFICATION-PLAN.md` for the sandbox run and its pass criteria.
+
 ## Payment methods
 
 Start with **cards only** (credit/debit, plus Apple Pay and Google Pay). Don't offer delayed methods (bank debits/ACH,
