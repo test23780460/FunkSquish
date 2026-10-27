@@ -7,6 +7,7 @@ import { PhoneLive } from "@/components/tiktok/PhoneLive";
 import { LiveSchedule } from "@/components/tiktok/LiveSchedule";
 import { ClipCard, LiveStatusPanel } from "@/components/tiktok/LiveRoom";
 import { ProductCard } from "@/components/shop/ProductCard";
+import { LiveStock } from "@/components/shop/LiveStock";
 import { listProducts } from "@/commerce/catalog";
 import { approvedLiveLinks, liveClips, liveSchedule } from "@/content/live-schedule";
 import { isTikTokVideoId } from "@/lib/live";
@@ -63,13 +64,17 @@ export default async function TikTokLivePage() {
       return [
         s.id,
         items.length > 0 ? (
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {items.map((p) => (
-              <li key={p.id}>
-                <ProductCard product={p} />
-              </li>
-            ))}
-          </ul>
+          <LiveStock products={items}>
+            {(shown) => (
+              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {shown.map((p) => (
+                  <li key={p.id}>
+                    <ProductCard product={p} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </LiveStock>
         ) : null,
       ];
     }),

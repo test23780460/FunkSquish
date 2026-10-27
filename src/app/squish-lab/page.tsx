@@ -7,6 +7,7 @@ import { PageHero } from "@/components/layout/PageHero";
 import { Container, SectionHeading } from "@/components/ui/Primitives";
 import { ButtonLink } from "@/components/ui/Button";
 import { ProductCard } from "@/components/shop/ProductCard";
+import { LiveStock } from "@/components/shop/LiveStock";
 import { SquishLab, SquishLabFromUrl } from "@/components/lab/SquishLab";
 import { TextureMeters } from "@/components/lab/TextureMeters";
 import { TextureBlob } from "@/components/illustrations/TextureBlob";
@@ -32,13 +33,17 @@ export default async function SquishLabPage() {
       return [
         t.id,
         list.length > 0 ? (
-          <ul className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
-            {list.map((p) => (
-              <li key={p.id}>
-                <ProductCard product={p} />
-              </li>
-            ))}
-          </ul>
+          <LiveStock products={list}>
+            {(shown) => (
+              <ul className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+                {shown.map((p) => (
+                  <li key={p.id}>
+                    <ProductCard product={p} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </LiveStock>
         ) : (
           <div className="flex flex-col items-center gap-4 rounded-[2rem] bg-ice-50 px-6 py-10 text-center ring-1 ring-inset ring-sky-200 sm:flex-row sm:text-left">
             <Mascot className="w-24 shrink-0" mood="sleepy" />

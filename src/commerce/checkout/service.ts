@@ -12,6 +12,7 @@ import { availableUnits, getLedger, releaseStock, reserveStock } from "../orders
 import { getLiveOrderStore, getTestOrderStore, type KvStore } from "../orders/store";
 import { snapshotFromStripeSession } from "../orders/session-snapshot";
 import { brevoMailer, notifyPaidOrder, type NotifyConfig } from "../orders/notify";
+import { checkCheckoutRateLimit } from "./rate-limit";
 import type { OrderDeps } from "../orders/fulfill";
 import { canPurchase, listProducts } from "../catalog";
 import type { Product, ProductVariant } from "../types";
@@ -195,9 +196,16 @@ async function quoteCartIn(rt: ModeRuntime, rawLines: unknown): Promise<CartQuot
   };
 }
 
-export async function quoteCart(rawLines: unknown): Promise<CartQuote> {
+/**
+ * `client` is the request's headers (null outside a web request). Requests are
+ * counted only while a checkout mode is open, so the closed shop stores nothing.
+ */
+export async function quoteCart(rawLines: unknown, client: Pick<Headers, "get"> | null = null): Promise<CartQuote> {
   const mode = activeMode();
-  const rt = mode ? await runtimeFor(mode) : null;
+  if (!mode) return { ok: false, error: "Checkout isn't open yet.", blocked: [] };
+  const limited = await checkCheckoutRateLimit("quote", client);
+  if (!limited.ok) return { ok: false, error: limited.message, blocked: [] };
+  const rt = await runtimeFor(mode);
   return rt ? quoteCartIn(rt, rawLines) : { ok: false, error: "Checkout isn't open yet.", blocked: [] };
 }
 
@@ -256,14 +264,22 @@ async function startCheckoutIn(rt: ModeRuntime, rawLines: unknown): Promise<Star
   }
 }
 
-export async function startTestCheckout(rawLines: unknown): Promise<StartCheckoutResult> {
-  const rt = await runtimeFor("test");
+async function startIn(mode: StripeMode, rawLines: unknown, client: Pick<Headers, "get"> | null): Promise<StartCheckoutResult> {
+  if (!(mode === "live" ? stripeLiveConfig() : stripeTestConfig())) return { ok: false, error: "Checkout isn't open yet." };
+  // Before anything is read, held or sent to Stripe.
+  const limited = await checkCheckoutRateLimit("start", client);
+  if (!limited.ok) return { ok: false, error: limited.message };
+  const rt = await runtimeFor(mode);
   return rt ? startCheckoutIn(rt, rawLines) : { ok: false, error: "Checkout isn't open yet." };
 }
 
-export async function startLiveCheckout(rawLines: unknown): Promise<StartCheckoutResult> {
-  const rt = await runtimeFor("live");
-  return rt ? startCheckoutIn(rt, rawLines) : { ok: false, error: "Checkout isn't open yet." };
+/** `client` is the request's headers (null outside a web request). */
+export async function startTestCheckout(rawLines: unknown, client: Pick<Headers, "get"> | null = null): Promise<StartCheckoutResult> {
+  return startIn("test", rawLines, client);
+}
+
+export async function startLiveCheckout(rawLines: unknown, client: Pick<Headers, "get"> | null = null): Promise<StartCheckoutResult> {
+  return startIn("live", rawLines, client);
 }
 
 /**

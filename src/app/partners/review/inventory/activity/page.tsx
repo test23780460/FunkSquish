@@ -7,6 +7,7 @@ import { reviewConfig } from "@/lib/partners/config";
 import { requireReviewer } from "@/lib/partners/review-auth";
 import { inventoryContext } from "@/commerce/orders/inventory-context";
 import { KIND_LABEL, recentActivity } from "@/commerce/orders/stock-admin";
+import { MAX_EXPORT_DAYS, parseExportRange } from "@/commerce/orders/stock-export";
 import { Container } from "@/components/ui/Primitives";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav } from "@/components/owner/OwnerNav";
@@ -42,6 +43,7 @@ async function Activity() {
       <Link href="/partners/review/inventory" className="text-sm font-semibold text-royal underline">← All inventory</Link>
       <h1 className="mt-2 font-display text-3xl font-bold text-ink sm:text-4xl">Inventory activity</h1>
       <p className="text-ink-soft">Every stock change in the last 14 days, newest first. {ctx.label}</p>
+      <ExportForm />
       {rows.length === 0 ? (
         <p className="mt-6 rounded-[2rem] bg-white p-8 text-center text-ink-soft ring-1 ring-inset ring-sky-200">No changes yet.</p>
       ) : (
@@ -65,5 +67,33 @@ async function Activity() {
         </ul>
       )}
     </div>
+  );
+}
+
+/** Download the full history as a spreadsheet (CSV). A plain GET form: works without JavaScript. */
+function ExportForm() {
+  const range = parseExportRange(null, null);
+  const defaults = range.ok ? range : { from: "", to: "" };
+  return (
+    <form method="get" action="/partners/review/inventory/export" className="mt-4 rounded-[2rem] bg-white p-4 ring-1 ring-inset ring-sky-200">
+      <p className="font-display font-bold text-ink">Download stock history (CSV)</p>
+      <div className="mt-3 flex flex-wrap items-end gap-3">
+        <label className="flex flex-col text-sm font-semibold text-ink">
+          From
+          <input type="date" name="from" defaultValue={defaults.from} required className="mt-1 min-h-11 rounded-xl bg-ice-50 px-3 ring-1 ring-inset ring-sky-200" />
+        </label>
+        <label className="flex flex-col text-sm font-semibold text-ink">
+          To
+          <input type="date" name="to" defaultValue={defaults.to} required className="mt-1 min-h-11 rounded-xl bg-ice-50 px-3 ring-1 ring-inset ring-sky-200" />
+        </label>
+        <button type="submit" className="min-h-11 rounded-full bg-royal px-5 font-display font-semibold text-white">
+          Download CSV
+        </button>
+      </div>
+      <p className="mt-2 text-sm text-ink-soft">
+        Up to {MAX_EXPORT_DAYS} days per file (Eastern Time dates). Stock changes only — no customer details. Stock history is kept;
+        nothing is deleted automatically until the record-keeping period is confirmed.
+      </p>
+    </form>
   );
 }

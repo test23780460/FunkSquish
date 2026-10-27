@@ -7,6 +7,7 @@ import { Container } from "@/components/ui/Primitives";
 import { StoreIcon } from "@/components/icons/Icons";
 import { SquishBoxBuilder, SquishBoxFromUrl } from "@/components/box/SquishBoxBuilder";
 import { pageMetadata } from "@/lib/seo";
+import { LiveStock } from "@/components/shop/LiveStock";
 
 export const metadata = pageMetadata({
   title: "Build Your Squish Box",
@@ -15,7 +16,7 @@ export const metadata = pageMetadata({
 });
 
 export default async function SquishBoxPage() {
-  const products = (await listProducts()).map(toProductSummary);
+  const products = await listProducts();
   return (
     <PageTransition>
       <PageHero
@@ -33,9 +34,13 @@ export default async function SquishBoxPage() {
       />
       <section className="bg-white pb-28 pt-4 sm:pb-36">
         <Container>
-          <Suspense fallback={<SquishBoxBuilder products={products} />}>
-            <SquishBoxFromUrl products={products} />
-          </Suspense>
+          <LiveStock products={products}>
+            {(shown) => (
+              <Suspense fallback={<SquishBoxBuilder products={shown.map(toProductSummary)} />}>
+                <SquishBoxFromUrl products={shown.map(toProductSummary)} />
+              </Suspense>
+            )}
+          </LiveStock>
         </Container>
       </section>
     </PageTransition>

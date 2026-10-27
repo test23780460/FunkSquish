@@ -14,6 +14,11 @@ export interface Versioned<T> {
 export interface KvStore {
   readonly durable: boolean;
   get<T>(key: string): Promise<Versioned<T> | null>;
+  /**
+   * Optional faster read for a key just returned by `list` (skips the existence
+   * check `get` does on Netlify). Callers fall back to `get` when it's missing.
+   */
+  getListed?<T>(key: string): Promise<Versioned<T> | null>;
   /** Writes only if the key doesn't exist yet. */
   create<T>(key: string, value: T): Promise<boolean>;
   /** Writes only if the stored etag still matches. */
@@ -53,6 +58,9 @@ export class MemoryKvStore implements KvStore {
   async get<T>(key: string) {
     const e = this.data.get(key);
     return e ? { value: JSON.parse(e.json) as T, etag: String(e.version) } : null;
+  }
+  async getListed<T>(key: string) {
+    return this.get<T>(key);
   }
   async create<T>(key: string, value: T) {
     if (this.data.has(key)) return false;
@@ -118,6 +126,11 @@ export async function createBlobsKvStore(name: string): Promise<KvStore> {
       // "not found" (seen on the PR #10 preview), so check it exists first (fast).
       const { blobs } = await store.list({ prefix: key });
       if (!blobs.some((b) => b.key === key)) return null;
+      const r = await store.getWithMetadata(key, { type: "json" });
+      if (!r || !r.etag) return null;
+      return { value: r.data as T, etag: r.etag };
+    },
+    async getListed<T>(key: string) {
       const r = await store.getWithMetadata(key, { type: "json" });
       if (!r || !r.etag) return null;
       return { value: r.data as T, etag: r.etag };
