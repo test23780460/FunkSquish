@@ -1,3 +1,9 @@
+> **Superseded (2026-10-27):** this first-pass review is kept for history. The full audit, which re-checked every item
+> below, is in `docs/MASTER-LEGAL-AUDIT.md`, with scenarios in `docs/ADVERSARIAL-SCENARIOS.md`, wording changes in
+> `docs/POLICY-COMPARISON.md`, attorney/accountant questions in `docs/LEGAL-OPEN-QUESTIONS.md`, launch gates in
+> `docs/COMPLIANCE-LAUNCH-GATES.md` and results in `docs/FINAL-AUDIT-SUMMARY.md`. Note: item 21's "receive and check"
+> refund wording changed an owner-approved term and has been restored to "after we receive the return".
+
 # Adversarial policy review — 2026-10-27
 
 **Draft findings; not legal advice.** Reviewed the proposed PR #11 legal text against known Stripe checkout, Netlify storage, partner-application flows, refunds, shipping and FTC guidance. Changes on this branch remain unmerged. An attorney should review all policy changes before final approval.

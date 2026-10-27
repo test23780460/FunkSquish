@@ -101,6 +101,9 @@ docs/
   LAUNCH-RUNBOOK.md    Turning each feature on safely
   OWNER-DECISIONS.md   Policy decisions awaiting approval (shipping, returns, business details)
   BACKUP-RECOVERY.md   Encrypted backups of private/ and how to restore them
+  FINAL-AUDIT-SUMMARY.md     Legal & compliance audit (2026-10-27): start here; links to
+                             MASTER-LEGAL-AUDIT, ADVERSARIAL-SCENARIOS, POLICY-COMPARISON,
+                             LEGAL-OPEN-QUESTIONS and COMPLIANCE-LAUNCH-GATES
 ```
 
 ## Design system (quick reference)
