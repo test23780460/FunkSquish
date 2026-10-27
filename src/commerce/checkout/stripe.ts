@@ -2,6 +2,20 @@ import Stripe from "stripe";
 import { isLiveKey, type StripeLiveConfig, type StripeTestConfig } from "./environment";
 import type { CheckedLine } from "./validate-cart";
 import { SHIPPING_AREA_NOTE } from "../orders/shipping-restrictions";
+import { POLICIES } from "@/content/policies";
+
+/**
+ * Which policy versions the shopper was shown, stored on the session and then
+ * the order, so a dispute can be answered with the terms that applied at the
+ * time (Terms: "Which policy version applies").
+ */
+export function policyVersionsTag(): string {
+  return `terms=${POLICIES.terms.version};shipping=${POLICIES.shipping.version};returns=${POLICIES.returns.version};privacy=${POLICIES.privacy.version}`;
+}
+
+/** Shown above Stripe's Pay button, so agreement to the Terms is an informed action rather than an assumption. */
+export const TERMS_NOTICE =
+  "By paying, you agree to the FunkSquish Terms of Service, Shipping Policy and Returns & Refunds Policy: funksquish.com/terms, funksquish.com/shipping and funksquish.com/returns.";
 
 /**
  * Stripe helpers (server-only) for both modes. Test and live share the same
@@ -70,7 +84,7 @@ export function buildCheckoutSessionParams(input: {
     // A filter on what Stripe would otherwise offer: only cards (and card wallets) get through.
     allowed_payment_method_types: PAYMENT_METHOD_TYPES,
     client_reference_id: checkoutId,
-    metadata: { checkout_id: checkoutId, funksquish_mode: mode },
+    metadata: { checkout_id: checkoutId, funksquish_mode: mode, policy_versions: policyVersionsTag() },
     payment_intent_data: { metadata: { checkout_id: checkoutId, funksquish_mode: mode } },
     line_items: lines.map((line) => ({
       quantity: line.quantity,
@@ -92,7 +106,7 @@ export function buildCheckoutSessionParams(input: {
     // as states and hosted Checkout can't hide them, so shoppers see a note here
     // and any territory order is flagged for refund (see shipping-restrictions.ts).
     shipping_address_collection: { allowed_countries: ["US"] },
-    custom_text: { shipping_address: { message: SHIPPING_AREA_NOTE } },
+    custom_text: { shipping_address: { message: SHIPPING_AREA_NOTE }, submit: { message: TERMS_NOTICE } },
     shipping_options: config.shippingRateIds.map((id) => ({ shipping_rate: id })),
     automatic_tax: { enabled: config.automaticTax },
     expires_at: expiresAt,

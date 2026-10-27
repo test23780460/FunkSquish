@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { requireReviewer } from "@/lib/partners/review-auth";
 import { siteOrigin } from "@/lib/partners/submit";
 import { activeMode, notifyConfigFor, orderDeps } from "@/commerce/checkout/service";
-import { cancelOrder, getOrder, markShipped, reconcileRecentSessions, refundOrder } from "@/commerce/orders/admin";
+import { cancelOrder, getOrder, markShipped, reconcileRecentSessions, refundOrder, sendDelayNotice, setShipBy } from "@/commerce/orders/admin";
 import { notifyPaidOrder, notifyShipped } from "@/commerce/orders/notify";
 
 /*
@@ -111,4 +111,25 @@ export async function reconcileAction() {
     q = `error=${msg("Couldn't reach Stripe. Try again in a minute.")}`;
   }
   redirect(`${BASE}?${q}`);
+}
+
+/** Supplier packages: record the ship-by date from the product's stated processing time. */
+export async function setShipByAction(fd: FormData) {
+  const { deps } = await context();
+  const sessionId = sessionFrom(fd);
+  if (!sessionId) redirect(BASE);
+  const r = await setShipBy(deps.store, sessionId, String(fd.get("group") ?? ""), String(fd.get("shipBy") ?? ""));
+  redirect(detail(sessionId, r.ok ? "saved=ship-by" : `error=${msg(r.error)}`));
+}
+
+/** FTC Mail Order Rule delay notice for one package (new date, or none if unknown). */
+export async function delayNoticeAction(fd: FormData) {
+  const { deps, notify } = await context();
+  const sessionId = sessionFrom(fd);
+  if (!sessionId) redirect(BASE);
+  const unknown = fd.get("unknown") === "yes";
+  const newShipBy = unknown ? null : String(fd.get("newShipBy") ?? "");
+  const r = await sendDelayNotice(deps.store, sessionId, String(fd.get("group") ?? ""), newShipBy, notify);
+  if (r.ok) console.info(`[orders] ${r.order.id} delay notice recorded`);
+  redirect(detail(sessionId, r.ok ? "saved=delay" : `error=${msg(r.error)}`));
 }

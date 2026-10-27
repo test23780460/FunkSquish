@@ -19,6 +19,8 @@ export interface SessionSnapshot {
   customer: Customer;
   shippingAddress: ShippingAddress | null;
   shippingRateId: string | null;
+  /** Policy versions the checkout showed (session metadata "policy_versions"), if any. */
+  policyVersions?: string | null;
   lineItems: {
     variantId: string;
     productId: string;
@@ -81,6 +83,7 @@ export function snapshotFromStripeSession(session: Stripe.Checkout.Session): Ses
         }
       : null,
     shippingRateId: idOf(session.shipping_cost?.shipping_rate),
+    policyVersions: typeof session.metadata?.policy_versions === "string" ? session.metadata.policy_versions.slice(0, 200) : null,
     lineItems: items.map((item) => {
       const product = item.price?.product;
       const meta = (product && typeof product === "object" && "metadata" in product ? product.metadata : {}) as Record<string, string>;

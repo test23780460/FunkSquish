@@ -48,7 +48,7 @@ Checkout Session settings: `mode=payment`, U.S. shipping address required (`allo
      `STRIPE_TEST_CHECKOUT_ENABLED=true`, `STRIPE_TEST_SECRET_KEY=…`, `STRIPE_TEST_SHIPPING_RATE_IDS=shr_…`
    - **Netlify:** Environment variables → add each with **Deploy Previews only** (Production left empty); tick **Contains secret values** for the key.
 5. **Webhooks (local):** install the Stripe CLI (`npm install -g @stripe/cli`), log in with `stripe login` and authorize **only the sandbox** (done Oct 24 as project `funksquish`), then run
-   `stripe listen --forward-to localhost:3000/api/stripe/test-webhook --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired,charge.refunded`
+   `stripe listen --forward-to localhost:3000/api/stripe/test-webhook --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired,charge.refunded,charge.dispute.created,charge.dispute.updated,charge.dispute.closed`
    and put the printed `whsec_…` in `.env.local` as `STRIPE_TEST_WEBHOOK_SECRET`.
 6. **Webhooks (previews):** Netlify protects Deploy Previews with team login, so **Stripe can't reach a preview's webhook** (it gets 401). That's a good default — keep it. On previews the return page still records paid orders; test expiry/refund/async webhooks locally with the CLI.
 

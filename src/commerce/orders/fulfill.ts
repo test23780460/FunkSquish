@@ -3,6 +3,7 @@ import { commitStock, getReservation, releaseStock } from "./inventory";
 import { updateWithRetry, type KvStore } from "./store";
 import type { SessionSnapshot } from "./session-snapshot";
 import { isAllowedDestination } from "./shipping-restrictions";
+import { shipByFor } from "./ship-by";
 import type { FulfillmentGroup, Order, OrderEventRecord } from "./types";
 
 /**
@@ -41,7 +42,8 @@ export function orderNumberFor(sessionId: string, at: Date, mode: "test" | "live
   return `FS-${mode === "test" ? "T-" : ""}${day}-${code}`;
 }
 
-function fulfillmentGroups(snapshot: SessionSnapshot): FulfillmentGroup[] {
+/** Our own stock gets the Shipping Policy's 2-business-day ship-by date from payment; supplier packages are set by the owner. */
+function fulfillmentGroups(snapshot: SessionSnapshot, paidAt: Date | null): FulfillmentGroup[] {
   const groups: FulfillmentGroup[] = [];
   for (const source of ["in_house", "supplier"] as const) {
     const variantIds = snapshot.lineItems.filter((l) => l.fulfillmentSource === source).map((l) => l.variantId);
@@ -58,6 +60,8 @@ function fulfillmentGroups(snapshot: SessionSnapshot): FulfillmentGroup[] {
       trackingUrl: null,
       shippedAt: null,
       deliveredAt: null,
+      shipBy: source === "in_house" && paidAt ? shipByFor(paidAt) : null,
+      delayNotices: [],
     });
   }
   return groups;
@@ -75,7 +79,7 @@ function newOrder(snapshot: SessionSnapshot, paid: boolean, at: Date, trigger: O
     paymentStatus: paid ? "paid" : "processing",
     amounts: { currency: "usd", ...snapshot.amounts },
     lineItems: snapshot.lineItems.map((l) => ({ ...l })),
-    fulfillments: fulfillmentGroups(snapshot),
+    fulfillments: fulfillmentGroups(snapshot, paid ? at : null),
     customer: snapshot.customer,
     shippingAddress: snapshot.shippingAddress,
     shippingRateId: snapshot.shippingRateId,
@@ -86,6 +90,7 @@ function newOrder(snapshot: SessionSnapshot, paid: boolean, at: Date, trigger: O
     createdAt: iso,
     updatedAt: iso,
     history: [trigger],
+    policyVersions: snapshot.policyVersions ?? null,
   };
 }
 
@@ -118,6 +123,8 @@ export async function fulfillCheckoutSession(sessionId: string, deps: OrderDeps,
     if (paid && current.paymentStatus === "processing") {
       current.paymentStatus = "paid";
       current.status = "open";
+      // The ship-by clock starts when payment actually arrives.
+      for (const g of current.fulfillments) if (g.source === "in_house" && !g.shipBy) g.shipBy = shipByFor(now);
       current.amounts = { currency: "usd", ...snapshot.amounts };
       current.updatedAt = now.toISOString();
       addHistory(current, trigger);
@@ -210,4 +217,40 @@ export async function recordRefund(
 
 export async function getOrderBySession(store: KvStore, sessionId: string): Promise<Order | null> {
   return (await store.get<Order>(orderKey(sessionId)))?.value ?? null;
+}
+
+const OPEN_DISPUTE = new Set(["warning_needs_response", "warning_under_review", "needs_response", "under_review"]);
+export const isOpenDispute = (status: string) => OPEN_DISPUTE.has(status);
+
+/**
+ * Record a card dispute reported by Stripe (charge.dispute.created / updated /
+ * closed). Keeps the order and its evidence trail in one place so the owner
+ * can answer before Stripe's deadline (usually 7–21 days). Money movements are
+ * Stripe's; this never refunds or changes stock.
+ */
+export async function recordDispute(
+  paymentIntentId: string,
+  dispute: { id: string; amount: number; reason: string | null; status: string; evidenceDueBy: string | null },
+  deps: OrderDeps,
+  source: string,
+  type: string,
+): Promise<boolean> {
+  const link = await deps.store.get<{ sessionId: string }>(piKey(paymentIntentId));
+  if (!link) return false;
+  const now = deps.now().toISOString();
+  await updateWithRetry<Order>(deps.store, orderKey(link.value.sessionId), (current) => {
+    if (!current) return undefined;
+    const disputes = (current.disputes ??= []);
+    const existing = disputes.find((d) => d.stripeDisputeId === dispute.id);
+    if (existing && existing.status === dispute.status && existing.evidenceDueBy === dispute.evidenceDueBy) return undefined;
+    if (existing) Object.assign(existing, { status: dispute.status, evidenceDueBy: dispute.evidenceDueBy, amount: dispute.amount, updatedAt: now });
+    else disputes.push({ stripeDisputeId: dispute.id, amount: dispute.amount, reason: dispute.reason, status: dispute.status, evidenceDueBy: dispute.evidenceDueBy, createdAt: now, updatedAt: now });
+    const open = disputes.some((d) => isOpenDispute(d.status));
+    current.flags = current.flags.filter((f) => f !== "disputed");
+    if (open) current.flags.push("disputed");
+    current.updatedAt = now;
+    addHistory(current, { source, type: `${type}:${dispute.status}`, at: now });
+    return current;
+  });
+  return true;
 }
