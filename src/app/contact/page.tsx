@@ -77,7 +77,11 @@ export default function ContactPage() {
           </div>
 
           <p className="text-center text-ink-soft md:col-span-2">
-            Looking for quick answers? Check the{" "}
+            Supplier, wholesale or collab idea? See{" "}
+            <Link href="/partners" className="font-semibold text-royal underline decoration-2 underline-offset-4">
+              Become a partner
+            </Link>
+            . Looking for quick answers? Check the{" "}
             <Link href="/faq" className="font-semibold text-royal underline decoration-2 underline-offset-4">
               FAQ
             </Link>

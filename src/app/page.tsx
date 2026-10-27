@@ -4,6 +4,7 @@ import { PageTransition } from "@/components/layout/PageTransition";
 import { Hero } from "@/components/home/Hero";
 import { Collections } from "@/components/home/Collections";
 import { WhyFunkSquish } from "@/components/home/WhyFunkSquish";
+import { SquishLabTeaser } from "@/components/home/SquishLabTeaser";
 import { TikTokLiveSection } from "@/components/home/TikTokLiveSection";
 import { LaunchSection } from "@/components/home/LaunchSection";
 
@@ -15,6 +16,7 @@ export default function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(siteJsonLd())} />
       <Hero />
       <Collections />
+      <SquishLabTeaser />
       <WhyFunkSquish />
       <TikTokLiveSection />
       <LaunchSection />

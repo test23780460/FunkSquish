@@ -50,7 +50,8 @@ While no product is `published`, the site keeps showing the illustrated preview 
 | `care_instructions` | ✅ | Product-specific care, `\|`-separated |
 | `manufacturer_or_importer`, `country_of_origin` | ✅ | From the label |
 | `material`, `fill`, `texture`, `size_description` | ✅ | Leave empty if not confirmed |
-| `media` | ✅ | `src::alt::width::height`, videos add `::video::poster.jpg`; items separated by `\|`. Put files in `public/products/<slug>/`. |
+| `texture_types` | ✅ | Texture styles confirmed with a real sample, separated by `\|`: `soft`, `slow-rise`, `jelly`, `crunchy`, `buttery`. Shown on the product page and in the Squish Lab. Leave empty if not confirmed. |
+| `media` | ✅ | `src::alt::width::height`, videos add `::video::poster.jpg`; items separated by `\|`. Put files in `public/products/<slug>/` — only our own photos/videos are accepted (no links to other sites). For a squeeze video, add captions as a `.vtt` file with the same name (e.g. `squeeze.mp4` + `squeeze.vtt`); the import picks it up. |
 | `variant_sku` | ✅ | **Unique** per variant (e.g. `FS-SLUSH-STRAW`) |
 | `variant_name`, `swatch_hex` | ✅ | Color name and `#rrggbb` |
 | `price_usd`, `compare_at_usd` | ✅ | Leave empty until decided. Compare-at must be higher than price. |

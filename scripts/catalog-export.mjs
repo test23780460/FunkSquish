@@ -31,6 +31,7 @@ const rows = products.flatMap((p) =>
       material: p.specs.material,
       fill: p.specs.fill,
       texture: p.specs.texture,
+      texture_types: join(p.textures ?? []),
       size_description: p.specs.sizeDescription,
       media: p.media
         .map((m) => [m.src, m.alt, m.width, m.height, m.type === "video" ? "video" : "", m.poster ?? ""].join("::").replace(/(::)+$/, ""))

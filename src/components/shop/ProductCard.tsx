@@ -6,6 +6,7 @@ import { availabilityLabel, canPurchase, formatMoney, getAvailability, startingP
 import { ProductArt } from "@/components/illustrations/ProductArt";
 import { Badge } from "@/components/ui/Primitives";
 import { PurchaseButton } from "./PurchaseButton";
+import { WishlistButton } from "@/components/wishlist/WishlistButton";
 import { themeClasses } from "@/components/theme";
 import { cn } from "@/lib/cn";
 
@@ -46,6 +47,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
         <Badge tone={badgeTone} className="absolute left-2 top-2 px-2 text-[0.7rem] sm:left-3 sm:top-3 sm:px-3 sm:text-xs">
           {availabilityLabel[availability]}
         </Badge>
+        <WishlistButton slug={product.slug} name={product.name} className="absolute right-2 top-2 size-9 sm:right-3 sm:top-3 sm:size-10" />
       </div>
 
       {/* body */}

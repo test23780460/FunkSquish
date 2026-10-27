@@ -12,6 +12,12 @@ import { ArrowLeftIcon, SparklesIcon } from "@/components/icons/Icons";
 import { themeClasses } from "@/components/theme";
 import { Wave } from "@/components/decor/Decor";
 import { jsonLdScript, pageMetadata, productJsonLd } from "@/lib/seo";
+import { getTexture } from "@/content/textures";
+import { WishlistButton } from "@/components/wishlist/WishlistButton";
+import { ShareButton } from "@/components/shop/ShareButton";
+import { ProductFacts } from "@/components/shop/ProductFacts";
+import { DropAlertForm } from "@/components/drops/DropAlertForm";
+import { dropAlertsAvailable } from "@/app/actions/drop-alerts";
 
 export async function generateStaticParams() {
   const products = await listProducts();
@@ -72,6 +78,8 @@ async function ProductContent({ slug }: { slug: string }) {
   const category = getCategory(product.category);
   const theme = category ? themeClasses[category.theme] : themeClasses.berry;
   const availability = getAvailability(product);
+  const productTextures = (product.textures ?? []).flatMap((id) => getTexture(id) ?? []);
+  const alertsOn = await dropAlertsAvailable();
 
   // Recommended: same collection first, then fill from other collections.
   const others = (await listProducts()).filter((p) => p.id !== product.id);
@@ -109,15 +117,40 @@ async function ProductContent({ slug }: { slug: string }) {
                   {product.name}
                 </h1>
                 <p className="mt-4 text-lg leading-relaxed text-ink-soft">{product.description}</p>
+                {productTextures.length > 0 && (
+                  <div className="mt-5 flex flex-wrap items-center gap-2">
+                    <span className="font-display font-semibold text-ink">{preview ? "Planned texture:" : "Texture:"}</span>
+                    {productTextures.map((t) => (
+                      <Link
+                        key={t.id}
+                        href={`/squish-lab?texture=${t.id}`}
+                        className={`inline-flex min-h-10 items-center gap-1.5 rounded-full px-3.5 font-display font-semibold text-ink ring-1 ring-inset ${t.tone.soft} ${t.tone.ring} hover:-translate-y-0.5 transition-transform`}
+                      >
+                        {t.name}
+                        <span className="text-sm font-semibold text-royal">· try it in the Squish Lab</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-5 flex flex-wrap gap-2.5">
+                  <WishlistButton slug={product.slug} name={product.name} look="pill" />
+                  <ShareButton title={`${product.name} · FunkSquish`} path={`/shop/${product.slug}`} />
+                </div>
               </>
             }
             footer={
-              preview && (
-                <Notice tone="lemon" title="Sample design" icon={<SparklesIcon className="size-6" />} className="mt-6">
-                  This page shows how product pages will look at launch. The design, colors, and details may change once we
-                  have real squishies in hand.
-                </Notice>
-              )
+              <>
+                {!["in-stock", "low-stock"].includes(availability) && (
+                  <DropAlertForm enabled={alertsOn} productName={product.name} className="mt-6" />
+                )}
+                <ProductFacts product={product} className="mt-6" />
+                {preview && (
+                  <Notice tone="lemon" title="Sample design" icon={<SparklesIcon className="size-6" />} className="mt-4">
+                    This page shows how product pages will look at launch. The design, colors, and details may change once we
+                    have real squishies in hand.
+                  </Notice>
+                )}
+              </>
             }
           />
         </Container>

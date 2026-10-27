@@ -29,7 +29,11 @@ function media(cell, slug) {
   return list(cell).map((item) => {
     const [src, alt, width, height, kind, poster] = item.split("::").map((s) => s?.trim());
     if (!src || !alt || !width || !height) throw new Error(`${slug}: media item "${item}" needs src::alt::width::height`);
-    return { type: kind === "video" ? "video" : "image", src, alt, width: Number(width), height: Number(height), ...(poster ? { poster } : {}) };
+    const type = kind === "video" ? "video" : "image";
+    // Captions: a .vtt file next to the video with the same name (e.g. squeeze.mp4 -> squeeze.vtt).
+    const vtt = type === "video" ? src.replace(/\.[a-z0-9]+$/i, ".vtt") : null;
+    const captions = vtt && fs.existsSync(path.join(ROOT, "public", vtt)) ? vtt : null;
+    return { type, src, alt, width: Number(width), height: Number(height), ...(poster ? { poster } : {}), ...(captions ? { captions } : {}) };
   });
 }
 
@@ -64,6 +68,7 @@ rows.forEach((r, i) => {
           countryOfOrigin: textOrNull(r.country_of_origin),
         },
         tags: list(r.tags),
+        textures: list(r.texture_types ?? ""),
         featuredRank: numOrNull(r.featured_rank) ?? 100,
         createdAt: new Date().toISOString().slice(0, 10),
       });

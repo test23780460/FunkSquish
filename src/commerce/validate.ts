@@ -10,6 +10,9 @@ import type { Product } from "./types";
 const CATEGORIES = ["fruity-slushies", "jelly-squishies", "crunchy-squishies", "cute-collectibles"];
 const PUBLICATION = ["draft", "preview", "published", "archived"];
 const ART = ["slushie", "jelly", "crunchy", "capsule"];
+const TEXTURES = ["soft", "slow-rise", "jelly", "crunchy", "buttery"];
+/** Real media must be our own files under /public/products/ (no hotlinked or copied images). */
+const MEDIA_SRC = /^\/products\/[a-z0-9-]+\/[\w.-]+$/i;
 
 /** Keys that indicate private data. They must never appear in public JSON. */
 const FORBIDDEN_KEY = /(cost|supplier|vendor|internal|note|margin|invoice|wholesale|compliance|certificate|purchase_?order)/i;
@@ -68,7 +71,16 @@ export function validateProducts(input: unknown): Product[] {
         if (!isObj(m) || !["image", "video"].includes(m.type as string) || !isStr(m.src) || !isStr(m.alt) || !m.alt.trim())
           errors.push(`${at}.media[${j}]: needs type (image|video), src and descriptive alt text`);
         else if (!(typeof m.width === "number" && typeof m.height === "number")) errors.push(`${at}.media[${j}]: width and height required`);
+        else {
+          if (!MEDIA_SRC.test(m.src as string)) errors.push(`${at}.media[${j}].src: must be a file under /products/<slug>/`);
+          if (m.poster !== undefined && !(isStr(m.poster) && MEDIA_SRC.test(m.poster))) errors.push(`${at}.media[${j}].poster: must be a file under /products/<slug>/`);
+          if (m.captions !== undefined && !(isStr(m.captions) && MEDIA_SRC.test(m.captions) && m.captions.endsWith(".vtt")))
+            errors.push(`${at}.media[${j}].captions: must be a .vtt file under /products/<slug>/`);
+        }
       });
+
+    if (p.textures !== undefined && !(Array.isArray(p.textures) && p.textures.every((t) => TEXTURES.includes(t as string))))
+      errors.push(`${at}.textures: list of ${TEXTURES.join(", ")}`);
 
     const specs = p.specs;
     if (!isObj(specs) || !["material", "fill", "texture", "sizeDescription"].every((k) => isNullableStr(specs[k])))

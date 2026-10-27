@@ -31,11 +31,31 @@ export function ProductGallery({
   return (
     <div className="lg:sticky lg:top-28 lg:self-start">
       <div className={cn("relative aspect-square overflow-hidden rounded-[2.5rem] ring-1 ring-inset ring-sky-200", themeSoft)}>
+        {current?.type === "video" ? (
+          <>
+            {/* Squeeze videos play right here, with controls; never autoplay. */}
+            <video
+              key={current.src}
+              src={current.src}
+              poster={current.poster}
+              controls
+              playsInline
+              preload="metadata"
+              aria-label={current.alt}
+              className="absolute inset-0 h-full w-full bg-ink object-cover"
+            >
+              {current.captions && <track kind="captions" src={current.captions} srcLang="en" label="English" default />}
+            </video>
+            <span className="pointer-events-none absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 font-display text-xs font-semibold text-ink ring-1 ring-inset ring-sky-200">
+              Squeeze video
+            </span>
+          </>
+        ) : (
         <button
           type="button"
           onClick={() => setViewerOpen(true)}
           className="group absolute inset-0 grid cursor-zoom-in place-items-center"
-          aria-label={`Enlarge ${isIllustration ? "illustration" : current?.type === "video" ? "video" : "photo"} of ${product.name}`}
+          aria-label={`Enlarge ${isIllustration ? "illustration" : "photo"} of ${product.name}`}
         >
           <span aria-hidden="true" className="absolute inset-0 dots opacity-50" />
           {isIllustration ? (
@@ -50,12 +70,6 @@ export function ProductGallery({
                 className="relative h-[66%] w-auto animate-rise drop-shadow-[0_24px_24px_rgba(19,53,122,0.22)]"
               />
             </>
-          ) : current?.type === "video" ? (
-            current.poster ? (
-              <Image src={current.poster} alt={current.alt} fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" />
-            ) : (
-              <span className="font-display text-lg font-semibold text-ink">▶ Play video</span>
-            )
           ) : current ? (
             <Image src={current.src} alt={current.alt} fill preload sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" />
           ) : null}
@@ -64,6 +78,7 @@ export function ProductGallery({
             Enlarge
           </span>
         </button>
+        )}
         {isIllustration && (
           <>
             <Bubble size={36} className="left-[10%] top-[12%]" />
@@ -89,7 +104,11 @@ export function ProductGallery({
                   i === index ? "ring-royal" : "ring-sky-200 hover:ring-sky-300",
                 )}
               >
-                <Image src={m.type === "video" ? (m.poster ?? m.src) : m.src} alt="" fill sizes="80px" className="object-cover" />
+                {m.type === "video" && !m.poster ? (
+                  <span className="absolute inset-0 bg-ink" />
+                ) : (
+                  <Image src={m.type === "video" ? (m.poster as string) : m.src} alt="" fill sizes="80px" className="object-cover" />
+                )}
                 {m.type === "video" && <span className="absolute inset-0 grid place-items-center bg-ink/30 text-white">▶</span>}
               </button>
             </li>
@@ -182,7 +201,9 @@ function Viewer({
             </div>
           ) : item.type === "video" ? (
             // Add captions for videos with speech (a .vtt <track>) when real videos are uploaded.
-            <video key={item.src} src={item.src} poster={item.poster} controls playsInline className="h-full w-full object-contain" />
+            <video key={item.src} src={item.src} poster={item.poster} controls playsInline preload="metadata" aria-label={item.alt} className="h-full w-full object-contain">
+              {item.captions && <track kind="captions" src={item.captions} srcLang="en" label="English" default />}
+            </video>
           ) : (
             <button
               type="button"

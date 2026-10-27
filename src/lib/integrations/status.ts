@@ -1,5 +1,6 @@
 import { features } from "@/lib/features";
-import { brevoConfigured } from "@/lib/newsletter/brevo";
+import { brevoConfigured, dropAlertsConfigured } from "@/lib/newsletter/brevo";
+import { partnerSetup } from "@/lib/partners/config";
 
 /**
  * Single source of truth for which third-party integrations are ACTIVE in
@@ -22,6 +23,16 @@ if (process.env.NEXT_PHASE === "phase-production-build" && !(globalThis as { __f
 /** Email sign-ups: Brevo configured AND switched on (code switch or per-context env var). */
 export function newsletterActive() {
   return brevoConfigured() && (features.newsletter || process.env.NEWSLETTER_ENABLED === "true");
+}
+
+/** Drop & restock alerts: separate Brevo list configured AND switched on. */
+export function dropAlertsActive() {
+  return dropAlertsConfigured() && (features.dropAlerts || process.env.DROP_ALERTS_ENABLED === "true");
+}
+
+/** Partner applications: storage, notification and review login all configured AND switched on. */
+export function partnerApplicationsActive() {
+  return partnerSetup().ready;
 }
 
 /** Analytics: Umami site id present AND this is the production build. */

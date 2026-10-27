@@ -22,10 +22,51 @@ export type SubscribeOutcome = "confirmation-sent" | "failed";
 
 export async function subscribeWithDoubleOptIn(email: string): Promise<SubscribeOutcome> {
   if (!brevoConfigured()) return "failed";
-  const listId = Number(process.env.BREVO_LIST_ID);
-  const templateId = Number(process.env.BREVO_DOI_TEMPLATE_ID);
-  const redirectionUrl = process.env.NEWSLETTER_CONFIRMED_URL ?? "https://funksquish.com/newsletter/confirmed";
+  return doubleOptIn({
+    email,
+    listId: Number(process.env.BREVO_LIST_ID),
+    templateId: Number(process.env.BREVO_DOI_TEMPLATE_ID),
+    redirectionUrl: process.env.NEWSLETTER_CONFIRMED_URL ?? "https://funksquish.com/newsletter/confirmed",
+    logTag: "newsletter",
+  });
+}
 
+/**
+ * New-drop & restock alerts: a SEPARATE Brevo list with its own confirmation
+ * email, so it never touches the launch newsletter list.
+ *   BREVO_DROPS_LIST_ID           numeric id of the "Drop & restock alerts" list
+ *   BREVO_DROPS_DOI_TEMPLATE_ID   double opt-in template written for drop alerts
+ * Optional: DROP_ALERTS_CONFIRMED_URL (default /drops/confirmed)
+ */
+export function dropAlertsConfigured() {
+  return !!(process.env.BREVO_API_KEY && process.env.BREVO_DROPS_LIST_ID && process.env.BREVO_DROPS_DOI_TEMPLATE_ID);
+}
+
+export async function subscribeToDropAlerts(email: string): Promise<SubscribeOutcome> {
+  if (!dropAlertsConfigured()) return "failed";
+  return doubleOptIn({
+    email,
+    listId: Number(process.env.BREVO_DROPS_LIST_ID),
+    templateId: Number(process.env.BREVO_DROPS_DOI_TEMPLATE_ID),
+    redirectionUrl: process.env.DROP_ALERTS_CONFIRMED_URL ?? "https://funksquish.com/drops/confirmed",
+    logTag: "drop-alerts",
+  });
+}
+
+async function doubleOptIn({
+  email,
+  listId,
+  templateId,
+  redirectionUrl,
+  logTag,
+}: {
+  email: string;
+  listId: number;
+  templateId: number;
+  redirectionUrl: string;
+  logTag: string;
+}): Promise<SubscribeOutcome> {
+  if (!Number.isInteger(listId) || !Number.isInteger(templateId)) return "failed";
   const res = await fetch("https://api.brevo.com/v3/contacts/doubleOptinConfirmation", {
     method: "POST",
     headers: {
@@ -49,6 +90,6 @@ export async function subscribeWithDoubleOptIn(email: string): Promise<Subscribe
   const body = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
   if (res.status === 400 && body.code === "duplicate_parameter") return "confirmation-sent";
   // Log Brevo's reason for debugging — never the email address or the API key.
-  console.error(`[newsletter] Brevo error ${res.status} ${body.code ?? ""}: ${String(body.message ?? "").replace(/\S+@\S+/g, "[email]").slice(0, 200)}`);
+  console.error(`[${logTag}] Brevo error ${res.status} ${body.code ?? ""}: ${String(body.message ?? "").replace(/\S+@\S+/g, "[email]").slice(0, 200)}`);
   return "failed";
 }

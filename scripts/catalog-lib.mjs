@@ -70,7 +70,7 @@ export function paletteFromHex(hex) {
 export const PUBLIC_COLUMNS = [
   "product_slug", "product_name", "category", "publication", "short_description", "description", "tags",
   "featured_rank", "art", "age_grade", "warnings", "care_instructions", "manufacturer_or_importer",
-  "country_of_origin", "material", "fill", "texture", "size_description", "media", "variant_sku", "variant_name",
+  "country_of_origin", "material", "fill", "texture", "texture_types", "size_description", "media", "variant_sku", "variant_name",
   "swatch_hex", "price_usd", "compare_at_usd", "inventory_tracked", "inventory_available", "weight_grams",
   "length_cm", "width_cm", "height_cm", "external_purchase_url",
 ];

@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { mainNav, siteConfig } from "@/lib/site";
+import { exploreNav, mainNav, siteConfig } from "@/lib/site";
 import { cn } from "@/lib/cn";
 import { Logo } from "./Logo";
 import { CloseIcon, MenuIcon, TikTokIcon, ArrowRightIcon } from "@/components/icons/Icons";
 import { CartButton } from "@/components/cart/Cart";
+import { WishlistHeaderLink } from "@/components/wishlist/WishlistButton";
 
 const dotColors = ["bg-sky", "bg-berry", "bg-grape", "bg-peach", "bg-mint"];
+const extraLinks = exploreNav.filter((x) => !mainNav.some((m) => m.href === x.href));
 
 function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
@@ -93,6 +95,7 @@ export function SiteHeader() {
             <span className="sr-only"> {siteConfig.tiktok.handle} on TikTok (opens in a new tab)</span>
           </a>
 
+          <WishlistHeaderLink onNavigate={close} />
           <CartButton />
 
           <button
@@ -146,6 +149,21 @@ export function SiteHeader() {
                 })}
               </ul>
             </nav>
+            {extraLinks.length > 0 && (
+              <ul aria-label="More to explore" className="mt-2 grid grid-cols-2 gap-1.5">
+                {extraLinks.map((item) => (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={close}
+                      className="flex min-h-12 items-center justify-center rounded-2xl bg-ice-50 px-3 text-center font-display font-semibold text-ink ring-1 ring-inset ring-sky-200 active:bg-ice"
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
             <a
               href={siteConfig.tiktok.url}
               data-umami-event="tiktok-click"

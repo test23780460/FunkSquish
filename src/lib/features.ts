@@ -21,6 +21,8 @@ export const features: {
   commerce: boolean;
   checkoutMode: CheckoutMode;
   newsletter: boolean;
+  dropAlerts: boolean;
+  partnerApplications: boolean;
   accounts: boolean;
 } = {
   /** Master switch for any purchasing. */
@@ -28,6 +30,10 @@ export const features: {
   checkoutMode: "disabled",
   /** Launch-email sign-up. Also requires the provider env vars (see .env.example). */
   newsletter: false,
+  /** New-drop & restock email alerts (separate Brevo list). Also requires env vars. */
+  dropAlerts: false,
+  /** Partner/distributor application form. Also requires storage, notification and review env vars. */
+  partnerApplications: false,
   /** Customer accounts — not planned unless genuinely useful. */
   accounts: false,
 };

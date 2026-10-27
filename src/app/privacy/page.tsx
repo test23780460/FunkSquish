@@ -1,7 +1,7 @@
 import { LegalPage, Todo, Decision } from "@/components/layout/LegalPage";
 import { siteConfig } from "@/lib/site";
 import { pageMetadata } from "@/lib/seo";
-import { analyticsActive, newsletterActive } from "@/lib/integrations/status";
+import { analyticsActive, dropAlertsActive, newsletterActive, partnerApplicationsActive } from "@/lib/integrations/status";
 
 export const metadata = pageMetadata({
   title: "Privacy Policy (draft)",
@@ -18,6 +18,8 @@ export const metadata = pageMetadata({
  */
 const status = {
   newsletter: newsletterActive() ? "active" : "not active yet",
+  dropAlerts: dropAlertsActive() ? "active" : "not active yet",
+  partners: partnerApplicationsActive() ? "active" : "not active yet",
   analytics: analyticsActive() ? "active" : "not active yet",
 };
 
@@ -64,6 +66,47 @@ export default function PrivacyPage() {
         <li>Our emails include a postal address for FunkSquish, as U.S. law requires.</li>
       </ul>
 
+      <h3>Drop &amp; restock alerts ({status.dropAlerts})</h3>
+      <p>
+        If you ask for drop alerts, it works the same way as the launch list — consent box, confirmation email, stored by
+        Brevo — but on a separate list. We use it only to email you when a new drop or a restock is announced. Unsubscribe
+        anytime from any alert email.
+      </p>
+
+      <h3>Wishlists, Squish Boxes and quiz results</h3>
+      <p>
+        These are saved only in your own browser (local storage) so they&apos;re still there when you come back. They&apos;re never
+        sent to us. If you share a wishlist or box link, the link contains short product codes (like grape-jelly-bear) and your box name, if
+        you gave one — nothing else. Clearing your browser data deletes them.
+      </p>
+
+      <h3>Partner and supplier applications ({status.partners})</h3>
+      <p>
+        If a business applies through our <a href="/partners">partner page</a>, we store the answers — such as name, work
+        email, business and website details, country, and what the applicant tells us about products, pricing, shipping,
+        safety documentation and where we may sell — privately with our host, Netlify, so we can review the application and
+        reply. Only FunkSquish&apos;s owner can see them, after signing in. Applications are never approved automatically: a
+        person reviews each one, and nothing is agreed until both sides sign a written agreement. Our email provider, Brevo,
+        sends us a short notice that an application arrived (its reference, business name and country, without contact
+        details). To limit spam, we keep scrambled codes made from the sender&apos;s IP address and email address in counters
+        that are deleted automatically after 2 days. Applicants are never added to marketing lists.
+      </p>
+      <p>
+        <strong>How long we keep applications.</strong> An automatic daily cleanup deletes declined applications 12 months
+        after the last activity on them, and other applications — including future reseller or distributor interest — 24
+        months after the last activity (the application itself, a change in its review stage, or a note we add). If we start
+        working together, we keep the application while the relationship is active, review it at least once a year, and
+        delete it when it&apos;s no longer needed. We may keep something longer only if the law requires it, and we record why.
+      </p>
+      <p>
+        <strong>Deleting your application.</strong> Email <a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a> from
+        the address you applied with, and we&apos;ll delete it within 30 days (or tell you if a legal reason means we must keep
+        part of it). We keep a short record that the request was handled — dates, a scrambled code instead of your email, and
+        the outcome — for 24 months. Emails you exchanged with us stay in our email account (Google Workspace) until we delete
+        them, which we&apos;ll also do on request; Brevo keeps a log of the notices it sent us under its own retention policy.{" "}
+        <Todo>legal review of the partner-application notice and retention schedule</Todo>
+      </p>
+
       <h3>Website analytics ({status.analytics})</h3>
       <p>
         We use <strong>Umami</strong>, a privacy-focused analytics service, to count visits and see which pages are popular
@@ -76,7 +119,7 @@ export default function PrivacyPage() {
       <h2>How we use information</h2>
       <ul>
         <li>To reply to your messages and help with orders.</li>
-        <li>To send launch emails, if you&apos;ve signed up and confirmed.</li>
+        <li>To send launch emails or drop alerts, if you&apos;ve signed up and confirmed.</li>
         <li>To run, improve, and protect the Site.</li>
         <li>To meet legal obligations.</li>
       </ul>
@@ -84,7 +127,8 @@ export default function PrivacyPage() {
       <h2>Who we share it with</h2>
       <p>
         We share information only with service providers that run parts of our business on our behalf — currently Netlify
-        (hosting) and Google Workspace (email), and, once active, Brevo (email list) and Umami (analytics) — or when required
+        (hosting and private application storage) and Google Workspace (email), and, once active, Brevo (email lists and
+        notifications) and Umami (analytics) — or when required
         by law. We don&apos;t sell or rent personal information.
       </p>
 
@@ -113,7 +157,7 @@ export default function PrivacyPage() {
       <h2>Keeping information</h2>
       <p>
         We keep emails as long as needed to help you and for our records. Email-list subscribers are kept until they
-        unsubscribe or ask to be deleted.
+        unsubscribe or ask to be deleted. Partner applications follow the schedule described above.
       </p>
 
       <h2>Security</h2>

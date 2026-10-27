@@ -5,6 +5,11 @@ import { Container, SectionHeading, Notice } from "@/components/ui/Primitives";
 import { ButtonAnchor } from "@/components/ui/Button";
 import { PhoneLive } from "@/components/tiktok/PhoneLive";
 import { LiveSchedule } from "@/components/tiktok/LiveSchedule";
+import { ClipCard, LiveStatusPanel } from "@/components/tiktok/LiveRoom";
+import { ProductCard } from "@/components/shop/ProductCard";
+import { listProducts } from "@/commerce/catalog";
+import { approvedLiveLinks, liveClips, liveSchedule } from "@/content/live-schedule";
+import { isTikTokVideoId } from "@/lib/live";
 import { HeartIcon, PlayIcon, SparklesIcon, StoreIcon, TikTokIcon, SmileIcon } from "@/components/icons/Icons";
 import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/cn";
@@ -43,7 +48,34 @@ const plans: { title: string; body: string; icon: ReactNode; tone: string }[] = 
   },
 ];
 
-export default function TikTokLivePage() {
+const safety = [
+  "We'll never ask for payment, card details or passwords in comments or DMs.",
+  "We don't run giveaways that ask you to pay shipping or click outside links.",
+  "Only links on this page and on @FunkSquish are ours.",
+];
+
+export default async function TikTokLivePage() {
+  const products = await listProducts();
+  // Featured products per scheduled LIVE, rendered on the server and handed to the status panel.
+  const featured = Object.fromEntries(
+    liveSchedule.map((s) => {
+      const items = (s.featuredSlugs ?? []).flatMap((slug) => products.find((p) => p.slug === slug) ?? []);
+      return [
+        s.id,
+        items.length > 0 ? (
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {items.map((p) => (
+              <li key={p.id}>
+                <ProductCard product={p} />
+              </li>
+            ))}
+          </ul>
+        ) : null,
+      ];
+    }),
+  );
+  const clips = liveClips.filter((c) => isTikTokVideoId(c.videoId));
+
   return (
     <PageTransition>
       <PageHero
@@ -70,6 +102,12 @@ export default function TikTokLivePage() {
         </div>
       </PageHero>
 
+      <section aria-label="LIVE status" className="bg-white pt-6">
+        <Container>
+          <LiveStatusPanel sessions={liveSchedule} featured={featured} />
+        </Container>
+      </section>
+
       <section aria-labelledby="plans-title" className="bg-white py-14 sm:py-20">
         <Container>
           <SectionHeading
@@ -86,6 +124,26 @@ export default function TikTokLivePage() {
               </li>
             ))}
           </ul>
+        </Container>
+      </section>
+
+      <section aria-labelledby="clips-title" className="bg-white pb-14 sm:pb-20">
+        <Container>
+          <SectionHeading eyebrow="Squish replays" title={<span id="clips-title">Clips from our TikTok</span>} />
+          {clips.length > 0 ? (
+            <ul className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {clips.map((c) => (
+                <li key={c.id}>
+                  <ClipCard clip={c} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mx-auto mt-6 max-w-xl rounded-[2rem] bg-ice-50 p-6 text-center text-ink-soft ring-1 ring-inset ring-sky-200">
+              Our first squish clips will show up here once we start posting. Videos only load from TikTok when you tap
+              play.
+            </p>
+          )}
         </Container>
       </section>
 
@@ -111,7 +169,31 @@ export default function TikTokLivePage() {
             </Notice>
           </div>
 
-          <LiveSchedule />
+          <div className="space-y-5">
+            <LiveSchedule />
+            <div className="rounded-[2rem] bg-white p-5 shadow-[var(--shadow-card)] ring-1 ring-inset ring-sky-200 sm:p-6">
+              <h3 className="font-display text-xl font-bold text-ink">Staying safe in our LIVEs</h3>
+              <ul className="mt-3 space-y-2 text-ink-soft">
+                {safety.map((t) => (
+                  <li key={t} className="flex gap-2">
+                    <span aria-hidden="true" className="mt-2 size-2 shrink-0 rounded-full bg-royal" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-4 font-display font-semibold text-ink">Our official links</p>
+              <ul className="mt-1">
+                {approvedLiveLinks.map((l) => (
+                  <li key={l.href}>
+                    <a href={l.href} target="_blank" rel="noopener noreferrer" className="font-semibold text-royal underline underline-offset-4">
+                      {l.label}
+                      <span className="sr-only"> (opens in a new tab)</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </Container>
       </section>
     </PageTransition>
