@@ -141,7 +141,10 @@ export default async function PartnersPage() {
               <li>Prices, terms and safety answers you share are kept confidential. They&apos;re never shown on our website.</li>
               <li>Applications are stored privately by our website host (Netlify) and are visible only to FunkSquish&apos;s owner after signing in. A person reviews every application — nothing is approved automatically.</li>
               <li>We get an email that a new application arrived (via our email provider, Brevo) with its reference, business name and country — not your contact details.</li>
-              <li>To prevent spam we keep scrambled codes made from your IP and email address, not the addresses themselves, and delete them after 2 days.</li>
+              <li>
+                To prevent spam we make scrambled codes from your IP and email address — never storing the addresses themselves. The
+                rate-limit codes are deleted after 2 days; one IP code is kept with your application and deleted with it.
+              </li>
               <li>
                 Applications are deleted automatically: declined ones {RETENTION.declinedMonths} months after the last activity, others (including future reseller interest) after{" "}
                 {RETENTION.openMonths} months. If we work together, we keep yours while the partnership is active.

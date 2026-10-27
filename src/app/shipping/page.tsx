@@ -6,7 +6,7 @@ import { siteConfig } from "@/lib/site";
 export const metadata = pageMetadata({
   title: "Shipping Policy",
   description:
-    "FunkSquish shipping policy: U.S. shipping (50 states + APO/FPO/DPO), buyer-paid rates shown at checkout, ships within 2 business days, tracking on every order.",
+    "FunkSquish shipping policy: U.S. shipping (50 states + APO/FPO/DPO), buyer-paid shipping shown at checkout, our stock ships within 2 business days, tracking on every order.",
   path: "/shipping",
 });
 
@@ -26,20 +26,22 @@ export default function ShippingPage() {
       <h2>Where we ship</h2>
       <p>
         We ship within the <strong>United States only</strong>: all 50 states, including Alaska and Hawaii, and military
-        APO/FPO/DPO addresses. We don&apos;t ship to U.S. territories yet.
+        APO/FPO/DPO addresses. We don&apos;t ship to U.S. territories yet. Our checkout may still let you choose a territory
+        address (such as Puerto Rico or Guam); if it does, we&apos;ll cancel that order and refund it in full.
       </p>
 
       <h2>Shipping costs</h2>
       <p>
-        Shipping is paid by the buyer. The exact cost is calculated at checkout from your package&apos;s weight and your
-        address, and you&apos;ll always see it before you pay. We don&apos;t offer free shipping at this time.
+        Shipping is paid by the buyer. The shipping options and their prices are shown at checkout, and you&apos;ll always see
+        the total before you pay. We don&apos;t offer free shipping at this time.
       </p>
 
       <h2>Processing time</h2>
       <p>
-        We pack and ship orders within <strong>2 business days</strong> of receiving them (Monday–Friday, excluding U.S.
-        federal holidays). Orders placed during a TikTok LIVE or a busy launch may take a little longer — if so, we&apos;ll
-        say so on the product or in the LIVE.
+        We pack and ship items from our own stock within <strong>2 business days</strong> of receiving the order
+        (Monday–Friday, excluding U.S. federal holidays). Orders placed during a TikTok LIVE or a busy launch may take a little
+        longer — if so, we&apos;ll say so on the product or in the LIVE. If an item ships directly from one of our suppliers,
+        its product page shows its own shipping time, and an order with both kinds of items may arrive in separate packages.
       </p>
 
       <h2>Delivery times</h2>
@@ -50,8 +52,8 @@ export default function ShippingPage() {
 
       <h2>Tracking</h2>
       <p>
-        Every shipped order includes tracking. You&apos;ll receive your tracking number by email from our checkout provider, or
-        in the TikTok app for TikTok Shop orders.
+        Every shipped order includes tracking. We&apos;ll email you the tracking number when your order ships (TikTok Shop orders
+        show tracking in the TikTok app).
       </p>
 
       <h2>If your order is delayed</h2>
