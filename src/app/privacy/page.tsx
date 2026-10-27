@@ -31,7 +31,7 @@ export default function PrivacyPage() {
         This Privacy Policy explains how FunkSquish (&ldquo;FunkSquish,&rdquo; &ldquo;we,&rdquo; &ldquo;us&rdquo;),
         operated by {siteConfig.legalOperator}, collects, uses and shares information when you visit{" "}
         <a href={siteConfig.url}>funksquish.com</a> (the &ldquo;Site&rdquo;), contact us, or (once our shop opens) buy from us.
-        FunkSquish is based in Kentucky, United States, and our service providers store information in the United States.
+        FunkSquish is based in Kentucky, United States. Our providers may process or store information in the United States and other countries, depending on their services and configurations.
       </p>
 
       <h2>Summary</h2>
@@ -90,7 +90,7 @@ export default function PrivacyPage() {
       <h3>Wishlists, Squish Boxes and quiz results</h3>
       <p>
         These are saved only in your own browser (local storage) and are never sent to us. A shared wishlist or box link
-        contains short product codes and the box name you chose, if any — nothing else. Clearing your browser data deletes them.
+        contains product codes and the box name you chose, if any. Anyone you give the link to may see that information; URLs may also appear in hosting or browser records when visited. Clearing your browser data removes locally saved lists and results, but not links already shared.
       </p>
 
       <h3>TikTok videos</h3>
@@ -172,8 +172,8 @@ export default function PrivacyPage() {
 
       <h2>Children</h2>
       <p>
-        The Site is meant for a general audience and isn&apos;t directed to children under 13. We don&apos;t knowingly collect personal
-        information from children under 13 — our sign-up, partner and (future) checkout forms are for adults. Wishlists, the quiz
+        We intend the Site for a general audience, rather than specifically for children under 13. This statement does not determine the Site&apos;s classification under children&apos;s privacy law. We don&apos;t knowingly collect personal
+        information from children under 13 — our sign-up, partner and (future) checkout forms are intended for adults. Wishlists, the quiz
         and the Squish Box stay in the browser and aren&apos;t sent to us. If you believe a child has sent us personal information,
         email us and we&apos;ll delete it. <Todo>legal review of children&apos;s privacy approach (COPPA), given that squishies appeal to children</Todo>
       </p>
@@ -181,8 +181,7 @@ export default function PrivacyPage() {
       <h2>Your choices and rights</h2>
       <p>
         You can ask what personal information we hold about you, and ask us to correct or delete it, by emailing{" "}
-        <a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a>. We&apos;ll confirm the request came from you (for example, by
-        replying to the address on file) and respond within 30 days. We may keep information we&apos;re legally required to keep (such
+        <a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a>. We&apos;ll take reasonable steps to verify the requester before disclosing or deleting information; access to an email address alone may not be sufficient for sensitive order details. We aim to respond within 30 days, or within a different period required by applicable law, and will explain any permitted extension. We may keep information we&apos;re legally required to keep (such
         as order records needed for taxes) and will tell you if so. Unsubscribe from emails at any time with the link in each
         email. Depending on where you live, you may have additional rights under state law.{" "}
         <Todo>legal review of applicable state privacy laws (including Kentucky&apos;s) and whether any thresholds apply</Todo>
@@ -190,7 +189,7 @@ export default function PrivacyPage() {
 
       <h2>Keeping information</h2>
       <ul>
-        <li>Emails: as long as needed to help you and for our records.</li>
+        <li>Emails: retained as needed for customer support and legitimate business and legal purposes; the precise schedule is under review.</li>
         <li>Email-list subscribers: until they unsubscribe or ask to be deleted.</li>
         <li>Partner applications: the schedule above, enforced automatically.</li>
         <li>Orders: the period stated above, once decided.</li>
@@ -198,8 +197,7 @@ export default function PrivacyPage() {
 
       <h2>Security</h2>
       <p>
-        Private records are stored with access limited to FunkSquish&apos;s owner, behind a sign-in, and never in public code or
-        ordinary logs. Payments are handled by Stripe. No method of storing or sending information is perfectly secure, but we
+        Private application and order records are intended to be accessible only through restricted administrative interfaces, not public pages. We avoid placing customer details in ordinary application logs and public source code; access controls and operational procedures must be checked before live checkout. Payments are handled by Stripe. No method of storing or sending information is perfectly secure, but we
         work to protect it, and we&apos;ll notify you if the law requires it after a breach.
       </p>
 
