@@ -49,8 +49,9 @@ export default function TermsPage() {
       <ul>
         <li>
           <strong>Payment.</strong> Payments are processed by Stripe on Stripe&apos;s secure checkout page. At launch we accept major
-          credit and debit cards. Your payment method is charged when you complete checkout; adding items to a cart does not charge
-          you. <Decision>payment methods offered at launch (cards only, and whether Stripe Link is turned off)</Decision>
+          credit and debit cards, including card wallets such as Apple Pay and Google Pay where your device supports them. We don&apos;t
+          offer pay-later or bank-transfer payments. Your payment method is charged when you complete checkout; adding items to a cart
+          does not charge you.
         </li>
         <li>
           <strong>Order confirmation.</strong> After you pay, we email you an order confirmation. It confirms that we received your
@@ -65,25 +66,29 @@ export default function TermsPage() {
           including shipping and tax. Canceling never changes the shipping timeframes in our Shipping Policy for the rest of your order.
         </li>
         <li>
-          <strong>Canceling yourself.</strong> You can cancel an order that hasn&apos;t shipped for a full refund — see our{" "}
-          <Link href="/returns">Returns &amp; Refunds Policy</Link>.
+          <strong>Canceling yourself.</strong> You can cancel an order — or any package of it — that hasn&apos;t shipped for a full refund
+          of what you canceled, including its shipping charge and tax — see our <Link href="/returns">Returns &amp; Refunds Policy</Link>.
         </li>
         <li>
-          <strong>Prices, shipping and tax.</strong> Prices are in U.S. dollars. Shipping options and their prices, and any sales tax,
-          are shown at checkout before you pay. We won&apos;t add charges after checkout — including if your order arrives in more than
-          one package. <Decision>sales-tax collection setup (e.g. Stripe Tax registrations)</Decision>
+          <strong>Prices, shipping and tax.</strong> Prices are in U.S. dollars. Shipping is calculated for your cart — one charge per
+          package, and items from different places ship in separate packages — as explained in our{" "}
+          <Link href="/shipping">Shipping Policy</Link>. Your shipping charges, any sales tax and your total are shown before you pay.
+          We won&apos;t add charges after checkout, however many packages your order ships in.{" "}
+          <Decision>sales-tax collection setup (e.g. Stripe Tax registrations)</Decision>
         </li>
         <li>
           <strong>Pricing and listing errors.</strong> We won&apos;t charge you more than the price you agreed to at checkout without your
           express permission. If we find a genuine price or listing error before an item ships, we&apos;ll tell you and let you choose
-          between buying it at the corrected price or canceling for a full refund of that item. If you don&apos;t choose before the
-          item&apos;s ship-by date, we&apos;ll cancel and refund it. Once an item has shipped, we won&apos;t ask you to pay more for it.
+          between buying it at the corrected price or canceling for a full refund of that item (or of your whole order, if you prefer).
+          We&apos;ll only charge a corrected price if you expressly agree to it. If you decline, or don&apos;t choose before the item&apos;s
+          ship-by date, we&apos;ll cancel and refund it, and the shipping and cancellation timeframes in our Shipping Policy still
+          apply. Once an item has shipped, we won&apos;t ask you to pay more for it.
         </li>
         <li>
-          <strong>Quantity limits.</strong> Checkout limits how many of each item one order can contain (the limit is shown in your
-          cart if you go over it). For limited drops, any per-customer limit will be stated on the product page before the drop. If
-          orders go over a stated per-customer limit — including across several orders — we may cancel the extra units and refund
-          them in full, and we&apos;ll tell you. A limit never lets us keep payment for units we don&apos;t ship.
+          <strong>Quantity limits.</strong> One order can include up to 10 of each item and up to 20 different items; your cart tells
+          you if you go over. For limited drops, any per-customer limit will be stated on the product page before the drop. If orders
+          go over a limit stated that way — including across several orders — we may cancel the extra units and refund them in full,
+          including any shipping charged for them, and we&apos;ll tell you. A limit never lets us keep payment for units we don&apos;t ship.
         </li>
         <li>
           <strong>Availability and substitutions.</strong> We won&apos;t send a different product, color or size instead of what you

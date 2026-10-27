@@ -145,12 +145,13 @@ export default function PrivacyPage() {
       </p>
 
       <h3>When you buy from us (not active yet)</h3>
-      <Decision>checkout launch date, payment methods and order-record retention period</Decision>
+      <Decision>checkout launch date and order-record retention period</Decision>
       <p>
         Orders will be paid through <strong>Stripe</strong>&apos;s secure checkout page. You type your card details on Stripe&apos;s page,
         not ours — we never see or store your full card number. Stripe processes your payment and may use the information to prevent
-        fraud, under its own privacy policy. If Stripe offers to save your details with its own Link service, that choice is between
-        you and Stripe.
+        fraud, under its own privacy policy. At launch we plan to accept cards only (including card wallets such as Apple Pay and
+        Google Pay). If Stripe&apos;s page offers to save your details with Stripe&apos;s own Link service, that choice is between you and
+        Stripe, under Stripe&apos;s privacy policy.
       </p>
       <p>To fulfil and support your order we receive and keep an order record with:</p>
       <ul>
@@ -161,7 +162,9 @@ export default function PrivacyPage() {
       <p>
         Order records are stored privately with Netlify and are visible only to FunkSquish&apos;s owner after signing in. If an item
         ships directly from one of our suppliers, we share only what they need to deliver it — your name, shipping address and the
-        items — with that supplier, and we require them to use it only for that delivery. We keep order records for{" "}
+        items — with that supplier. We sell supplier-shipped items only once a written agreement with that supplier is in place, and
+        it allows them to use your details only to fulfill and support that order (delivery, tracking, returns and safety notices)
+        and for nothing else we haven&apos;t specifically authorized — never for their own marketing. We keep order records for{" "}
         <strong>[period to be decided]</strong> for tax, accounting, warranty, product-safety and fraud-prevention purposes, then
         delete them. Stripe keeps its own payment records under its own policies.{" "}
         <Todo>attorney/accountant: required order-record retention period</Todo>
@@ -269,7 +272,8 @@ export default function PrivacyPage() {
       <h2>Security</h2>
       <p>
         Private application and order records are stored with Netlify and are meant to be reachable only through a signed-in owner
-        area, not public pages. We avoid placing customer details in application logs and never in our public source code. Card
+        area, not public pages. The owner area needs a passphrase and, before we take customer orders, two-step sign-in (a code from
+        an authenticator app). We avoid placing customer details in application logs and never in our public source code. Card
         payments are entered on Stripe&apos;s encrypted checkout page. No method of storing or sending information is perfectly
         secure, but we work to protect it. If a security incident affects your personal information, we&apos;ll give you, and any
         authorities, the notices the law requires.

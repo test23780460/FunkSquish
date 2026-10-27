@@ -7,7 +7,7 @@ import { POLICIES } from "@/content/policies";
 export const metadata = pageMetadata({
   title: "Shipping Policy",
   description:
-    "FunkSquish shipping policy: U.S. shipping (50 states, D.C. + APO/FPO/DPO), buyer-paid shipping shown at checkout, our stock ships within 2 business days, tracking on every order.",
+    "FunkSquish shipping policy: U.S. shipping (50 states, D.C. + APO/FPO/DPO), shipping calculated for your cart and shown before you pay, our stock ships within 2 business days, tracking on every package.",
   path: "/shipping",
 });
 
@@ -15,8 +15,9 @@ export const metadata = pageMetadata({
  * Shipping policy — terms approved by the owner on Oct 24, 2026
  * (docs/OWNER-DECISIONS.md S1–S6). Written to fit the FTC Mail, Internet,
  * or Telephone Order Merchandise Rule (16 CFR Part 435). The Oct 27, 2026
- * clarifications need the owner's renewed approval before merge
- * (docs/POLICY-COMPARISON.md).
+ * clarifications and the owner's Phase 2 decisions (mixed-origin orders,
+ * per-package shipping — docs/MIXED-ORDER-SHIPPING.md) need the owner's
+ * sign-off on this exact wording before merge (docs/POLICY-COMPARISON.md).
  */
 export default function ShippingPage() {
   return (
@@ -36,9 +37,18 @@ export default function ShippingPage() {
 
       <h2>Shipping costs</h2>
       <p>
-        Shipping is paid by the buyer. The shipping options and their prices are shown at checkout, and you&apos;ll always see the total
-        before you pay. The shipping charge you pay at checkout covers your whole order — we never charge extra shipping later, even
-        if your order arrives in more than one package. We don&apos;t offer free shipping at this time.
+        Shipping is paid by the buyer and is calculated for your cart before you pay. Items ship either from our own stock or
+        directly from one of our supplier partners. Items that ship from the same place are packed together in one package with one
+        shipping charge; items from a different place ship in a separate package with its own charge. Each package&apos;s charge is
+        based on our confirmed shipping rate for the place it ships from and the number or weight of the items in it. So an order
+        with items from more than one place can cost more to ship than an order from one place.
+      </p>
+      <p>
+        Your cart shows each package&apos;s shipping charge, and our secure checkout page shows the combined shipping charge, any sales
+        tax, and your order total <strong>before you pay</strong>. That combined charge covers every package in your order — we never
+        add shipping charges after you pay. If we can&apos;t calculate shipping for an item from confirmed rates, we don&apos;t sell it until
+        we can: checkout tells you, and the rest of your cart can still be ordered. Sales tax, where it applies, is calculated on your
+        items and, in states that tax it, on shipping. We don&apos;t offer free shipping at this time.
       </p>
 
       <h2>Processing time</h2>
@@ -52,7 +62,12 @@ export default function ShippingPage() {
         If a product takes longer to ship — for example, an item shipped directly by one of our suppliers, or a pre-order — its own
         processing time is shown on the product page before you buy, and that time applies instead. We don&apos;t offer an item for sale
         until we can support its stated shipping time. A busy launch or LIVE sale by itself doesn&apos;t extend the ship-by date for an
-        order. Orders with items from different places may arrive in separate packages, each with its own tracking.
+        order.
+      </p>
+      <p>
+        Each package has its own ship-by date, counted from when we receive your paid order: 2 business days for our own stock, or the
+        time shown on the product page for supplier-shipped items. Your cart and our checkout page show how many packages your order
+        ships in and how long each takes, and your order confirmation lists each package&apos;s ship-by date.
       </p>
 
       <h2>Delivery times</h2>
@@ -63,14 +78,16 @@ export default function ShippingPage() {
 
       <h2>Tracking</h2>
       <p>
-        Every shipped order includes tracking. We&apos;ll email you the tracking number when your order ships (TikTok Shop orders show
-        tracking in the TikTok app).
+        Every package includes tracking. We&apos;ll email you each package&apos;s tracking number when it ships, so an order in two
+        packages gets two shipping emails (TikTok Shop orders show tracking in the TikTok app).
       </p>
 
       <h2>If your order is delayed</h2>
       <p>
-        If we can&apos;t ship on time, we&apos;ll email you <strong>before the ship-by date</strong> with a new shipping date (or tell you we
-        don&apos;t know it yet) and give you a free, easy way to cancel for a full refund of the unshipped items.
+        If we can&apos;t ship a package on time, we&apos;ll email you <strong>before its ship-by date</strong> with a new shipping date (or tell
+        you we don&apos;t know it yet) and give you a free, easy way to cancel for a full refund of the unshipped items. If your order
+        is in more than one package, a delay to one package doesn&apos;t change the others, and canceling the delayed package refunds its
+        items, its shipping charge and any tax on them.
       </p>
       <ul>
         <li>
@@ -100,9 +117,9 @@ export default function ShippingPage() {
           number and, if you can, photos of the item and packaging. See our <Link href="/returns">Returns &amp; Refunds Policy</Link>.
         </li>
         <li>
-          <strong>Lost in transit:</strong> if the carrier loses the package or tracking shows it was destroyed before delivery,
-          we&apos;ll send a replacement or a full refund, your choice. You don&apos;t have to file a carrier claim. (Packages returned to
-          us as undeliverable are covered below.)
+          <strong>Lost in transit:</strong> if the carrier loses a package or tracking shows it was destroyed before delivery,
+          we&apos;ll send a replacement at no cost or refund that package in full (its items, its shipping charge and any tax), your
+          choice. You don&apos;t have to file a carrier claim. (Packages returned to us as undeliverable are covered below.)
         </li>
         <li>
           <strong>Tracking says delivered but it isn&apos;t there:</strong> check with neighbors and your mail carrier, then email us
@@ -119,9 +136,14 @@ export default function ShippingPage() {
       <p>
         Please check your address at checkout. If you need to change it, email us right away — we can usually help before the order
         ships. If a package comes back to us as undeliverable because of the address entered at checkout or a missed pickup, we can
-        reship it once you pay for new postage, or refund the items minus the original shipping cost, within 5 business days after
-        it reaches us. If it came back because of our mistake or the carrier&apos;s, we&apos;ll reship it at no cost or refund it in full,
-        your choice.
+        reship it once you pay for new postage, or refund its items (and any tax on them) minus that package&apos;s original shipping
+        charge, within 5 business days after it reaches us. If it came back because of our mistake or the carrier&apos;s, we&apos;ll
+        reship it at no cost or refund it in full, your choice.
+      </p>
+      <p>
+        Some items shipped by our supplier partners can&apos;t be sent to APO/FPO/DPO addresses. If that applies to anything in your
+        cart, our checkout page says so before you pay. If such an order is placed anyway, we&apos;ll refund those items in full,
+        including their shipping charge and tax.
       </p>
 
       <h2>Orders placed on TikTok Shop</h2>
