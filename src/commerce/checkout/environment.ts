@@ -12,11 +12,13 @@
  * Pure functions take an `env` object so they can be unit-tested.
  */
 
+import { SHIPPING_ORIGINS, type ShippingOrigin } from "../origins";
+import { liveShippingProblem, type ShippingLockProblem } from "../shipping-approval";
+
 export type Env = Record<string, string | undefined>;
 
 export interface StripeTestConfig {
   secretKey: string;
-  shippingRateIds: string[];
   webhookSecret: string | null;
   returnOrigin: string;
   automaticTax: boolean;
@@ -28,7 +30,6 @@ export type ConfigProblem =
   | "missing-secret-key"
   | "live-key-rejected"
   | "invalid-secret-key"
-  | "missing-shipping-rate"
   | "invalid-return-origin";
 
 const PRODUCTION_HOSTS = new Set(["funksquish.com", "www.funksquish.com"]);
@@ -78,13 +79,8 @@ export function readStripeTestConfig(env: Env): { ok: true; config: StripeTestCo
   if (isLiveKey(secretKey)) return { ok: false, problem: "live-key-rejected" };
   if (!/^(sk|rk)_test_[A-Za-z0-9]+$/.test(secretKey)) return { ok: false, problem: "invalid-secret-key" };
 
-  const shippingRateIds = (env.STRIPE_TEST_SHIPPING_RATE_IDS || env.STRIPE_TEST_SHIPPING_RATE_ID || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (shippingRateIds.length === 0 || shippingRateIds.length > 5 || !shippingRateIds.every((id) => /^shr_[A-Za-z0-9]+$/.test(id))) {
-    return { ok: false, problem: "missing-shipping-rate" };
-  }
+  // STRIPE_TEST_SHIPPING_RATE_ID(S) is no longer needed or read: shipping is priced by the
+  // server from the (test) origin table and sent inline (src/commerce/shipping-approval.ts).
 
   const returnOrigin = returnOriginFrom(env);
   if (!returnOrigin) return { ok: false, problem: "invalid-return-origin" };
@@ -94,7 +90,6 @@ export function readStripeTestConfig(env: Env): { ok: true; config: StripeTestCo
     ok: true,
     config: {
       secretKey,
-      shippingRateIds,
       webhookSecret: webhookSecret && /^whsec_[A-Za-z0-9]+$/.test(webhookSecret) ? webhookSecret : null,
       returnOrigin,
       automaticTax: env.STRIPE_TEST_AUTOMATIC_TAX === "true",
@@ -136,13 +131,18 @@ export function testCheckoutEnabled(): boolean {
  *     just as live keys are rejected by the test config);
  *  5. a live webhook signing secret (orders are only created from verified webhooks
  *     or a server-side re-fetch of the session);
- *  6. at least one live shipping rate.
+ *  6. VERIFIED SHIPPING: at least one origin with verified rates (expiry is checked
+ *     per item at checkout), and
+ *  7. the owner's approval of that exact shipping table: STRIPE_LIVE_SHIPPING_TABLE
+ *     = its fingerprint (src/commerce/shipping-approval.ts). This replaced the
+ *     old STRIPE_LIVE_SHIPPING_RATE_IDS, which no longer set any price.
+ * (The checkout service also refuses real orders until the owner has two-step
+ * sign-in — src/lib/owner/mfa-gate.ts.)
  * Live variables have their own names (STRIPE_LIVE_*), so test and live can
- * never share a key, webhook secret, shipping rate or order store.
+ * never share a key, webhook secret or order store.
  */
 export interface StripeLiveConfig {
   secretKey: string;
-  shippingRateIds: string[];
   webhookSecret: string;
   returnOrigin: string;
   automaticTax: boolean;
@@ -156,13 +156,14 @@ export type LiveConfigProblem =
   | "test-key-rejected"
   | "invalid-secret-key"
   | "missing-webhook-secret"
-  | "missing-shipping-rate";
+  | ShippingLockProblem;
 
 export const LIVE_RETURN_ORIGIN = "https://funksquish.com";
 
 export function readStripeLiveConfig(
   env: Env,
   codeSwitchOn: boolean,
+  origins: ShippingOrigin[] = SHIPPING_ORIGINS,
 ): { ok: true; config: StripeLiveConfig } | { ok: false; problem: LiveConfigProblem } {
   if (!codeSwitchOn) return { ok: false, problem: "code-switch-off" };
   if (deployContext(env) !== "production") return { ok: false, problem: "environment-not-allowed" };
@@ -176,16 +177,12 @@ export function readStripeLiveConfig(
   const webhookSecret = env.STRIPE_LIVE_WEBHOOK_SECRET?.trim() ?? "";
   if (!/^whsec_[A-Za-z0-9]+$/.test(webhookSecret)) return { ok: false, problem: "missing-webhook-secret" };
 
-  const shippingRateIds = (env.STRIPE_LIVE_SHIPPING_RATE_IDS ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (shippingRateIds.length === 0 || shippingRateIds.length > 5 || !shippingRateIds.every((id) => /^shr_[A-Za-z0-9]+$/.test(id))) {
-    return { ok: false, problem: "missing-shipping-rate" };
-  }
+  // Verified rates, approved by the owner (replaces the old, price-less STRIPE_LIVE_SHIPPING_RATE_IDS).
+  const shipping = liveShippingProblem(origins, env.STRIPE_LIVE_SHIPPING_TABLE);
+  if (shipping) return { ok: false, problem: shipping };
 
   return {
     ok: true,
-    config: { secretKey, shippingRateIds, webhookSecret, returnOrigin: LIVE_RETURN_ORIGIN, automaticTax: env.STRIPE_LIVE_AUTOMATIC_TAX === "true" },
+    config: { secretKey, webhookSecret, returnOrigin: LIVE_RETURN_ORIGIN, automaticTax: env.STRIPE_LIVE_AUTOMATIC_TAX === "true" },
   };
 }

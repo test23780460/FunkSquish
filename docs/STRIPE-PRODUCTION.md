@@ -97,9 +97,9 @@ tested: sessions request cards only and never a payment-method configuration, sa
 | Variable | Value |
 | --- | --- |
 | `STRIPE_LIVE_CHECKOUT_ENABLED` | `true` — only on launch day |
-| `STRIPE_LIVE_SECRET_KEY` | A **restricted** live key (`rk_live_…`) with **Checkout Sessions: write** and **Refunds: write**. Nothing else is needed (prices are sent inline). |
+| `STRIPE_LIVE_SECRET_KEY` | A **restricted** live key (`rk_live_…`) with **Checkout Sessions: Write**, **Refunds: Write**, and **Products: Read** + **Prices: Read** (order line items are read with their product details — the sandbox key that passed on Oct 24 had these reads; corrected 2026-10-27). Everything else None. |
 | `STRIPE_LIVE_WEBHOOK_SECRET` | From the live webhook endpoint `https://funksquish.com/api/stripe/webhook`, listening to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.updated`, `charge.dispute.closed` |
-| `STRIPE_LIVE_SHIPPING_RATE_IDS` | 1–5 live `shr_…` ids, comma-separated. Still required by the unchanged live lock; the price itself now comes from the verified origin rates in `src/commerce/origins.ts` (`docs/MIXED-ORDER-SHIPPING.md` §4) |
+| `STRIPE_LIVE_SHIPPING_TABLE` | **Your approval of the exact shipping rates** (replaces `STRIPE_LIVE_SHIPPING_RATE_IDS`, proposal in its own PR, decision D-SHIP-3): the `ship_v1_…` code shown on the owner Orders page under "Shipping rates for live checkout", after you've checked the rates. Not a secret. If the rates later change in code, live checkout closes until you set the new code. The live lock also needs at least one origin with verified, current rates (`docs/MIXED-ORDER-SHIPPING.md` §4). `STRIPE_LIVE_SHIPPING_RATE_IDS` is no longer read — delete it if set. |
 | `STRIPE_LIVE_AUTOMATIC_TAX` | `true` once Stripe Tax has your Kentucky registration |
 | `ORDER_EMAIL_FROM` / `ORDER_NOTIFY_EMAIL` | Sender (verified in Brevo) and owner address; default to the `PARTNER_NOTIFY_*` values |
 | `BREVO_API_KEY` | Already set for Production |
@@ -156,8 +156,9 @@ The **sandbox** key is restricted to Checkout Sessions only, so the owner page's
 3. Stripe account: business verification complete; payouts bank account added by you; **Link (and its Bank/Klarna)
    turned off**; statement descriptor and support details set.
 4. Shipping: real packed weights and carrier costs entered as the verified `funksquish` origin rule, each supplier's
-   signed agreement and rate card entered as its origin (`docs/MIXED-ORDER-SHIPPING.md` §3), and one live `shr_…` id kept
-   for the unchanged lock; Shipping Policy wording matches the per-package calculation.
+   signed agreement and rate card entered as its origin (`docs/MIXED-ORDER-SHIPPING.md` §3); you check the rates on the
+   owner Orders page and set `STRIPE_LIVE_SHIPPING_TABLE` to the approval code shown; Shipping Policy wording matches the
+   per-package calculation.
 5. Products: real, sellable products in the catalog with price, tracked stock, SKU, weight, age grade and safety
    documents (`npm run catalog:check`); final-sale labels before any blind-bag items.
 6. Live keys and webhook created **by you** in the Stripe Dashboard and saved in Netlify Production as secrets (never in

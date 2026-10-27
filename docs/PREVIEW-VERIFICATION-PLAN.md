@@ -19,10 +19,13 @@ here touches live keys, production settings or real customers.
 
 ## Set-up (owner — Deploy Previews context only, never Production)
 
+**Step-by-step owner checklist: `docs/SANDBOX-TEST-CHECKLIST.md`.** (`STRIPE_TEST_SHIPPING_RATE_IDS` is no longer
+needed once PR #21 is in the preview.)
+
 | Step | Who |
 | --- | --- |
 | 1. Preview: **done** — PR #15 (DO NOT MERGE) into `main` has a deploy preview of everything combined: `https://deploy-preview-15--ephemeral-syrniki-2b3f3c.netlify.app`. Close it after testing. | ✅ |
-| 2. Netlify env vars, **Deploy Previews / branch deploys scope only**: `STRIPE_TEST_CHECKOUT_ENABLED=true`, `STRIPE_TEST_SECRET_KEY` = sandbox restricted key with Checkout Sessions **and Refunds** write, `STRIPE_TEST_SHIPPING_RATE_IDS`, `STRIPE_TEST_SEND_EMAILS=true`, `ORDER_NOTIFY_EMAIL` = owner. Review login vars already exist for previews. | Owner (secrets) |
+| 2. Netlify env vars, **Deploy Previews / branch deploys scope only**: `STRIPE_TEST_CHECKOUT_ENABLED=true`, `STRIPE_TEST_SECRET_KEY` = sandbox restricted key with Checkout Sessions **and Refunds** write, `STRIPE_TEST_WEBHOOK_SECRET`, `STRIPE_TEST_SEND_EMAILS=true`, `ORDER_NOTIFY_EMAIL` = owner. Review login vars already exist for previews. | Owner (secrets) |
 | 3. Stripe **sandbox** → Developers → Webhooks: endpoint `https://deploy-preview-15--ephemeral-syrniki-2b3f3c.netlify.app/api/stripe/test-webhook`, events `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.updated`, `charge.dispute.closed`; put its signing secret in `STRIPE_TEST_WEBHOOK_SECRET` (previews only). | Owner |
 | 4. Use only the owner's own email addresses at checkout (test emails will really be sent). | Owner |
 

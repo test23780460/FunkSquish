@@ -6,6 +6,16 @@ import { assertSession, buildCheckoutSessionParams, createStripeLiveClient, crea
 import { fulfillCheckoutSession, orderNumberFor } from "@/commerce/orders/fulfill";
 import { handleStripeEvent } from "@/commerce/orders/webhook";
 import { fakeDeps, snapshot } from "../orders/helpers";
+import { SHIPPING_ORIGINS, type ShippingOrigin } from "@/commerce/origins";
+import { shippingTableFingerprint } from "@/commerce/shipping-approval";
+
+/** A verified studio rule (made-up numbers) — what the owner will enter before launch. */
+const VERIFIED: ShippingOrigin[] = SHIPPING_ORIGINS.map((o) => ({
+  ...o,
+  rule: { kind: "weight", packagingGrams: 60, tiers: [{ upToGrams: 500, cents: 650 }] },
+  verified: { on: "2026-11-01", by: "owner", evidence: "private/shipping/usps-2026-11.pdf" },
+})) as ShippingOrigin[];
+const APPROVED = shippingTableFingerprint(VERIFIED);
 
 // Fake values only — not real Stripe credentials.
 const LIVE_ENV = {
@@ -13,21 +23,28 @@ const LIVE_ENV = {
   STRIPE_LIVE_CHECKOUT_ENABLED: "true",
   STRIPE_LIVE_SECRET_KEY: "rk_live_FAKEFAKEFAKE123",
   STRIPE_LIVE_WEBHOOK_SECRET: "whsec_FAKElive123",
-  STRIPE_LIVE_SHIPPING_RATE_IDS: "shr_FAKElive1",
+  STRIPE_LIVE_SHIPPING_TABLE: "", // set per test
 };
 
 describe("live configuration stays locked", () => {
-  it("needs the code switch, production, the env switch, a live key, a webhook secret and a shipping rate", () => {
-    expect(readStripeLiveConfig(LIVE_ENV, false)).toEqual({ ok: false, problem: "code-switch-off" });
-    expect(readStripeLiveConfig({ ...LIVE_ENV, BUILD_CONTEXT: "deploy-preview" }, true)).toEqual({ ok: false, problem: "environment-not-allowed" });
-    expect(readStripeLiveConfig({ ...LIVE_ENV, BUILD_CONTEXT: "" , NODE_ENV: "development" }, true)).toEqual({ ok: false, problem: "environment-not-allowed" });
-    expect(readStripeLiveConfig({ ...LIVE_ENV, STRIPE_LIVE_CHECKOUT_ENABLED: "" }, true)).toEqual({ ok: false, problem: "switch-off" });
-    expect(readStripeLiveConfig({ ...LIVE_ENV, STRIPE_LIVE_SECRET_KEY: "" }, true)).toEqual({ ok: false, problem: "missing-secret-key" });
-    expect(readStripeLiveConfig({ ...LIVE_ENV, STRIPE_LIVE_SECRET_KEY: "sk_test_FAKE" }, true)).toEqual({ ok: false, problem: "test-key-rejected" });
-    expect(readStripeLiveConfig({ ...LIVE_ENV, STRIPE_LIVE_SECRET_KEY: "pk_live_FAKE" }, true)).toEqual({ ok: false, problem: "invalid-secret-key" });
-    expect(readStripeLiveConfig({ ...LIVE_ENV, STRIPE_LIVE_WEBHOOK_SECRET: "" }, true)).toEqual({ ok: false, problem: "missing-webhook-secret" });
-    expect(readStripeLiveConfig({ ...LIVE_ENV, STRIPE_LIVE_SHIPPING_RATE_IDS: "" }, true)).toEqual({ ok: false, problem: "missing-shipping-rate" });
-    const ok = readStripeLiveConfig(LIVE_ENV, true);
+  it("needs the code switch, production, the env switch, a live key, a webhook secret, verified shipping and the owner's approval of it", () => {
+    const read = (env: Record<string, string | undefined>, code = true, origins = VERIFIED) => readStripeLiveConfig({ STRIPE_LIVE_SHIPPING_TABLE: APPROVED, ...env }, code, origins);
+    expect(read(LIVE_ENV, false)).toEqual({ ok: false, problem: "code-switch-off" });
+    const env = { ...LIVE_ENV, STRIPE_LIVE_SHIPPING_TABLE: APPROVED };
+    expect(read({ ...env, BUILD_CONTEXT: "deploy-preview" })).toEqual({ ok: false, problem: "environment-not-allowed" });
+    expect(read({ ...env, BUILD_CONTEXT: "", NODE_ENV: "development" })).toEqual({ ok: false, problem: "environment-not-allowed" });
+    expect(read({ ...env, STRIPE_LIVE_CHECKOUT_ENABLED: "" })).toEqual({ ok: false, problem: "switch-off" });
+    expect(read({ ...env, STRIPE_LIVE_SECRET_KEY: "" })).toEqual({ ok: false, problem: "missing-secret-key" });
+    expect(read({ ...env, STRIPE_LIVE_SECRET_KEY: "sk_test_FAKE" })).toEqual({ ok: false, problem: "test-key-rejected" });
+    expect(read({ ...env, STRIPE_LIVE_SECRET_KEY: "pk_live_FAKE" })).toEqual({ ok: false, problem: "invalid-secret-key" });
+    expect(read({ ...env, STRIPE_LIVE_WEBHOOK_SECRET: "" })).toEqual({ ok: false, problem: "missing-webhook-secret" });
+    // Shipping (replaces the old STRIPE_LIVE_SHIPPING_RATE_IDS, which set no price):
+    expect(read(env, true, SHIPPING_ORIGINS)).toEqual({ ok: false, problem: "shipping-not-verified" }); // today: no verified rates
+    expect(read({ ...env, STRIPE_LIVE_SHIPPING_TABLE: "" })).toEqual({ ok: false, problem: "shipping-not-approved" });
+    expect(read({ ...env, STRIPE_LIVE_SHIPPING_TABLE: "ship_v1_0000000000000000" })).toEqual({ ok: false, problem: "shipping-not-approved" });
+    // An old rate-id variable doesn't stand in for the approval.
+    expect(read({ ...env, STRIPE_LIVE_SHIPPING_TABLE: "", STRIPE_LIVE_SHIPPING_RATE_IDS: "shr_FAKElive1" })).toEqual({ ok: false, problem: "shipping-not-approved" });
+    const ok = read(env);
     expect(ok.ok && ok.config.returnOrigin).toBe("https://funksquish.com");
   });
 
@@ -55,7 +72,7 @@ describe("live configuration stays locked", () => {
 
 describe("Stripe sessions per mode", () => {
   const lines = [checkedLine({ variantId: "v1", productId: "p1", sku: "S1", name: "Squish", quantity: 1, unitAmount: 899 })];
-  const cfg = { returnOrigin: "https://funksquish.com", shippingRateIds: ["shr_X"], automaticTax: false };
+  const cfg = { returnOrigin: "https://funksquish.com", automaticTax: false };
   const shipping = quoteFor(lines);
 
   it("offers cards only, in both modes", () => {

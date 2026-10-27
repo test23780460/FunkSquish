@@ -77,12 +77,32 @@ checked out until you do this** (by design).
    agreement in `private/` only.
 4. Re-verify every 90 days (or set `reviewEveryDays`); expired origins stop checkout automatically.
 
-## 4. Stripe shipping-rate ids (`STRIPE_*_SHIPPING_RATE_IDS`)
+## 4. Stripe shipping-rate ids → replaced by verified, owner-approved rates (decision D-SHIP-3)
 
-The checkout locks in `src/commerce/checkout/environment.ts` are **unchanged**: they still require 1–5 `shr_…` ids for
-the test and live modes. The price no longer comes from them — Stripe receives the server's computed rate instead.
-Keeping the requirement means no lock was loosened. **Decision D-SHIP-3:** remove that requirement in a separate,
-reviewed PR, or keep it. Until then, keep any valid `shr_…` id in the variables.
+**Review (2026-10-27):** the old lock required 1–5 Stripe `shr_…` ids (`STRIPE_*_SHIPPING_RATE_IDS`). Since mixed-order
+shipping, checkout sends Stripe the server's own computed rate (`shipping_rate_data`), so those ids are never used: any
+valid-looking id opened the lock, it proved nothing about what customers are charged, and a stale id could give false
+confidence. The requirement is obsolete.
+
+**Replacement (its own draft PR, stacked on the MFA branch, so you can accept or decline it separately):**
+
+| Mode | Before | After |
+| --- | --- | --- |
+| Live | 1–5 `shr_…` ids in `STRIPE_LIVE_SHIPPING_RATE_IDS` | (a) at least one origin with **verified** rates (a rule, who/when/evidence, supplier agreement on file) **and** (b) `STRIPE_LIVE_SHIPPING_TABLE` = the **approval code (fingerprint) of the exact table** that will be charged |
+| Test (sandbox) | 1–5 `shr_…` ids in `STRIPE_TEST_SHIPPING_RATE_IDS` | nothing extra — test checkout already prices only the labeled test origins; the old variable is ignored |
+
+- Nothing is weakened: every other live lock is untouched (code switch, production only, env switch, live key,
+  webhook secret), the live lock goes from 6 to 7 conditions, and the checkout service also needs owner two-step
+  sign-in. The new conditions are tied to real prices; the old one wasn't.
+- The fingerprint (`src/commerce/shipping-approval.ts`) covers each origin's rule, verification, review period,
+  processing time, APO/FPO support, supplier agreement and $0 confirmation (not display wording). **Any change closes
+  live checkout until you approve the new table** — rates can't change on customers without you seeing them first.
+  The owner Orders page shows the code, how many origins are verified, and whether Production's value matches.
+- Review dates: the lock itself doesn't read the clock (pages that check it are built ahead of time, and Next.js
+  refuses clock reads there — caught by the build). A verification past its `reviewEveryDays` (or dated in the
+  future) is refused item by item at checkout, every time, exactly as before; if every origin lapses, nothing can be
+  bought. The owner Orders page counts only current verifications.
+- Tests: `tests/shipping/approval.test.ts` (9) and the live-lock cases in `tests/checkout/live-readiness.test.ts`.
 
 ## 5. After payment: packages on the order (`/partners/review/orders/<session>`)
 
