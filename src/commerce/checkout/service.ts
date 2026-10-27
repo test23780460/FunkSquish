@@ -13,6 +13,7 @@ import { getLiveOrderStore, getTestOrderStore, type KvStore } from "../orders/st
 import { snapshotFromStripeSession } from "../orders/session-snapshot";
 import { brevoMailer, notifyPaidOrder, type NotifyConfig } from "../orders/notify";
 import { checkCheckoutRateLimit } from "./rate-limit";
+import { MFA_GATE_TEXT, ownerMfaReady } from "@/lib/owner/mfa-gate";
 import type { OrderDeps } from "../orders/fulfill";
 import { canPurchase, listProducts } from "../catalog";
 import type { Product, ProductVariant } from "../types";
@@ -200,9 +201,17 @@ async function quoteCartIn(rt: ModeRuntime, rawLines: unknown): Promise<CartQuot
  * `client` is the request's headers (null outside a web request). Requests are
  * counted only while a checkout mode is open, so the closed shop stores nothing.
  */
+/** Real orders only once the owner has two-step sign-in (owner decision); test mode isn't affected. */
+async function ownerReadyFor(mode: StripeMode): Promise<boolean> {
+  if (mode !== "live") return true;
+  const gate = await ownerMfaReady();
+  if (!gate.ready) console.warn(`[stripe-live] checkout closed: ${MFA_GATE_TEXT[gate.reason]}`);
+  return gate.ready;
+}
+
 export async function quoteCart(rawLines: unknown, client: Pick<Headers, "get"> | null = null): Promise<CartQuote> {
   const mode = activeMode();
-  if (!mode) return { ok: false, error: "Checkout isn't open yet.", blocked: [] };
+  if (!mode || !(await ownerReadyFor(mode))) return { ok: false, error: "Checkout isn't open yet.", blocked: [] };
   const limited = await checkCheckoutRateLimit("quote", client);
   if (!limited.ok) return { ok: false, error: limited.message, blocked: [] };
   const rt = await runtimeFor(mode);
@@ -266,6 +275,7 @@ async function startCheckoutIn(rt: ModeRuntime, rawLines: unknown): Promise<Star
 
 async function startIn(mode: StripeMode, rawLines: unknown, client: Pick<Headers, "get"> | null): Promise<StartCheckoutResult> {
   if (!(mode === "live" ? stripeLiveConfig() : stripeTestConfig())) return { ok: false, error: "Checkout isn't open yet." };
+  if (!(await ownerReadyFor(mode))) return { ok: false, error: "Checkout isn't open yet." };
   // Before anything is read, held or sent to Stripe.
   const limited = await checkCheckoutRateLimit("start", client);
   if (!limited.ok) return { ok: false, error: limited.message };

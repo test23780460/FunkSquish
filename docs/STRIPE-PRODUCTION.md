@@ -72,7 +72,8 @@ Built on top of this PR's head; nothing here unlocks live payments.
    shipping charge for all packages (`docs/MIXED-ORDER-SHIPPING.md`). The `shr_…` ids are still required by the unchanged
    locks but no longer set the price (decision D-SHIP-3).
 2. ~~MFA for the owner area.~~ **Decided and built (branch `claude/upbeat-hawking-aonyc6-mfa`):** authenticator-app
-   two-step sign-in, required automatically once live checkout is on (`docs/OWNER-SECURITY.md`).
+   two-step sign-in, required automatically once live checkout (or partner applications) is on, and **live checkout
+   refuses to open until an enrollment exists** (`src/lib/owner/mfa-gate.ts`, `docs/OWNER-SECURITY.md`).
 3. **Deploy-preview verification is not done.** Refund, delay-notice and dispute flows have automated tests only; see
    `docs/PREVIEW-VERIFICATION-PLAN.md` for the sandbox run and its pass criteria.
 
@@ -161,7 +162,7 @@ The **sandbox** key is restricted to Checkout Sessions only, so the owner page's
    documents (`npm run catalog:check`); final-sale labels before any blind-bag items.
 6. Live keys and webhook created **by you** in the Stripe Dashboard and saved in Netlify Production as secrets (never in
    chat or GitHub).
-7. Owner security: two-step sign-in set up **on production**, then `OWNER_MFA_REQUIRED=true` for Production
+7. Owner security: two-step sign-in set up **on production** (checkout stays closed without it), then `OWNER_MFA_REQUIRED=true` for Production
    (`docs/OWNER-SECURITY.md`); two-step verification on Stripe, Netlify, Google, GitHub, Brevo and TikTok Shop.
 8. Inventory: starting counts confirmed on the production inventory page for every product being sold
    (`docs/INVENTORY.md`).
