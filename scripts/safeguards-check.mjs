@@ -2,7 +2,7 @@
 /**
  * Pre-launch safeguards, checked on every pull request. Fails if a change
  * switches on purchasing, partner applications or email sign-ups, weakens the
- * Stripe locks, or publishes a draft policy.
+ * Stripe locks or the owner two-step sign-in gates, or publishes a draft policy.
  *
  * THIS IS MEANT TO FAIL ON A LAUNCH PR. When the owner approves turning
  * something on, that PR updates EXPECTED below in the same change, so the
@@ -51,7 +51,20 @@ if (env) {
   for (const [text, what] of must) if (!env.includes(text)) problems.push(`Stripe lock changed or missing: ${what}`);
   const live = read("src/commerce/checkout/live.ts");
   if (live && !live.includes('features.commerce && features.checkoutMode === "hosted-checkout"')) problems.push("live code switch changed (live.ts)");
+  // Verified, owner-approved shipping rates (PR #21), once that code exists on the branch.
+  if (read("src/commerce/shipping-approval.ts") && !env.includes("const shipping = liveShippingProblem(origins, env.STRIPE_LIVE_SHIPPING_TABLE);"))
+    problems.push("Stripe lock changed or missing: live mode needs verified, owner-approved shipping rates");
   checked.push("Stripe test/live locks");
+}
+
+// 2b. Owner two-step sign-in gates real orders and partner applications (PR #18), once that code exists.
+if (read("src/lib/owner/mfa-gate.ts")) {
+  const service = read("src/commerce/checkout/service.ts") ?? "";
+  const partners = read("src/app/actions/partners.ts") ?? "";
+  if (!/if \(!\(await ownerReadyFor\(mode\)\)\) return \{ ok: false, error: "Checkout isn't open yet\." \};/.test(service))
+    problems.push("live checkout no longer waits for owner two-step sign-in (service.ts)");
+  if (!/const mfa = await ownerMfaReady\(\);\s*if \(!mfa\.ready\)/.test(partners)) problems.push("partner applications no longer wait for owner two-step sign-in (actions/partners.ts)");
+  checked.push("two-step sign-in gates");
 }
 const stripe = read("src/commerce/checkout/stripe.ts");
 if (stripe) {
