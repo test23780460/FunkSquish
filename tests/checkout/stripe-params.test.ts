@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { assertTestSession, buildCheckoutSessionParams, createStripeTestClient, STRIPE_API_VERSION } from "@/commerce/checkout/stripe";
 import type { StripeTestConfig } from "@/commerce/checkout/environment";
+import { checkedLine, quoteFor } from "./shipping-helpers";
 
 const config: StripeTestConfig = {
   secretKey: "sk_test_FAKEFAKEFAKE123",
@@ -11,12 +12,13 @@ const config: StripeTestConfig = {
 };
 
 const lines = [
-  { variantId: "test-var-jelly-blue", productId: "test-fixture-jelly", sku: "TEST-JELLY-BLUE", name: "TEST Jelly — Blue", quantity: 2, unitAmount: 500, currency: "usd" as const, fulfillmentSource: "in_house" as const },
-  { variantId: "test-var-supplier-mint", productId: "test-fixture-supplier", sku: "TEST-SUPPLIER-MINT", name: "TEST Supplier — Mint", quantity: 1, unitAmount: 750, currency: "usd" as const, fulfillmentSource: "supplier" as const },
+  checkedLine({ variantId: "test-var-jelly-blue", productId: "test-fixture-jelly", sku: "TEST-JELLY-BLUE", name: "TEST Jelly — Blue", quantity: 2, unitAmount: 500 }),
+  checkedLine({ variantId: "test-var-supplier-mint", productId: "test-fixture-supplier", sku: "TEST-SUPPLIER-MINT", name: "TEST Supplier — Mint", quantity: 1, unitAmount: 750, fulfillmentSource: "supplier", fulfillmentOrigin: "test-supplier-a" }),
 ];
+const shipping = quoteFor(lines);
 
 describe("buildCheckoutSessionParams", () => {
-  const params = buildCheckoutSessionParams({ lines, checkoutId: "11111111-2222-3333-4444-555555555555", config, expiresAt: 1_800_000_000 });
+  const params = buildCheckoutSessionParams({ lines, checkoutId: "11111111-2222-3333-4444-555555555555", config, shipping, expiresAt: 1_800_000_000 });
 
   it("creates a one-time payment session priced from server data", () => {
     expect(params.mode).toBe("payment");
@@ -26,13 +28,19 @@ describe("buildCheckoutSessionParams", () => {
     ]);
   });
 
-  it("tags each line with variant, SKU and fulfillment source for order processing", () => {
+  it("tags each line with variant, SKU, fulfillment source and origin for order processing", () => {
     expect(params.line_items?.[1].price_data?.product_data?.metadata).toEqual({
       variant_id: "test-var-supplier-mint",
       product_id: "test-fixture-supplier",
       sku: "TEST-SUPPLIER-MINT",
       fulfillment_source: "supplier",
+      fulfillment_origin: "test-supplier-a",
     });
+  });
+
+  it("adds sales tax on top of prices and shipping (never included in them)", () => {
+    for (const li of params.line_items ?? []) expect(li.price_data?.tax_behavior).toBe("exclusive");
+    expect(params.shipping_options?.[0].shipping_rate_data).toMatchObject({ tax_behavior: "exclusive", tax_code: "txcd_92010001" });
   });
 
   it("links the session to our checkout id", () => {
@@ -41,9 +49,22 @@ describe("buildCheckoutSessionParams", () => {
     expect(params.payment_intent_data?.metadata).toMatchObject({ checkout_id: "11111111-2222-3333-4444-555555555555" });
   });
 
-  it("collects a U.S. shipping address and offers only configured rates", () => {
+  it("collects a U.S. shipping address and offers exactly one shipping charge: the server's quote for every package", () => {
     expect(params.shipping_address_collection).toEqual({ allowed_countries: ["US"] });
-    expect(params.shipping_options).toEqual([{ shipping_rate: "shr_FAKE1" }, { shipping_rate: "shr_FAKE2" }]);
+    expect(params.shipping_options).toHaveLength(1);
+    expect(params.shipping_options?.[0].shipping_rate_data).toMatchObject({
+      type: "fixed_amount",
+      display_name: "Shipping (2 packages)",
+      fixed_amount: { amount: 900, currency: "usd" },
+    });
+    // The fixed Dashboard rates no longer set the price (they stay a required lock in environment.ts).
+    expect(JSON.stringify(params.shipping_options)).not.toContain("shr_FAKE");
+    expect(params.metadata?.shipping_plan).toBe("v1;test-studio:h:450:2:1;test-supplier-a:s:450:3:1");
+  });
+
+  it("refuses to build a session without a quote covering every line", () => {
+    expect(() => buildCheckoutSessionParams({ lines, checkoutId: "x", config, shipping: { packages: [], totalCents: 0 }, expiresAt: 1 })).toThrow();
+    expect(() => buildCheckoutSessionParams({ lines, checkoutId: "x", config, shipping: quoteFor(lines.slice(0, 1)), expiresAt: 1 })).toThrow();
   });
 
   it("returns to the preview, never to production", () => {
@@ -55,7 +76,7 @@ describe("buildCheckoutSessionParams", () => {
   it("expires so held stock is released, and leaves tax off unless configured", () => {
     expect(params.expires_at).toBe(1_800_000_000);
     expect(params.automatic_tax).toEqual({ enabled: false });
-    expect(buildCheckoutSessionParams({ lines, checkoutId: "x", config: { ...config, automaticTax: true }, expiresAt: 1 }).automatic_tax).toEqual({ enabled: true });
+    expect(buildCheckoutSessionParams({ lines, checkoutId: "x", config: { ...config, automaticTax: true }, shipping, expiresAt: 1 }).automatic_tax).toEqual({ enabled: true });
   });
 });
 

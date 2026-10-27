@@ -4,7 +4,22 @@ import { redirect } from "next/navigation";
 import { requireReviewer } from "@/lib/partners/review-auth";
 import { siteOrigin } from "@/lib/partners/submit";
 import { activeMode, notifyConfigFor, orderDeps } from "@/commerce/checkout/service";
-import { cancelOrder, getOrder, markShipped, reconcileRecentSessions, refundOrder, sendDelayNotice, setShipBy } from "@/commerce/orders/admin";
+import {
+  RETURN_CAUSES,
+  cancelOrder,
+  cancelPackage,
+  getOrder,
+  markLost,
+  markReturned,
+  markShipped,
+  reconcileRecentSessions,
+  refundOrder,
+  refundPackage,
+  reshipPackage,
+  sendDelayNotice,
+  setShipBy,
+} from "@/commerce/orders/admin";
+import type { ReturnCause } from "@/commerce/orders/types";
 import { notifyPaidOrder, notifyShipped } from "@/commerce/orders/notify";
 
 /*
@@ -132,4 +147,79 @@ export async function delayNoticeAction(fd: FormData) {
   const r = await sendDelayNotice(deps.store, sessionId, String(fd.get("group") ?? ""), newShipBy, notify);
   if (r.ok) console.info(`[orders] ${r.order.id} delay notice recorded`);
   redirect(detail(sessionId, r.ok ? "saved=delay" : `error=${msg(r.error)}`));
+}
+
+/* ------------------------------ one package ------------------------------ */
+
+const groupFrom = (fd: FormData) => String(fd.get("group") ?? "").slice(0, 40);
+
+/** Money moves: the owner types the order number, like the whole-order refund. */
+async function confirmedOrder(fd: FormData, deps: Awaited<ReturnType<typeof context>>["deps"], sessionId: string, what: string) {
+  const order = await getOrder(deps.store, sessionId);
+  if (!order) redirect(BASE);
+  if (fd.get("confirm") !== order.id) redirect(detail(sessionId, `error=${msg(`Type the order number to confirm ${what}.`)}`));
+  return order;
+}
+
+/** Cancel one unshipped package (e.g. the customer declined a delay): refund it in full and return its stock. */
+export async function cancelPackageAction(fd: FormData) {
+  const { deps } = await context();
+  const sessionId = sessionFrom(fd);
+  if (!sessionId) redirect(BASE);
+  const order = await confirmedOrder(fd, deps, sessionId, "canceling this package");
+  let r;
+  try {
+    r = await cancelPackage(deps.stripe, deps.store, sessionId, groupFrom(fd), { supplierCanceled: fd.get("supplierCanceled") === "yes" });
+  } catch (err) {
+    console.error(`[orders] package cancel failed for ${order.id}:`, (err as { code?: string })?.code ?? "error");
+    r = { ok: false as const, error: "Stripe didn't accept the refund. Nothing was canceled." };
+  }
+  if (!r.ok) redirect(detail(sessionId, `error=${msg(r.error)}`));
+  console.info(`[orders] ${order.id} package canceled`);
+  redirect(detail(sessionId, "saved=package-canceled"));
+}
+
+/** Refund one package in full (items + its shipping + tax): lost, came back, or customer canceled after a delay. */
+export async function refundPackageAction(fd: FormData) {
+  const { deps } = await context();
+  const sessionId = sessionFrom(fd);
+  if (!sessionId) redirect(BASE);
+  const order = await confirmedOrder(fd, deps, sessionId, "this package refund");
+  let r;
+  try {
+    r = await refundPackage(deps.stripe, deps.store, sessionId, groupFrom(fd));
+  } catch (err) {
+    console.error(`[orders] package refund failed for ${order.id}:`, (err as { code?: string })?.code ?? "error");
+    r = { ok: false as const, error: "Stripe didn't accept the refund. Check the Stripe Dashboard." };
+  }
+  if (!r.ok) redirect(detail(sessionId, `error=${msg(r.error)}`));
+  console.info(`[orders] ${order.id} package refunded`);
+  redirect(detail(sessionId, "saved=package-refund"));
+}
+
+export async function markLostAction(fd: FormData) {
+  const { deps } = await context();
+  const sessionId = sessionFrom(fd);
+  if (!sessionId) redirect(BASE);
+  const r = await markLost(deps.store, sessionId, groupFrom(fd));
+  redirect(detail(sessionId, r.ok ? "saved=lost" : `error=${msg(r.error)}`));
+}
+
+export async function markReturnedAction(fd: FormData) {
+  const { deps } = await context();
+  const sessionId = sessionFrom(fd);
+  if (!sessionId) redirect(BASE);
+  const cause = String(fd.get("cause") ?? "");
+  const r = cause in RETURN_CAUSES ? await markReturned(deps.store, sessionId, groupFrom(fd), cause as ReturnCause) : { ok: false as const, error: "Choose why it came back." };
+  redirect(detail(sessionId, r.ok ? "saved=returned" : `error=${msg(r.error)}`));
+}
+
+/** Free replacement for a lost or returned package (no charge to the customer). */
+export async function reshipAction(fd: FormData) {
+  const { deps } = await context();
+  const sessionId = sessionFrom(fd);
+  if (!sessionId) redirect(BASE);
+  const r = await reshipPackage(deps.store, sessionId, groupFrom(fd));
+  if (r.ok) console.info(`[orders] ${r.order.id} replacement started`);
+  redirect(detail(sessionId, r.ok ? "saved=reship" : `error=${msg(r.error)}`));
 }

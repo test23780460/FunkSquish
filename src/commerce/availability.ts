@@ -1,5 +1,6 @@
 import type { Availability, Money, Product, ProductVariant } from "./types";
 import { purchasingEnabled } from "@/lib/features";
+import { variantShippingReady } from "./origins";
 
 /**
  * Pure pricing/availability helpers. No catalog data is imported here, so
@@ -40,7 +41,8 @@ export function getAvailability(product: Product, variant?: ProductVariant): Ava
   const allSoldOut = known.length === variants.length && known.every((v) => (v.inventory.available ?? 0) <= 0);
   if (allSoldOut) return "sold-out";
 
-  const sellable = purchasingEnabled && variants.some((v) => v.price !== null);
+  // Sellable only with a price AND verified shipping from where it ships (src/commerce/origins.ts).
+  const sellable = purchasingEnabled && variants.some((v) => v.price !== null && variantShippingReady(v));
   if (!sellable || known.length === 0) return "coming-soon";
 
   const units = known.reduce((sum, v) => sum + Math.max(0, v.inventory.available ?? 0), 0);
@@ -57,8 +59,8 @@ export const availabilityLabel: Record<Availability, string> = {
   unavailable: "Unavailable",
 };
 
-/** Purchasable only when every safety gate is open. */
+/** Purchasable only when every safety gate is open — including verified shipping for where it ships from. */
 export function canPurchase(product: Product, variant: ProductVariant) {
   const a = getAvailability(product, variant);
-  return purchasingEnabled && (a === "in-stock" || a === "low-stock") && variant.price !== null;
+  return purchasingEnabled && (a === "in-stock" || a === "low-stock") && variant.price !== null && variantShippingReady(variant);
 }

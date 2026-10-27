@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { commitStock, getReservation, releaseStock } from "./inventory";
 import { updateWithRetry, type KvStore } from "./store";
 import type { SessionSnapshot } from "./session-snapshot";
-import { isAllowedDestination } from "./shipping-restrictions";
+import { isAllowedDestination, isMilitaryAddress } from "./shipping-restrictions";
 import { shipByFor } from "./ship-by";
 import type { FulfillmentGroup, Order, OrderEventRecord } from "./types";
 
@@ -42,33 +42,73 @@ export function orderNumberFor(sessionId: string, at: Date, mode: "test" | "live
   return `FS-${mode === "test" ? "T-" : ""}${day}-${code}`;
 }
 
-/** Our own stock gets the Shipping Policy's 2-business-day ship-by date from payment; supplier packages are set by the owner. */
-function fulfillmentGroups(snapshot: SessionSnapshot, paidAt: Date | null): FulfillmentGroup[] {
+const emptyGroup = (id: string, source: FulfillmentGroup["source"], variantIds: string[]): FulfillmentGroup => ({
+  id,
+  source,
+  supplierRef: null,
+  variantIds,
+  // Supplier items are placed with the partner MANUALLY by the owner. Nothing is auto-purchased.
+  status: source === "supplier" ? "awaiting_supplier" : "unfulfilled",
+  carrier: null,
+  trackingNumber: null,
+  trackingUrl: null,
+  shippedAt: null,
+  deliveredAt: null,
+  shipBy: null,
+  delayNotices: [],
+});
+
+/**
+ * One package per origin, exactly as priced at checkout (session metadata
+ * "shipping_plan"): its own shipping charge and its own ship-by date
+ * (business days after payment, as promised). If the plan is missing or
+ * doesn't match the items, fall back to one package per source and flag the
+ * order so the owner checks it — never guess a package's charge.
+ */
+export function fulfillmentGroups(snapshot: SessionSnapshot, paidAt: Date | null): { groups: FulfillmentGroup[]; flags: string[] } {
+  const plan = snapshot.shippingPlan ?? null;
+  const flags: string[] = [];
+  if (plan && plan.length) {
+    const groups = plan.map((p) => ({
+      ...emptyGroup(
+        p.groupId,
+        p.source,
+        snapshot.lineItems.filter((l) => l.fulfillmentOrigin === p.groupId).map((l) => l.variantId),
+      ),
+      origin: p.groupId,
+      shippingAmount: p.cents,
+      processingBusinessDays: p.processingBusinessDays,
+      militaryAddresses: p.militaryAddresses,
+      shipBy: paidAt ? shipByFor(paidAt, p.processingBusinessDays) : null,
+    }));
+    const assigned = new Set(groups.flatMap((g) => g.variantIds));
+    const complete = snapshot.lineItems.every((l) => assigned.has(l.variantId)) && groups.every((g) => g.variantIds.length > 0);
+    if (complete) {
+      if (plan.reduce((sum, p) => sum + p.cents, 0) !== snapshot.amounts.shipping) flags.push("shipping_mismatch");
+      return { groups, flags };
+    }
+    flags.push("shipping_mismatch");
+  } else if (snapshot.lineItems.some((l) => l.fulfillmentOrigin)) {
+    flags.push("shipping_mismatch"); // priced per package at checkout, but the plan didn't come back
+  }
+
+  // Orders from before per-package pricing (or a broken plan): one package per source, as before.
   const groups: FulfillmentGroup[] = [];
   for (const source of ["in_house", "supplier"] as const) {
     const variantIds = snapshot.lineItems.filter((l) => l.fulfillmentSource === source).map((l) => l.variantId);
     if (variantIds.length === 0) continue;
-    groups.push({
-      id: `${source}-1`,
-      source,
-      supplierRef: null,
-      variantIds,
-      // Supplier items are placed with the partner MANUALLY by the owner. Nothing is auto-purchased.
-      status: source === "supplier" ? "awaiting_supplier" : "unfulfilled",
-      carrier: null,
-      trackingNumber: null,
-      trackingUrl: null,
-      shippedAt: null,
-      deliveredAt: null,
-      shipBy: source === "in_house" && paidAt ? shipByFor(paidAt) : null,
-      delayNotices: [],
-    });
+    groups.push({ ...emptyGroup(`${source}-1`, source, variantIds), shipBy: source === "in_house" && paidAt ? shipByFor(paidAt) : null });
   }
-  return groups;
+  return { groups, flags };
 }
 
 function newOrder(snapshot: SessionSnapshot, paid: boolean, at: Date, trigger: OrderEventRecord, mode: "test" | "live"): Order {
   const iso = at.toISOString();
+  const { groups, flags } = fulfillmentGroups(snapshot, paid ? at : null);
+  // Territory / non-US address slipped through Stripe's form → refund, don't ship.
+  if (!isAllowedDestination(snapshot.shippingAddress)) flags.push("restricted_destination");
+  // Military address, but a package's origin can't ship there (disclosed on Stripe's page) → refund that package.
+  if (isMilitaryAddress(snapshot.shippingAddress) && groups.some((g) => g.militaryAddresses === false)) flags.push("military_unsupported");
   return {
     id: orderNumberFor(snapshot.id, at, mode),
     mode,
@@ -79,14 +119,13 @@ function newOrder(snapshot: SessionSnapshot, paid: boolean, at: Date, trigger: O
     paymentStatus: paid ? "paid" : "processing",
     amounts: { currency: "usd", ...snapshot.amounts },
     lineItems: snapshot.lineItems.map((l) => ({ ...l })),
-    fulfillments: fulfillmentGroups(snapshot, paid ? at : null),
+    fulfillments: groups,
     customer: snapshot.customer,
     shippingAddress: snapshot.shippingAddress,
     shippingRateId: snapshot.shippingRateId,
     refunds: [],
     inventoryCommitted: false,
-    // Territory / non-US address slipped through Stripe's form → refund, don't ship.
-    flags: isAllowedDestination(snapshot.shippingAddress) ? [] : ["restricted_destination"],
+    flags,
     createdAt: iso,
     updatedAt: iso,
     history: [trigger],
@@ -124,7 +163,8 @@ export async function fulfillCheckoutSession(sessionId: string, deps: OrderDeps,
       current.paymentStatus = "paid";
       current.status = "open";
       // The ship-by clock starts when payment actually arrives.
-      for (const g of current.fulfillments) if (g.source === "in_house" && !g.shipBy) g.shipBy = shipByFor(now);
+      for (const g of current.fulfillments)
+        if (!g.shipBy && (g.processingBusinessDays || g.source === "in_house")) g.shipBy = shipByFor(now, g.processingBusinessDays);
       current.amounts = { currency: "usd", ...snapshot.amounts };
       current.updatedAt = now.toISOString();
       addHistory(current, trigger);

@@ -2,7 +2,7 @@
 
 import { testCheckoutEnabled } from "@/commerce/checkout/environment";
 import { liveCheckoutEnabled } from "@/commerce/checkout/live";
-import { startLiveCheckout, startTestCheckout } from "@/commerce/checkout/service";
+import { quoteCart, startLiveCheckout, startTestCheckout, type CartQuote } from "@/commerce/checkout/service";
 import { CheckoutDisabledError, getCheckoutProvider } from "@/commerce/provider";
 
 export type CheckoutResult = { ok: true; url: string } | { ok: false; error: string };
@@ -28,4 +28,13 @@ export async function startCheckout(lines: { variantId: string; quantity: number
     if (!(err instanceof CheckoutDisabledError)) console.error("[checkout] unexpected:", err instanceof Error ? err.name : "unknown");
     return { ok: false, error: "Checkout isn't open yet." };
   }
+}
+
+/**
+ * Shipping and total for the cart drawer, before checkout. Same server-side
+ * calculation as checkout itself (the browser's prices are never used); read
+ * only — nothing is reserved or charged.
+ */
+export async function quoteCheckout(lines: { variantId: string; quantity: number }[]): Promise<CartQuote> {
+  return quoteCart(lines);
 }

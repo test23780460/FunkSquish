@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { PRIVATE_COLUMNS, PRIVATE_DIR, PRIVATE_JSON, PUBLIC_COLUMNS, PUBLIC_JSON, ROOT, money, readJson, toCsv } from "./catalog-lib.mjs";
+import { FULFILLMENT_COLUMNS } from "./catalog-lib.mjs";
 
 const products = readJson(PUBLIC_JSON, []);
 const internal = readJson(PRIVATE_JSON, {});
@@ -44,6 +45,8 @@ const rows = products.flatMap((p) =>
       inventory_tracked: String(v.inventory.tracked),
       inventory_available: v.inventory.available ?? "",
       weight_grams: v.weightGrams ?? "",
+      fulfillment_source: v.fulfillmentSource ?? "",
+      fulfillment_origin: v.fulfillmentOrigin ?? "",
       length_cm: v.dimensions?.lengthCm ?? "",
       width_cm: v.dimensions?.widthCm ?? "",
       height_cm: v.dimensions?.heightCm ?? "",
@@ -66,5 +69,5 @@ const rows = products.flatMap((p) =>
 
 fs.mkdirSync(PRIVATE_DIR, { recursive: true });
 const out = path.join(PRIVATE_DIR, "catalog-export.csv");
-fs.writeFileSync(out, toCsv(rows, [...PUBLIC_COLUMNS, ...PRIVATE_COLUMNS]));
+fs.writeFileSync(out, toCsv(rows, [...PUBLIC_COLUMNS, ...FULFILLMENT_COLUMNS, ...PRIVATE_COLUMNS]));
 console.log(`Exported ${rows.length} variant rows -> ${path.relative(ROOT, out)} (git-ignored)`);

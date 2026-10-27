@@ -94,10 +94,35 @@ function itemsTable(order: Order) {
   return `<table cellpadding="6" style="border-collapse:collapse;min-width:280px">${rows}${extra}<tr><td><b>Total</b></td><td align="right"><b>${money(a.total)}</b></td></tr></table>`;
 }
 
+/** "from FunkSquish" / "from a supplier partner" — never a supplier's name. */
+export function packageLabel(order: Order, groupId: string): string {
+  const g = order.fulfillments.find((f) => f.id === groupId);
+  const n = order.fulfillments.findIndex((f) => f.id === groupId) + 1;
+  const from = g?.source === "supplier" ? "from a supplier partner" : "from FunkSquish";
+  return order.fulfillments.length > 1 ? `Package ${n} (${from})` : `Your package (${from})`;
+}
+
+const longDay = (day: string) => new Date(`${day}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
+
+/** One line per package: what's in it and when it ships. Only for orders priced per package. */
+function packagesHtml(order: Order): string {
+  if (!order.fulfillments.every((f) => typeof f.shippingAmount === "number")) return "";
+  const rows = order.fulfillments
+    .map((f) => {
+      const items = order.lineItems.filter((l) => f.variantIds.includes(l.variantId)).map((l) => `${esc(l.name)} × ${l.quantity}`).join(", ");
+      const when = f.shipBy ? `ships by ${esc(longDay(f.shipBy))}` : "ship date to follow";
+      return `<li><b>${esc(packageLabel(order, f.id))}</b>: ${items} — ${when} · shipping ${money(f.shippingAmount ?? 0)}</li>`;
+    })
+    .join("");
+  const intro = order.fulfillments.length > 1 ? `<p>Your order ships in <b>${order.fulfillments.length} separate packages</b>, each with its own tracking email:</p>` : "";
+  return `${intro}<ul>${rows}</ul>`;
+}
+
 export function customerConfirmationEmail(order: Order, cfg: Pick<NotifyConfig, "siteUrl" | "contactEmail">) {
   const addr = order.shippingAddress;
   const address = addr ? [addr.name, addr.line1, addr.line2, [addr.city, addr.state, addr.postalCode].filter(Boolean).join(", ")].filter(Boolean).map(esc).join("<br>") : "";
   const supplier = order.fulfillments.some((f) => f.source === "supplier");
+  const perPackage = packagesHtml(order);
   return {
     subject: `${prefix(order)}Your FunkSquish order ${order.id}`,
     html: `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#0e2a5c">
@@ -105,7 +130,8 @@ export function customerConfirmationEmail(order: Order, cfg: Pick<NotifyConfig, 
 <p>We've received your order <b>${esc(order.id)}</b> and your payment. We'll email your tracking number when it ships.</p>
 ${itemsTable(order)}
 ${address ? `<p><b>Shipping to</b><br>${address}</p>` : ""}
-<p>Items from our own stock ship within 2 business days.${supplier ? " Items shipped by our supplier partner ship within the processing time shown on their product page when you ordered, and may arrive separately." : ""} If anything will be late, we'll email you before the ship-by date with your options, including a full refund.</p>
+${perPackage || `<p>Items from our own stock ship within 2 business days.${supplier ? " Items shipped by our supplier partner ship within the processing time shown on their product page when you ordered, and may arrive separately." : ""}</p>`}
+<p>If any package will be late, we'll email you before its ship-by date with your options, including a full refund for that package. The shipping you paid at checkout covers every package — we never add shipping charges later.</p>
 <p>Questions? Reply to this email or write to ${esc(cfg.contactEmail)}. See our <a href="${esc(cfg.siteUrl)}/shipping">Shipping</a> and <a href="${esc(cfg.siteUrl)}/returns">Returns</a> policies.</p>
 </body></html>`,
   };
@@ -128,11 +154,16 @@ ${flags}
 export function shippingEmail(order: Order, groupId: string) {
   const g = order.fulfillments.find((f) => f.id === groupId);
   const tracking = g?.trackingUrl ? `<a href="${esc(g.trackingUrl)}">${esc(g.trackingNumber)}</a>` : esc(g?.trackingNumber);
+  const replacement = (g?.previousShipments?.length ?? 0) > 0;
+  const items = order.lineItems.filter((l) => g?.variantIds.includes(l.variantId)).map((l) => `<li>${esc(l.name)} × ${l.quantity}</li>`).join("");
+  const others = order.fulfillments.filter((f) => f.id !== groupId && f.status !== "canceled").length;
   return {
-    subject: `${prefix(order)}Your FunkSquish order ${order.id} has shipped`,
+    subject: `${prefix(order)}Your FunkSquish order ${order.id} has shipped${replacement ? " (replacement)" : ""}`,
     html: `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#0e2a5c">
-<h2>It's on its way!</h2>
-<p>Part or all of your order <b>${esc(order.id)}</b> shipped${g?.carrier ? ` with ${esc(g.carrier)}` : ""}.</p>
+<h2>${replacement ? "Your replacement is on its way!" : "It's on its way!"}</h2>
+<p>${esc(packageLabel(order, groupId))} from order <b>${esc(order.id)}</b> shipped${g?.carrier ? ` with ${esc(g.carrier)}` : ""}${replacement ? " at no cost to you" : ""}:</p>
+<ul>${items}</ul>
+${others ? `<p>${others === 1 ? "Your other package ships" : `Your other ${others} packages ship`} separately, with ${others === 1 ? "its" : "their"} own tracking email.</p>` : ""}
 <p>Tracking: ${tracking}</p>
 <p>If anything arrives damaged, defective or wrong, please email us — ideally within 7 days of delivery, with photos if you can. See our Returns policy.</p>
 </body></html>`,
@@ -145,8 +176,14 @@ export async function notifyPaidOrder(store: KvStore, order: Order, cfg: NotifyC
   await sendOnce(store, order, "owner", cfg, now, () => ({ to: cfg.ownerEmail, tag: "order-owner", ...ownerOrderEmail(order, cfg.ownerOrdersUrl) }));
 }
 
+/** Email slot for a package's shipping notice. A replacement shipment gets its own slot, so it's emailed too. */
+export function shippingSlotId(order: Order, groupId: string): string {
+  const n = order.fulfillments.find((f) => f.id === groupId)?.previousShipments?.length ?? 0;
+  return n ? `${groupId}~r${n}` : groupId;
+}
+
 export async function notifyShipped(store: KvStore, order: Order, groupId: string, cfg: NotifyConfig, now = new Date()) {
-  await sendOnce(store, order, `shipping:${groupId}`, cfg, now, () => ({ to: order.customer.email, tag: "order-shipped", ...shippingEmail(order, groupId) }));
+  await sendOnce(store, order, `shipping:${shippingSlotId(order, groupId)}`, cfg, now, () => ({ to: order.customer.email, tag: "order-shipped", ...shippingEmail(order, groupId) }));
 }
 
 /** Brevo transactional email. */
@@ -193,7 +230,7 @@ export function delayNoticeEmail(
 <p>We can't ship these items from order <b>${esc(order.id)}</b> by the date we promised${d.originalShipBy ? ` (${esc(d.originalShipBy)})` : ""}:</p>
 <ul>${items}</ul>
 <p>${when}</p>
-<p><b>You can cancel these items for a full refund</b> at no cost: just reply to this email with "cancel" (or write to ${esc(cfg.contactEmail)}). We'll refund them to your original payment method within 7 business days.</p>
+<p><b>You can cancel these items for a full refund</b> — including ${order.fulfillments.length > 1 ? "this package's shipping charge" : "shipping"} and any tax — at no cost: just reply to this email with "cancel" (or write to ${esc(cfg.contactEmail)}). We'll refund them to your original payment method within 7 business days.${order.fulfillments.length > 1 ? " The rest of your order isn't affected." : ""}</p>
 ${silence}
 <p>You can cancel any time before the items ship. See our <a href="${esc(cfg.siteUrl)}/shipping">Shipping Policy</a>.</p>
 </body></html>`,

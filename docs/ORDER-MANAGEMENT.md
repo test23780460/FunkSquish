@@ -17,15 +17,15 @@ Code: `src/commerce/orders/`. Everything here runs **only in Stripe test mode** 
 | **Customer** (on the order) | email, name, phone — copied from Stripe's `customer_details` |
 | **Order** | `FS-T-YYYYMMDD-XXXXXXXX` (T = test), Stripe session + PaymentIntent ids, `status`, `paymentStatus`, amounts (subtotal/shipping/tax/discount/total in cents), line items, fulfillment groups, shipping address, refunds, `flags` (e.g. `oversold`), history of triggering events |
 | **Line item** | variant, SKU, name, quantity, unit price, amount charged, fulfillment source |
-| **Fulfillment group** | one per source (our stock / supplier): status, carrier, tracking number + URL, shipped/delivered dates, private supplier reference |
-| **Refund** | amount, Stripe refund id, reason, date |
+| **Fulfillment group (package)** | one per **origin** (our studio, each supplier — see `docs/MIXED-ORDER-SHIPPING.md`): its shipping charge, processing time and ship-by date, status, carrier, tracking number + URL, shipped/delivered dates, lost/returned records, earlier shipments, private supplier reference. Orders from before per-package pricing have one group per source. |
+| **Refund** | amount, Stripe refund id, reason, date, package (when refunded per package) |
 | **Stock ledger** (`inventory.ts`) | per variant: which checkouts hold or bought units; available = on-hand − sold − unexpired holds |
 
 States:
 
 - **Payment:** `processing` → `paid` → (`partially_refunded` \| `refunded`); or `processing` → `failed`.
 - **Order:** `awaiting_payment` → `open` → `partially_fulfilled` → `fulfilled`; or `canceled`.
-- **Fulfillment:** `unfulfilled` \| `awaiting_supplier` → `sent_to_supplier` → `packed` → `shipped` → `delivered`; or `canceled`.
+- **Fulfillment:** `unfulfilled` \| `awaiting_supplier` → `sent_to_supplier` → `packed` → `shipped` → `delivered`; or `canceled`; a shipped package can become `lost` or `returned`, then is reshipped (back to `unfulfilled`/`awaiting_supplier`) or refunded.
 
 ## Flows
 
@@ -39,7 +39,7 @@ States:
 **Supplier-shipped (dropship)**
 1–3. Same as above; the order records `fulfillmentSource: supplier` per line.
 4. Fulfillment group starts as `awaiting_supplier`. Owner checks supplier availability, then places the order with the approved partner **by hand** (no automatic supplier purchasing).
-5. Owner enters the partner's tracking → `shipped`. Mixed carts get one fulfillment group (and tracking) per source.
+5. Owner enters the partner's tracking → `shipped`. Mixed carts get one package (shipping charge, ship-by date, tracking and email) per origin; one package can be delayed, canceled, lost or returned without touching the others (`docs/MIXED-ORDER-SHIPPING.md` §5).
 
 **Edge cases handled in code:** delayed payment methods (`processing` until Stripe confirms), async payment failure (order canceled, stock freed), hold expired before payment and stock ran out (order flagged `oversold` for manual contact/refund instead of shipping), refunds from `charge.refunded` (recorded once; stock **not** auto-returned until returned items are inspected), duplicate and concurrent events.
 
@@ -61,8 +61,9 @@ Order confirmation and shipping emails (with tracking); an owner-only order scre
 
 ## Ship-by dates, delay notices and disputes (legal audit, 2026-10-27)
 
-- Each package gets a **ship-by date**: our own stock = 2 business days after payment (Eastern Time, U.S. federal holidays
-  skipped). Supplier packages start without one — set it on the order page from the product's stated processing time.
+- Each package gets a **ship-by date**: the processing time promised at checkout (our own stock = 2 business days;
+  each supplier = its committed time) after payment, Eastern Time, U.S. federal holidays skipped. Only orders from
+  before per-package pricing can lack a supplier ship-by date — set it on the order page.
 - The orders list and each order show what needs you, most urgent first: open card disputes, **ship-by passed**,
   territory addresses, oversold items, ships today, missing ship-by date.
 - **Can't make the date?** Before it passes, use "Send a delay notice" on the package. The email gives the new date (or

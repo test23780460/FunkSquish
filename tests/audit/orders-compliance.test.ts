@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { checkedLine, quoteFor } from "../checkout/shipping-helpers";
 import { fulfillCheckoutSession, orderKey } from "@/commerce/orders/fulfill";
 import { handleStripeEvent, HANDLED_EVENT_TYPES, type VerifiedEvent } from "@/commerce/orders/webhook";
 import { orderAttention, sendDelayNotice, setShipBy } from "@/commerce/orders/admin";
@@ -113,10 +114,12 @@ describe("card disputes are recorded on the order", () => {
 });
 
 describe("checkout records which policies applied, and says so before payment", () => {
+  const auditLines = [checkedLine({ variantId: "v", productId: "p", sku: "S", name: "N" })];
   const params = buildCheckoutSessionParams({
-    lines: [{ variantId: "v", productId: "p", sku: "S", name: "N", quantity: 1, unitAmount: 500, currency: "usd", fulfillmentSource: "in_house" }],
+    lines: auditLines,
     checkoutId: "11111111-2222-3333-4444-555555555555",
     config: { returnOrigin: "https://preview.example", shippingRateIds: ["shr_1"], automaticTax: false },
+    shipping: quoteFor(auditLines),
     expiresAt: 2_000_000_000,
   });
 
@@ -150,6 +153,7 @@ describe("order emails say what the policies say", () => {
     const html = customerConfirmationEmail(await reload(f), cfg(null)).html;
     expect(html).toMatch(/Items from our own stock ship within 2 business days/);
     expect(html).toMatch(/processing time shown on their product page when you ordered/);
-    expect(html).toMatch(/we'll email you before the ship-by date with your options, including a full refund/);
+    expect(html).toMatch(/we'll email you before its ship-by date with your options, including a full refund/);
+    expect(html).toMatch(/we never add shipping charges later/);
   });
 });

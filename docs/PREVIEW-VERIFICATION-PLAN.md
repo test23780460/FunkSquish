@@ -42,6 +42,15 @@ here touches live keys, production settings or real customers.
 | V-11 | Duplicates | Resend each event from the Dashboard | Logged as duplicate; no second order, refund or dispute record |
 | V-12 | Policy record | Inspect any new order | "Policies shown at checkout: terms=…;shipping=…;returns=…;privacy=…"; Terms notice visible above Stripe's Pay button |
 
+### Mixed-order shipping (branch `claude/upbeat-hawking-aonyc6-shipping`)
+
+| # | Flow | Steps (sandbox) | PASS when |
+| --- | --- | --- | --- |
+| V-13 | Single origin | On `/checkout/test`, add 2 × TEST Jelly, open the cart | Cart shows shipping $6.50 and total before tax; Stripe's page shows one "Shipping" line of $6.50 and the same total before the Pay button |
+| V-14 | Mixed, three origins | Add Jelly, Mint and Peach; pay with 4242 | Cart lists 3 packages ($4.50 + $5.99 + $7.00); Stripe shows "Shipping (3 packages)" $17.49 and the package note above the address form; the order has 3 packages with ship-by dates 2, 3 and 5 business days out; confirmation email lists all three |
+| V-15 | Blocked supplier | Add the Lime item (unverified supplier) | Cart marks it "Shipping … isn't set up yet" and disables checkout; the harness "Try it" row is rejected; no Stripe session created |
+| V-16 | One package canceled / lost | On the V-14 order: cancel the Peach package; mark the Jelly package shipped, then "Carrier confirmed it lost" → "Send a free replacement" → ship again | Stripe shows one refund equal to the Peach package total; the order keeps the other packages; the replacement gets a new ship-by date and its own "(replacement)" email |
+
 Record results (date, preview URL, Stripe event ids, PASS/FAIL) in the PR. Afterwards: remove `STRIPE_TEST_SEND_EMAILS`,
 delete test orders if desired, and close any temporary PR/branch deploy. **Production variables are never touched.**
 

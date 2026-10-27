@@ -26,3 +26,8 @@ export function isAllowedDestination(address: { country: string | null; state: s
   if (!address || address.country !== "US" || !address.state) return false;
   return !RESTRICTED_US_REGIONS.has(address.state.toUpperCase());
 }
+
+/** APO/FPO/DPO addresses use the "states" AA, AE and AP. */
+export function isMilitaryAddress(address: { country: string | null; state: string | null } | null): boolean {
+  return !!address && address.country === "US" && ["AA", "AE", "AP"].includes((address.state ?? "").toUpperCase());
+}

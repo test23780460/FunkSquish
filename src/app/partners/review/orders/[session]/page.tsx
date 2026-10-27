@@ -6,12 +6,26 @@ import { connection } from "next/server";
 import { reviewConfig } from "@/lib/partners/config";
 import { requireReviewer } from "@/lib/partners/review-auth";
 import { activeMode, orderDeps } from "@/commerce/checkout/service";
-import { getOrder, orderAttention, refundedSoFar } from "@/commerce/orders/admin";
+import { RETURN_CAUSES, getOrder, orderAttention, packageAmounts, refundedSoFar } from "@/commerce/orders/admin";
+import { packageLabel } from "@/commerce/orders/notify";
+import { signatureRecommended, SIGNATURE_POLICY } from "@/commerce/signature";
 import { formatMoney } from "@/commerce/availability";
 import { Container } from "@/components/ui/Primitives";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { ArrowLeftIcon } from "@/components/icons/Icons";
-import { cancelAction, delayNoticeAction, markShippedAction, refundAction, resendEmailsAction, setShipByAction } from "../actions";
+import {
+  cancelAction,
+  cancelPackageAction,
+  delayNoticeAction,
+  markLostAction,
+  markReturnedAction,
+  markShippedAction,
+  refundAction,
+  refundPackageAction,
+  resendEmailsAction,
+  reshipAction,
+  setShipByAction,
+} from "../actions";
 
 export const metadata: Metadata = { title: "Order", robots: { index: false, follow: false } };
 
@@ -42,7 +56,14 @@ const saved: Record<string, string> = {
   emails: "Emails retried.",
   "ship-by": "Ship-by date saved.",
   delay: "Delay notice recorded.",
+  "package-canceled": "Package canceled — refunded in full and its stock returned.",
+  "package-refund": "Package refunded in full (items, its shipping and tax).",
+  lost: "Package marked lost. Send a replacement or refund it.",
+  returned: "Return recorded. Refund or reship before the deadline shown.",
+  reship: "Replacement started — ship it and add the new tracking number.",
 };
+const canShip = (status: string) => !["canceled", "lost", "returned"].includes(status);
+const notShipped = (status: string) => !["shipped", "delivered", "canceled", "lost", "returned"].includes(status);
 
 async function Detail({ params, searchParams }: { params: PageProps<"/partners/review/orders/[session]">["params"]; searchParams: PageProps<"/partners/review/orders/[session]">["searchParams"] }) {
   await connection();
@@ -84,6 +105,11 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
           </ul>
         )}
         <p className="mt-2 text-sm text-ink-soft">Policies shown at checkout: {order.policyVersions ?? "not recorded (order placed before versions were recorded)"}</p>
+        {signatureRecommended(order.amounts.total) && order.status !== "canceled" && (
+          <p className="mt-2 rounded-xl bg-lemon-soft px-3 py-2 text-sm text-ink">
+            Order is {usd(SIGNATURE_POLICY.recommendAtOrAboveCents)} or more: consider adding signature confirmation when you buy the label. It&apos;s your cost — never charge the customer for it.
+          </p>
+        )}
       </header>
 
       <section aria-labelledby="items" className={box}>
@@ -118,14 +144,30 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
       </section>
 
       <section aria-labelledby="ship" className={box}>
-        <h2 id="ship" className="font-display text-xl font-bold text-ink">Shipping</h2>
+        <h2 id="ship" className="font-display text-xl font-bold text-ink">Packages</h2>
+        <p className="mt-1 text-sm text-ink-soft">Each package has its own ship-by date, tracking and email. The customer paid {usd(order.amounts.shipping)} shipping in total at checkout.</p>
         <div className="mt-3 space-y-4">
-          {order.fulfillments.map((f) => (
+          {order.fulfillments.map((f) => {
+            const money = packageAmounts(order, f.id);
+            const items = order.lineItems.filter((l) => f.variantIds.includes(l.variantId));
+            const open = order.status !== "canceled";
+            return (
             <div key={f.id} className="rounded-2xl bg-ice-50 p-4">
               <p className="font-semibold text-ink">
-                {f.source === "supplier" ? "Supplier package" : "Our package"} · {f.status.replace("_", " ")}
+                {packageLabel(order, f.id)} · <span className="uppercase tracking-wide">{f.status.replace("_", " ")}</span>
                 {f.trackingNumber ? ` · ${f.carrier} ${f.trackingNumber}` : ""}
               </p>
+              <p className="mt-1 text-sm text-ink-soft">
+                {items.map((l) => `${l.name} × ${l.quantity}`).join(", ")}
+                {f.origin ? ` · ships from ${f.origin}` : ""}
+              </p>
+              {money && (
+                <p className="mt-1 text-sm text-ink">
+                  Shipping charged {usd(money.shipping)} · package total {usd(money.total)}
+                  {money.refunded ? ` · refunded ${usd(money.refunded)}` : ""}
+                </p>
+              )}
+              {f.militaryAddresses === false && <p className="mt-1 text-sm text-ink-soft">This origin can&apos;t ship to APO/FPO/DPO addresses.</p>}
               {f.source === "supplier" && f.status === "awaiting_supplier" && (
                 <p className="mt-1 text-sm text-ink-soft">Place this with the supplier yourself — nothing is ordered from suppliers automatically.</p>
               )}
@@ -133,7 +175,12 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
                 Ship by: <strong>{f.shipBy ?? "not set"}</strong>
                 {(f.delayNotices?.length ?? 0) > 0 && ` · ${f.delayNotices!.length} delay notice(s), last ${fmt(f.delayNotices!.at(-1)!.at)} (${f.delayNotices!.at(-1)!.email})`}
               </p>
-              {!f.shippedAt && order.status !== "canceled" && !f.shipBy && (
+              {(f.previousShipments?.length ?? 0) > 0 && (
+                <p className="mt-1 text-sm text-ink-soft">
+                  Earlier: {f.previousShipments!.map((x) => `${x.carrier ?? ""} ${x.trackingNumber ?? ""} (${x.outcome})`).join("; ")}
+                </p>
+              )}
+              {!f.shippedAt && open && notShipped(f.status) && !f.shipBy && (
                 <form action={setShipByAction} className="mt-2 flex flex-wrap items-end gap-2">
                   <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
                   <input type="hidden" name="group" value={f.id} />
@@ -141,20 +188,20 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
                   <button type="submit" className="min-h-11 rounded-full bg-white px-4 font-display text-sm font-semibold text-ink ring-1 ring-inset ring-sky-200">Save</button>
                 </form>
               )}
-              {!f.shippedAt && order.status !== "canceled" && f.shipBy && (
+              {!f.shippedAt && open && notShipped(f.status) && f.shipBy && (
                 <details className="mt-2">
                   <summary className="cursor-pointer text-sm font-semibold text-royal">Can&apos;t ship by {f.shipBy}? Send a delay notice</summary>
                   <form action={delayNoticeAction} className="mt-2 grid gap-2 rounded-xl bg-white p-3">
                     <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
                     <input type="hidden" name="group" value={f.id} />
-                    <p className="text-sm text-ink-soft">Send it <strong>before</strong> the ship-by date. The email offers a free cancel-and-refund. Over 30 days late, no date, or a second delay: the customer must say yes, or you cancel and refund.</p>
+                    <p className="text-sm text-ink-soft">Send it <strong>before</strong> the ship-by date. The email offers a free cancel-and-refund for this package. Over 30 days late, no date, or a second delay: the customer must say yes, or you cancel and refund.</p>
                     <label className="grid gap-1 text-sm font-semibold text-ink">New ship-by date<input name="newShipBy" type="date" className={input} /></label>
                     <label className="flex items-center gap-2 text-sm text-ink"><input type="checkbox" name="unknown" value="yes" /> We can&apos;t give a date yet</label>
                     <button type="submit" className="justify-self-start rounded-full bg-royal px-4 py-2 font-display text-sm font-semibold text-white">Email delay notice</button>
                   </form>
                 </details>
               )}
-              {order.status !== "canceled" && (order.paymentStatus === "paid" || order.paymentStatus === "partially_refunded") && (
+              {open && canShip(f.status) && (order.paymentStatus === "paid" || order.paymentStatus === "partially_refunded") && (
                 <form action={markShippedAction} className="mt-3 grid gap-2 sm:grid-cols-[8rem_1fr_1fr_auto] sm:items-end">
                   <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
                   <input type="hidden" name="group" value={f.id} />
@@ -164,8 +211,66 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
                   <button type="submit" className="min-h-11 rounded-full bg-royal px-4 font-display text-sm font-semibold text-white">{f.shippedAt ? "Update" : "Mark shipped"}</button>
                 </form>
               )}
+              {open && notShipped(f.status) && money && order.fulfillments.length > 1 && (
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-sm font-semibold text-[#b8215a]">Cancel just this package (refund {usd(money.refundable)})</summary>
+                  <form action={cancelPackageAction} className="mt-2 grid gap-2 rounded-xl bg-white p-3">
+                    <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
+                    <input type="hidden" name="group" value={f.id} />
+                    <p className="text-sm text-ink-soft">Refunds this package&apos;s items, its shipping and tax, and puts its stock back. The other packages carry on.</p>
+                    {f.status === "sent_to_supplier" && (
+                      <label className="flex items-center gap-2 text-sm text-ink"><input type="checkbox" name="supplierCanceled" value="yes" /> I&apos;ve canceled it with the supplier</label>
+                    )}
+                    <label className="grid gap-1 text-sm font-semibold text-ink">Order number<input name="confirm" autoComplete="off" required placeholder={order.id} className={`${input} font-mono`} /></label>
+                    <button type="submit" className="justify-self-start rounded-full bg-white px-4 py-2 font-display text-sm font-semibold text-[#b8215a] ring-2 ring-inset ring-[#b8215a]">Cancel package</button>
+                  </form>
+                </details>
+              )}
+              {f.status === "shipped" && open && (
+                <div className="mt-3 flex flex-wrap items-end gap-2">
+                  <form action={markLostAction}>
+                    <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
+                    <input type="hidden" name="group" value={f.id} />
+                    <button type="submit" className="min-h-11 rounded-full bg-white px-4 font-display text-sm font-semibold text-ink ring-1 ring-inset ring-sky-200">Carrier confirmed it lost</button>
+                  </form>
+                  <form action={markReturnedAction} className="flex flex-wrap items-end gap-2">
+                    <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
+                    <input type="hidden" name="group" value={f.id} />
+                    <label className="grid gap-1 text-sm font-semibold text-ink">
+                      It came back to us because…
+                      <select name="cause" required className={input} defaultValue="">
+                        <option value="" disabled>Choose</option>
+                        {Object.entries(RETURN_CAUSES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                      </select>
+                    </label>
+                    <button type="submit" className="min-h-11 rounded-full bg-white px-4 font-display text-sm font-semibold text-ink ring-1 ring-inset ring-sky-200">Record return</button>
+                  </form>
+                </div>
+              )}
+              {(f.status === "lost" || f.status === "returned") && !f.resolution && (
+                <div className="mt-3 grid gap-2 rounded-xl bg-white p-3">
+                  <p className="text-sm text-ink">
+                    {f.status === "lost" ? "Lost in transit:" : "Came back undeliverable:"} send a free replacement, or refund this package in full.
+                    {f.status === "returned" && f.returnCause === "address" && " The address was wrong at checkout — a refund is the default; reship only if the customer gives a corrected address."}
+                  </p>
+                  <form action={reshipAction}>
+                    <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
+                    <input type="hidden" name="group" value={f.id} />
+                    <button type="submit" className="min-h-11 rounded-full bg-royal px-4 font-display text-sm font-semibold text-white">Send a free replacement</button>
+                  </form>
+                  {money && money.refundable > 0 && (
+                    <form action={refundPackageAction} className="flex flex-wrap items-end gap-2">
+                      <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
+                      <input type="hidden" name="group" value={f.id} />
+                      <label className="grid gap-1 text-sm font-semibold text-ink">Order number<input name="confirm" autoComplete="off" required placeholder={order.id} className={`${input} font-mono`} /></label>
+                      <button type="submit" className="min-h-11 rounded-full bg-[#b8215a] px-4 font-display text-sm font-semibold text-white">Refund package ({usd(money.refundable)})</button>
+                    </form>
+                  )}
+                </div>
+              )}
             </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

@@ -1,4 +1,5 @@
 import type { FulfillmentSource, Product, ProductVariant } from "../types";
+import { originIdFor } from "../origins";
 
 /**
  * Server-side cart validation. Pure (no I/O) so it is fully unit-tested.
@@ -23,6 +24,22 @@ export interface CheckedLine {
   unitAmount: number;
   currency: "usd";
   fulfillmentSource: FulfillmentSource;
+  /** Where it ships from (src/commerce/origins.ts); null = not set, so it can't be shipped. */
+  fulfillmentOrigin: string | null;
+  /** Shipping weight of one unit, grams (for weight-based shipping rules). */
+  weightGrams: number | null;
+  /** Processing time the product page states, if any (catalog column processing_business_days). */
+  statedProcessingDays: number | null;
+}
+
+/**
+ * The product page's stated processing time. `salesTerms` comes from the
+ * catalog column added with the policy work (PR #13); until both are merged
+ * it simply isn't there and the origin's committed time applies.
+ */
+export function statedProcessingDays(product: Product): number | null {
+  const days = (product as Product & { salesTerms?: { processingBusinessDays?: unknown } }).salesTerms?.processingBusinessDays;
+  return typeof days === "number" && Number.isInteger(days) && days >= 1 && days <= 30 ? days : null;
 }
 
 export type CartErrorCode = "empty" | "too-many-lines" | "bad-line" | "bad-quantity" | "too-many-of-one" | "unavailable" | "not-enough-stock";
@@ -94,6 +111,9 @@ export function validateCartAgainstCatalog(
       unitAmount: price.amount,
       currency: "usd",
       fulfillmentSource: variant.fulfillmentSource ?? "in_house",
+      fulfillmentOrigin: originIdFor(variant),
+      weightGrams: variant.weightGrams,
+      statedProcessingDays: statedProcessingDays(product),
     });
   }
   return { ok: true, value: checked };

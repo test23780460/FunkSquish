@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { checkedLine, quoteFor } from "./shipping-helpers";
 import Stripe from "stripe";
 import { readStripeLiveConfig, readStripeTestConfig, runtimeEnv } from "@/commerce/checkout/environment";
 import { assertSession, buildCheckoutSessionParams, createStripeLiveClient, createStripeTestClient, PAYMENT_METHOD_TYPES } from "@/commerce/checkout/stripe";
@@ -53,17 +54,18 @@ describe("live configuration stays locked", () => {
 });
 
 describe("Stripe sessions per mode", () => {
-  const lines = [{ variantId: "v1", productId: "p1", sku: "S1", name: "Squish", quantity: 1, unitAmount: 899, currency: "usd" as const, fulfillmentSource: "in_house" as const }];
+  const lines = [checkedLine({ variantId: "v1", productId: "p1", sku: "S1", name: "Squish", quantity: 1, unitAmount: 899 })];
   const cfg = { returnOrigin: "https://funksquish.com", shippingRateIds: ["shr_X"], automaticTax: false };
+  const shipping = quoteFor(lines);
 
   it("offers cards only, in both modes", () => {
     expect(PAYMENT_METHOD_TYPES).toEqual(["card"]);
-    expect(buildCheckoutSessionParams({ lines, checkoutId: "c", config: cfg, expiresAt: 1, mode: "live" }).allowed_payment_method_types).toEqual(["card"]);
-    expect(buildCheckoutSessionParams({ lines, checkoutId: "c", config: cfg, expiresAt: 1 }).allowed_payment_method_types).toEqual(["card"]);
+    expect(buildCheckoutSessionParams({ lines, checkoutId: "c", config: cfg, shipping, expiresAt: 1, mode: "live" }).allowed_payment_method_types).toEqual(["card"]);
+    expect(buildCheckoutSessionParams({ lines, checkoutId: "c", config: cfg, shipping, expiresAt: 1 }).allowed_payment_method_types).toEqual(["card"]);
   });
 
   it("live sessions return to the live order page and are tagged live", () => {
-    const p = buildCheckoutSessionParams({ lines, checkoutId: "c", config: cfg, expiresAt: 1, mode: "live" });
+    const p = buildCheckoutSessionParams({ lines, checkoutId: "c", config: cfg, shipping, expiresAt: 1, mode: "live" });
     expect(p.success_url).toBe("https://funksquish.com/checkout/complete?session_id={CHECKOUT_SESSION_ID}");
     expect(p.metadata).toMatchObject({ funksquish_mode: "live" });
   });
