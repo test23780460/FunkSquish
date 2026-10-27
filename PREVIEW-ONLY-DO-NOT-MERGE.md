@@ -5,7 +5,7 @@ draft branch combined, and so GitHub Actions runs CI on the combined code. It me
 
 - the CI branch (`claude/upbeat-hawking-aonyc6-ci`);
 - the policy stack: PR #11 → PR #13 → Phase 2 policies (`claude/upbeat-hawking-aonyc6-policies`);
-- the checkout stack: PR #5 → PR #12 → PR #14 → shipping → inventory → MFA (`claude/upbeat-hawking-aonyc6-mfa`).
+- the checkout stack: PR #5 → PR #12 → PR #14 → #16 shipping → #17 inventory → #18 MFA → #21 shipping-lock proposal (`claude/upbeat-hawking-aonyc6-shipping-lock`).
 
 Merging it would put all of those into `main` at once, skipping their individual reviews. Close the PR (and delete the
 branch) once preview testing is done. Each real change is reviewed and merged through its own PR, in stack order.
