@@ -1,0 +1,142 @@
+# Mixed-order shipping — one checkout, one shipping charge, separate packages
+
+**Status (2026-10-27): built and tested in a draft branch (`claude/upbeat-hawking-aonyc6-shipping`, stacked on PR #14).
+Live purchasing is still disabled; no live-payment lock was changed.** Owner decision: customers can buy FunkSquish stock
+and supplier-shipped products together in one Stripe checkout (replaces "launch with our own stock only").
+
+## 1. What the customer sees
+
+| Where | What |
+| --- | --- |
+| Cart drawer (before leaving the site) | Shipping for the cart, split per package when there's more than one ("From FunkSquish: 2 items, ships within 2 business days — $6.50"), the combined shipping charge, and the total before tax. Items that can't be shipped yet are marked with a plain explanation and the checkout button stays off until they're removed. |
+| Stripe's checkout page | One shipping line ("Shipping (3 packages)") with the combined charge, the tax, and the final total **before the Pay button**. Above the address form: how many packages, where each ships from (generic labels, never supplier names), each one's processing time, and any package that can't go to APO/FPO/DPO addresses. |
+| Confirmation email | Each package with its items, ship-by date and shipping charge; "the shipping you paid at checkout covers every package — we never add shipping charges later". |
+| Shipping emails | One per package (and one per replacement), naming the package and saying the others ship separately. |
+
+Nothing is charged after payment. The code has no way to charge a card again.
+
+## 2. How shipping is calculated (`src/commerce/checkout/shipping-quote.ts`)
+
+1. Every variant has an **origin**: where it ships from (`src/commerce/origins.ts`). Our own stock is `funksquish` by
+   default; supplier items must name theirs (catalog column `fulfillment_origin`).
+2. **All items from one origin go in one package and share one base charge.** A second item from the same place
+   never adds a second base fee.
+3. Each package is priced from its origin's **verified rule** only:
+   - `per-item`: first item + each additional item, up to a maximum per package (typical supplier rate card);
+   - `weight`: items' shipping weights + packaging, looked up in a table of weight tiers (typical for our own USPS labels).
+4. The packages add up to **one** shipping charge, sent to Stripe as the only shipping option (inline
+   `shipping_rate_data`, `tax_behavior: exclusive`, Stripe tax code `txcd_92010001` for shipping so tax on shipping
+   follows each state's rules once Stripe Tax is on).
+5. Each package's charge and processing time are stored on the Checkout Session (`metadata.shipping_plan`) and become
+   the order's packages. If the plan is missing or doesn't add up to what Stripe charged, the order is flagged
+   `shipping_mismatch` for the owner — no package price is ever guessed.
+
+**Mixed orders can cost more than single-origin orders** (two places shipping = two packages). That's shown before
+payment, as the owner approved.
+
+### What blocks checkout (only for the affected items)
+
+| Situation | Shopper sees | Owner sees (server log / docs) |
+| --- | --- | --- |
+| Origin has no verified rule | "Shipping for X isn't set up yet, so it can't be ordered right now. Please remove it to continue — the rest of your cart can still be ordered." | `No verified shipping rates have been entered for this origin.` |
+| Verification missing who/when/evidence, dated in the future, or older than `reviewEveryDays` (default 90) | same | `not-verified` / `verification-expired` |
+| Supplier without a signed agreement on file | same | `no-supplier-agreement` |
+| No committed processing time | same | `no-processing-time` |
+| Product page promises faster shipping than the origin commits to | same | `promises N business days but this origin commits to M` |
+| Weight-priced origin, item has no weight | same | `weight is missing` |
+| A $0 rate without `zeroCostConfirmed: true` | same | `zero-cost-unconfirmed` — free supplier shipping is never assumed |
+| Package heavier/larger than the biggest verified tier | "The items shipping from X won't fit in one package. Please lower the quantity of Y or place a second order." | `over the largest package in the rule` |
+| More than 5 origins in one cart | "…more than 5 different places. Please remove Y and order it separately." | — |
+
+The product pages use the same readiness check (`canPurchase` → `variantShippingReady`), so an item whose shipping
+isn't ready shows as "Coming soon" instead of offering a buy button once purchasing is switched on.
+
+## 3. Entering verified rates (owner)
+
+Nothing here is filled in yet: `SHIPPING_ORIGINS` has only `funksquish` with `rule: null`, so **no real product can be
+checked out until you do this** (by design).
+
+**Our own stock (`funksquish`)**
+1. Weigh each product packed in its real mailer/box (catalog `weight_grams` is the unit weight; also weigh the empty
+   packaging → `packagingGrams`).
+2. Price USPS (or your carrier) for each weight tier. Hosted Stripe Checkout **can't change the shipping price after the
+   customer types the address**, so the charge can't depend on distance: pick an amount per tier that covers your
+   costliest zone (or accept a loss on far zones). Write down the quotes.
+3. Add the rule, e.g. `{ kind: "weight", packagingGrams: 60, tiers: [{ upToGrams: 250, cents: 550 }, …] }`, and
+   `verified: { on: "YYYY-MM-DD", by: "owner", evidence: "private/shipping/usps-2026-11.pdf" }` in a reviewed PR.
+
+**Each supplier**
+1. Signed agreement covering: committed processing time (business days to hand to the carrier), the shipping rate
+   card, tracking provided for every package, **use of customer names and addresses only to fulfill FunkSquish
+   orders** (Privacy Policy commitment), whether they ship to APO/FPO/DPO, returns/defects handling, and recall
+   cooperation.
+2. Add an origin with an opaque id (`supplier-a`), the generic label `"a FunkSquish supplier partner"`, the rule from
+   their rate card, `processingBusinessDays`, `agreementOnFile: true`, `militaryAddresses`, and `verified`.
+3. In the catalog CSV set `fulfillment_source=supplier` and `fulfillment_origin=supplier-a` for their items (optional
+   columns; `npm run catalog:import` rejects a supplier row with no origin). Keep the supplier's name, costs and the
+   agreement in `private/` only.
+4. Re-verify every 90 days (or set `reviewEveryDays`); expired origins stop checkout automatically.
+
+## 4. Stripe shipping-rate ids (`STRIPE_*_SHIPPING_RATE_IDS`)
+
+The checkout locks in `src/commerce/checkout/environment.ts` are **unchanged**: they still require 1–5 `shr_…` ids for
+the test and live modes. The price no longer comes from them — Stripe receives the server's computed rate instead.
+Keeping the requirement means no lock was loosened. **Decision D-SHIP-3:** remove that requirement in a separate,
+reviewed PR, or keep it. Until then, keep any valid `shr_…` id in the variables.
+
+## 5. After payment: packages on the order (`/partners/review/orders/<session>`)
+
+| Situation | Owner action | What happens |
+| --- | --- | --- |
+| Normal | Mark each package shipped with its tracking | One shipping email per package; order "partially fulfilled" until every remaining package ships |
+| One package will be late | Delay notice on that package | FTC delay email for those items only; the other packages keep their dates |
+| Customer cancels one delayed/unshipped package | **Cancel just this package** (type the order number) | Refund = that package's items (incl. their tax) + its shipping + its share of shipping tax; its stock goes back; the rest carries on. A supplier package already placed needs "I've canceled it with the supplier" ticked. |
+| Carrier confirms a package lost | **Carrier confirmed it lost** → **Send a free replacement** or **Refund package** | Replacement: old tracking kept, new ship-by date from today, its own "replacement" email, no charge. Refund: the whole package. |
+| Package comes back undeliverable | **Record return** with the cause | "Needs attention" shows the Shipping Policy's 5-business-day refund deadline. Our/carrier fault → reship free or refund; wrong address/refused → refund (reship if the customer agrees). |
+| Whole order | Existing refund-by-amount and cancel-before-shipping | Unchanged |
+
+Every refund goes through Stripe with an idempotency key (now including the package id) and is recorded once even if
+Stripe's `charge.refunded` webhook arrives first.
+
+**Tax.** Package refunds include the tax Stripe charged on those items and that package's share of the tax on shipping
+(split to the cent). How partial refunds appear in Stripe Tax reports and Kentucky filings is an accountant question
+(**Q-TAX-3**).
+
+## 6. Limits (said plainly)
+
+- Rates can't vary by destination (hosted Checkout limitation); APO/FPO/DPO restrictions are disclosed, and an order
+  that slips through is flagged `military_unsupported` for a refund of that package.
+- One package per origin; no automatic splitting of very large orders (they're refused with an explanation).
+- Supplier ship-by dates are only as good as the supplier's performance — the delay-notice process still applies.
+- Signature confirmation is not offered to customers (see §7).
+
+## 7. Signature confirmation (proposed $150 threshold)
+
+`src/commerce/signature.ts`: the owner order page **recommends** buying signature confirmation for orders of $150 or
+more (configurable `recommendAtOrAboveCents`). It is never charged to the customer and never advertised
+(`chargeCustomer: false`, `advertised: false` are fixed in the type). Before enforcing or advertising it: confirm the
+carrier service and price, and that a missed signature (post-office pickup) is acceptable for the customer
+experience. **Decision D-OPS-2b.**
+
+## 8. Outstanding supplier dependencies
+
+| # | Needed before supplier items can be sold | Status |
+| --- | --- | --- |
+| SUP-1 | Signed agreement per supplier (processing time, rates, tracking, data-use limit, APO/FPO, returns/defects, recall cooperation) | Not started |
+| SUP-2 | Written rate card per supplier → origin rule | Not started |
+| SUP-3 | Product safety documents per supplier item (CPC, test reports, tracking labels) | Not started (catalog `private_*` columns) |
+| SUP-4 | Supplier's real processing time ≤ what the product page states | Not started |
+| SUP-5 | Our own packed weights and USPS costs → `funksquish` rule | Not started |
+
+## 9. Tests
+
+`tests/shipping/` (58 tests): single-origin weight tiers; one base charge per origin; supplier-only with two suppliers;
+mixed carts; blocked unverified/expired/agreement-less/unknown origins; $0 rates; promise mismatch; too-large and
+too-many-origin carts; plan encoding and tamper rejection; Stripe session shape and the cart quote matching it;
+browser-sent shipping ignored; per-origin packages with ship-by dates; mismatch and legacy fallbacks; military flag;
+tax allocation; per-package cancel/refund (amounts, idempotency, no double count with the webhook, stock returned for
+that package only); lost → replacement (new tracking, its own email) or refund; returned with the 5-business-day
+deadline; order status; customer emails.
+
+**Not tested here:** a real Stripe sandbox session with inline shipping (needs the deploy-preview run —
+`docs/PREVIEW-VERIFICATION-PLAN.md`, checks V-13 to V-16).

@@ -32,6 +32,10 @@ npm run typecheck
 ```
 
 ```bash
+npm test
+```
+
+```bash
 npm run build
 ```
 
@@ -101,6 +105,9 @@ docs/
   LAUNCH-RUNBOOK.md    Turning each feature on safely
   OWNER-DECISIONS.md   Policy decisions awaiting approval (shipping, returns, business details)
   BACKUP-RECOVERY.md   Encrypted backups of private/ and how to restore them
+  STRIPE-TEST-SETUP.md Stripe Checkout TEST mode: setup, test plan, what's automated
+  ORDER-MANAGEMENT.md  Order data model, fulfillment (in-house + supplier), storage options
+  CHECKOUT-LAUNCH-READINESS.md  Shipping, tax, security and other blockers before real sales
 ```
 
 ## Design system (quick reference)

@@ -12,6 +12,7 @@ import {
   COMPLIANCE_STATUSES, PRIVATE_DIR, PRIVATE_JSON, PUBLIC_JSON, ROOT,
   centsOrNull, list, numOrNull, paletteFromHex, parseCsv, textOrNull,
 } from "./catalog-lib.mjs";
+import { fulfillmentFields } from "./catalog-lib.mjs";
 import { validateProducts } from "../src/commerce/validate.ts";
 
 const input = path.resolve(ROOT, process.argv[2] ?? "private/catalog.csv");
@@ -101,6 +102,7 @@ rows.forEach((r, i) => {
       weightGrams: numOrNull(r.weight_grams),
       dimensions: dims.every((d) => d !== null) ? { lengthCm: dims[0], widthCm: dims[1], heightCm: dims[2] } : null,
       externalPurchaseUrl: textOrNull(r.external_purchase_url),
+      ...fulfillmentFields(r, r.variant_sku),
     });
 
     const status = r.private_compliance_status || "missing";

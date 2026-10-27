@@ -70,25 +70,57 @@ export async function verifyPassphrase(passphrase: string, stored: string) {
 
 export const SESSION_COOKIE = "fs_partner_review";
 export const SESSION_SECONDS = 8 * 60 * 60;
+/** A passphrase-only session waiting for the two-step code lasts 10 minutes. */
+export const PARTIAL_SESSION_SECONDS = 10 * 60;
 
 /** A session is tied to the current passphrase: changing it signs every device out. */
 function passphraseVersion(secret: string, passphraseHash: string) {
   return hmac(secret, "pw-version", passphraseHash).slice(0, 12);
 }
 
-export function issueSession(secret: string, passphraseHash: string, nowMs = Date.now()) {
-  const payload = `${Math.floor(nowMs / 1000) + SESSION_SECONDS}.${passphraseVersion(secret, passphraseHash)}.${randomBytes(9).toString("base64url")}`;
+/**
+ * What a session token says (all signed):
+ *  - aal: 1 = passphrase only, 2 = passphrase + second factor;
+ *  - mfa: which two-step setup the second factor was checked against ("0" = none),
+ *    so resetting two-step sign-in ends sessions made with the old one;
+ *  - epoch: the "sign out everywhere" counter at sign-in.
+ */
+export interface SessionClaims {
+  aal: 1 | 2;
+  mfa: string;
+  epoch: number;
+}
+
+export interface Session extends SessionClaims {
+  exp: number;
+  nonce: string;
+}
+
+const DEFAULT_CLAIMS: SessionClaims = { aal: 1, mfa: "0", epoch: 0 };
+
+/** Format: exp.pwVersion.aal.mfa.epoch.nonce.sig */
+export function issueSession(secret: string, passphraseHash: string, nowMs = Date.now(), claims: SessionClaims = DEFAULT_CLAIMS, seconds = SESSION_SECONDS) {
+  if (!/^[A-Za-z0-9_-]{1,16}$/.test(claims.mfa) || !Number.isSafeInteger(claims.epoch) || claims.epoch < 0) throw new Error("Bad session claims");
+  const payload = `${Math.floor(nowMs / 1000) + seconds}.${passphraseVersion(secret, passphraseHash)}.${claims.aal}.${claims.mfa}.${claims.epoch}.${randomBytes(9).toString("base64url")}`;
   return `${payload}.${hmac(secret, "session", payload)}`;
 }
 
-export function checkSession(secret: string, passphraseHash: string, token: string | undefined, nowMs = Date.now()) {
-  if (!token || token.length > 300) return false;
+/** The session's claims if the token is genuine, unexpired and made with the current passphrase; otherwise null. */
+export function readSession(secret: string, passphraseHash: string, token: string | undefined, nowMs = Date.now()): Session | null {
+  if (!token || token.length > 300) return null;
   const parts = token.split(".");
-  if (parts.length !== 4) return false;
-  const [exp, version, nonce, sig] = parts;
-  if (!safeEqual(sig, hmac(secret, "session", `${exp}.${version}.${nonce}`))) return false;
-  if (!safeEqual(version, passphraseVersion(secret, passphraseHash))) return false;
-  return Number(exp) * 1000 > nowMs;
+  if (parts.length !== 7) return null;
+  const [exp, version, aal, mfa, epoch, nonce, sig] = parts;
+  if (!safeEqual(sig, hmac(secret, "session", parts.slice(0, 6).join(".")))) return null;
+  if (!safeEqual(version, passphraseVersion(secret, passphraseHash))) return null;
+  if (!(Number(exp) * 1000 > nowMs)) return null;
+  if (aal !== "1" && aal !== "2") return null;
+  if (!/^\d{1,15}$/.test(epoch)) return null;
+  return { exp: Number(exp), aal: aal === "2" ? 2 : 1, mfa, epoch: Number(epoch), nonce };
+}
+
+export function checkSession(secret: string, passphraseHash: string, token: string | undefined, nowMs = Date.now()) {
+  return readSession(secret, passphraseHash, token, nowMs) !== null;
 }
 
 /** Client IP as seen by Netlify's edge (falls back to the first forwarded hop). */

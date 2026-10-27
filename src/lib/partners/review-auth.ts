@@ -1,18 +1,18 @@
 import "server-only";
-import { cookies } from "next/headers";
-import { reviewConfig } from "./config";
-import { SESSION_COOKIE, checkSession } from "./security";
-import { partnerStores } from "./store";
+import { ownerAuth } from "@/lib/owner/auth";
 
 /**
- * Returns the review context only for a signed-in owner; null otherwise.
- * Every review page AND every review server action must call this first —
+ * Returns the review context only for a FULLY signed-in owner; null otherwise.
+ * Every owner page AND every owner server action must call this first —
  * server actions are public endpoints, so the page check alone isn't enough.
+ *
+ * "Fully" means the passphrase plus, once two-step sign-in is set up (or
+ * required — see src/lib/owner/auth.ts), the second factor. A passphrase-only
+ * session waiting for its code gets null here, so it can't read or change
+ * anything; it can only reach the code page.
  */
 export async function requireReviewer() {
-  const cfg = reviewConfig();
-  if (!cfg) return null;
-  const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  if (!checkSession(cfg.secret, cfg.passphraseHash, token)) return null;
-  return { cfg, stores: await partnerStores(cfg) };
+  const auth = await ownerAuth();
+  if (!auth || auth.status !== "full") return null;
+  return { cfg: auth.cfg, stores: auth.stores };
 }
