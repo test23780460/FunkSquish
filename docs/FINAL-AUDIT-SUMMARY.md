@@ -24,8 +24,12 @@ Plus **83 adversarial scenarios** (`ADVERSARIAL-SCENARIOS.md`).
 
 | Branch | Base | Commits | Status |
 | --- | --- | --- | --- |
-| `claude/upbeat-hawking-aonyc6` (legal audit, child of PR #11) | `legal/policy-accuracy` @ `95a8f22` | 4 audit commits (policies + code + tests; analytics loader fix; second-pass fixes; documents) | Pushed; draft PR for review |
-| `claude/upbeat-hawking-aonyc6-checkout` (child of PR #12) | `feature/stripe-live-readiness` @ `5dba5f2` | 1 commit (checkout compliance fixes) | Pushed for review; **no PR opened** — open one into PR #12's branch if wanted |
+| `claude/upbeat-hawking-aonyc6` (legal audit, child of PR #11) | `legal/policy-accuracy` @ `95a8f22` | Audit commits: policies + code + tests; analytics loader fix; second-pass fixes; documents; review flags | **Draft PR #13** → `legal/policy-accuracy` |
+| `claude/upbeat-hawking-aonyc6-checkout` (child of PR #12) | `feature/stripe-live-readiness` @ `5dba5f2` | Checkout compliance fixes; deploy-preview verification plan | **Draft PR #14** → `feature/stripe-live-readiness` |
+
+The two PRs are deliberately separate: #13 holds policy wording and site code, #14 holds checkout code. Neither is merged,
+and neither has a Netlify deploy preview (Netlify builds previews only for PRs into `main` here) or CI (the repository has
+no GitHub Actions); all results below come from manual runs in this session.
 
 PR #5 needs no separate change: PR #12 contains it, and the checkout branch builds on PR #12.
 
@@ -64,7 +68,10 @@ policies. Live-payment locks untouched.
 | Secret scan (regex) | no secrets | no secrets (test fixtures only) | — |
 | `npm audit --omit=dev` | 0 vulnerabilities | 0 vulnerabilities | — |
 
-**Not executed:** real payments, real email sends, Netlify deploy previews, TikTok in-app browser, screen-reader testing,
+Re-run on the latest commits on 2026-10-27 after opening PR #14 (see the table above — same results).
+
+**Not executed:** real payments, real email sends, Netlify deploy previews (including the refund/delay/dispute run in
+`PREVIEW-VERIFICATION-PLAN.md`), TikTok in-app browser, screen-reader testing,
 anything against live Stripe/Brevo/Netlify accounts. Direct fetching of legal sources was blocked in this sandbox; sources
 were verified via search retrieval of the official pages (see `MASTER-LEGAL-AUDIT.md` §1–2).
 
@@ -104,8 +111,8 @@ Q-MKT-1. Hand-off document: `LEGAL-OPEN-QUESTIONS.md`.
 | Partner applications | **No** | G-4/G-5 (legal + owner approval), PA-1, PA-5 |
 | Launch list / drop alerts | **No** | M-2 (COPPA decision), G-4 |
 | Purchasable listings | **No** | No real products; P-1…P-9 |
-| Stripe live payments | **No** | C-1…C-9 (policies, tax, checkout branch merged, webhooks, MFA decision, smoke test) |
-| Fulfilment | **No** | F-1…F-6 (supplier agreements, recall readiness) |
+| Stripe live payments | **No** | C-1…C-10 (policies, tax, checkout branch merged, webhooks, MFA decision, deploy-preview sandbox run, smoke test) |
+| Fulfilment | **No** | F-1…F-7 (supplier agreements, recall readiness, mixed-order shipping decision) |
 
 ## What the owner must decide or approve
 
@@ -122,7 +129,18 @@ Q-MKT-1. Hand-off document: `LEGAL-OPEN-QUESTIONS.md`.
 6. **Operational decisions:** D-OPS-1 turn Stripe Link off (or disclose it) · D-OPS-2 order value above which to buy
    signature confirmation · D-OPS-3 build MFA (P-SEC-1) or accept the risk in writing · D-OPS-4 TikTok Shop stock
    allocation/sync · D-OPS-5 order retention period after the accountant answers Q-RET-1.
-7. Whether to open a PR from the checkout branch into PR #12's branch.
+7. **Explicit review items** (`OWNER-REVIEW-FLAGS.md`):
+   - **D-SHIP-1** — how mixed carts pay for two shipments (recommended: launch with our own stock only).
+   - **D-RET-1** — keep, lengthen or drop the 30-day disposal of nonconforming returns (recommended: keep with two
+     emails and no disposal during a dispute; attorney Q-RET-2).
+   - **D-SEC-1** — require MFA for the owner area before real customer data (recommended) or accept the risk in writing.
+   - **D-QA-1** — how to get a deploy preview for the sandbox run of refunds, delays and disputes, and who runs it.
+
+## Monitoring
+
+No continuous monitoring is configured for these PRs, CI or deployments: no GitHub Actions, no Netlify builds for the
+stacked PRs, and no scheduled check or PR subscription from this session. New comments or failures will only be seen when
+someone looks or asks for another review.
 
 After approval: set `src/content/policies.ts` dates to the merge date, and keep Privacy/Terms in Draft until the attorney
 has answered the Priority 1 questions.

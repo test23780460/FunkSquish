@@ -22,8 +22,8 @@ branches sit directly on `main` (`c548e84`).
 
 | Branch | Based on | Contents |
 | --- | --- | --- |
-| `claude/upbeat-hawking-aonyc6` | PR #11 head | Policy rewrites, disclosures before purchase, analytics scrubbing, legal-hold fix, catalog gates, tests, these documents |
-| `claude/upbeat-hawking-aonyc6-checkout` | PR #12 head | Checkout compliance fixes (refund race, ship-by dates, delay notices, disputes, policy versions, Terms notice, email wording). Still locked. |
+| `claude/upbeat-hawking-aonyc6` (draft PR #13) | PR #11 head | Policy rewrites, disclosures before purchase, analytics scrubbing, legal-hold fix, catalog gates, tests, these documents |
+| `claude/upbeat-hawking-aonyc6-checkout` (draft PR #14) | PR #12 head | Checkout compliance fixes (refund race, ship-by dates, delay notices, disputes, policy versions, Terms notice, email wording) and a deploy-preview verification plan. Still locked. |
 
 **What was reviewed:** every page under `src/app`, all components with customer-facing copy, `src/content`, partner
 storage/retention/deletion code, analytics, catalog scripts, `next.config.ts`, the Netlify scheduled function, all docs,
@@ -339,6 +339,7 @@ legal hold). 6. Partner applications: use **Deletion requests** in the owner are
 | P-CK-5 | Rate-limit `startCheckout` per IP and cap concurrent reservations per IP during drops | T-19 | Small |
 | P-CK-6 | Alert email when the webhook fails or reconciliation finds missed orders | C7 | Small |
 | P-CK-7 | Stripe `consent_collection.terms_of_service = "required"` if counsel prefers a checkbox | Q-TERMS-1 | Small (Dashboard ToS URL needed) |
+| P-CK-8 | Cart-dependent shipping rate (inline `shipping_rate_data`) or blocking mixed carts, if supplier items are sold | D-SHIP-1 (`OWNER-REVIEW-FLAGS.md` §1) | Small |
 
 ## 9. Second independent adversarial pass
 

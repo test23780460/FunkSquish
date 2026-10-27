@@ -113,6 +113,14 @@ and noindex), Shipping and Returns policies (owner-approved Oct 24, 2026; clarif
 - Assumed-name certificate for "FunkSquish" with the Hardin County clerk (KRS 365.015); whether an LLC is advisable before
   selling children's products.
 
+### Q-RET-2. Disposing of nonconforming returns (Attorney)
+- **Facts:** proposed Returns text: if a change-of-mind return arrives opened, used, damaged after delivery or isn't the
+  item we sent, we tell the customer and send it back (they pay postage) or dispose of it at their choice; "If we don't
+  hear back within 30 days of our message, we may dispose of it safely." Planned safeguards: two emails, photos, no
+  disposal during a dispute/chargeback/fraud review.
+- **Questions:** Is 30 days with these notices reasonable in Kentucky (and generally) for goods a customer sent us? Any
+  bailment/abandoned-goods rule that requires longer, a specific notice, or a different method?
+
 ## Priority 3 — can wait, but decide before scaling
 
 - **Q-TAX-2:** Kentucky treatment of sales tax on returned goods and partial refunds.

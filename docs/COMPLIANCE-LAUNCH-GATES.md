@@ -73,8 +73,9 @@ Everything in `docs/STRIPE-PRODUCTION.md` ("Exactly what must happen before the 
 | C-5 | Reconciliation | "Check Stripe for missed orders" run daily for the first 2 weeks and after any outage | 👤 log |
 | C-6 | Payment methods | Link (and its Bank/Klarna offers) off, or the Privacy Policy updated to mention it; cards only | 👤 |
 | C-7 | Dispute evidence pack | Owner knows where to find: order record, policy versions, tracking/delivery proof, emails sent (confirmation, shipping, delay), customer messages; response within Stripe's deadline | 👤 dry run on a test dispute |
-| C-8 | Owner area second factor | MFA or equivalent protection for the owner area before real customer addresses are stored (proposal **P-SEC-1**) — or a written owner decision to accept the risk | 👤 |
+| C-8 | Owner area second factor | MFA or equivalent protection for the owner area before real customer addresses are stored (proposal **P-SEC-1**) — or a written owner decision to accept the risk (**D-SEC-1**; MFA recommended, see `OWNER-REVIEW-FLAGS.md` §3) | 👤 |
 | C-9 | Live smoke test | One real low-value purchase, confirmation + shipping emails received, refunded from the owner page, refund recorded once | 👤 |
+| C-10 | Deploy-preview sandbox run | Every check V-1 … V-12 in `docs/PREVIEW-VERIFICATION-PLAN.md` (PR #14) recorded as PASS on a deploy preview or branch deploy, sandbox keys only (**D-QA-1**) | 👤 results in the PR |
 
 ## F. FunkSquish can begin fulfilling orders
 
@@ -83,9 +84,10 @@ Everything in `docs/STRIPE-PRODUCTION.md` ("Exactly what must happen before the 
 | F-1 | Ship-by discipline | Owner checks the orders list every business day; nothing shows "ship-by passed" without a delay notice or refund | 👤 |
 | F-2 | Supplier agreement | Each supplier who ships to customers has a signed agreement covering: ship-by SLA, tracking, safety documents per SKU, recall cooperation, and **use of customer data only for delivery** | 👤⚖️ |
 | F-3 | Supplier-shipped items | No supplier-shipped product is published until F-2 passes and its `processing_business_days` is set | 👤 |
-| F-4 | Packaging & returns | Return address, photo-on-arrival routine for returns, label-voiding routine for cancellations | 👤 |
+| F-4 | Packaging & returns | Return address, photo-on-arrival routine for returns, label-voiding routine for cancellations; for nonconforming returns: two emails before any disposal, **no disposal while a dispute, chargeback or fraud review is open**, disposal recorded (**D-RET-1**) | 👤 |
 | F-5 | Recall readiness | Recall/Section 15(b) runbook (`MASTER` §7.5) read; order records retained long enough to contact buyers | 👤 |
 | F-6 | Territory/oversold SLA | Orders flagged territory/oversold refunded within 1 business day | 👤 |
+| F-7 | Mixed-order shipping | Written decision **D-SHIP-1** (own stock only at launch, worst-case flat rate, cart-dependent rate, or no mixed carts) before any supplier-shipped product can share a cart with our stock | 👤 (`OWNER-REVIEW-FLAGS.md` §1) |
 
 ## O. Ongoing operations (monthly)
 
