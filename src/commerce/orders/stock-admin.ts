@@ -11,7 +11,6 @@ import {
 } from "./inventory";
 import { updateWithRetry, type KvStore } from "./store";
 import type { Order } from "./types";
-import { LOW_STOCK_THRESHOLD } from "../availability";
 
 /**
  * Manual, shared inventory (owner decision): ONE physical stock for the
@@ -324,8 +323,14 @@ export interface StockRow extends StockItem {
   warnings: StockWarning[];
 }
 
-/** "Only a few left on both channels" — tune with the owner (decision D-INV-1). */
-export const BOTH_CHANNELS_WARNING_UNITS = 5;
+/**
+ * The owner's low-stock warning (decision D-INV-1: kept at 5 units by the owner,
+ * 2026-10-27). Owner pages only — the public "Only a few left" label is separate
+ * (LOW_STOCK_THRESHOLD in src/commerce/availability.ts).
+ */
+export const LOW_STOCK_WARNING_UNITS = 5;
+/** "Only a few left on both channels — pause it on the website": same owner threshold. */
+export const BOTH_CHANNELS_WARNING_UNITS = LOW_STOCK_WARNING_UNITS;
 const DAY = 86_400_000;
 
 export function stockRow(
@@ -345,7 +350,7 @@ export function stockRow(
   else {
     if (sold > onHand) w.push({ code: "oversold", text: `Website orders need ${sold - onHand} more than you have. Check the shelf, then contact those customers.` });
     else if (free === 0 && !ledger?.paused) w.push({ code: "sold-out", text: "Sold out on the website." });
-    else if (free <= LOW_STOCK_THRESHOLD) w.push({ code: "low", text: `Low: ${free} left to sell.` });
+    else if (free <= LOW_STOCK_WARNING_UNITS) w.push({ code: "low", text: `Low: ${free} left to sell.` });
     if (tiktok && item.websiteSellable && !ledger?.paused && free > 0 && free <= BOTH_CHANNELS_WARNING_UNITS)
       w.push({ code: "both-channels-low", text: `On the website and TikTok with only ${free} left — pause it on the website while you sell it on TikTok.` });
   }

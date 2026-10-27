@@ -18,7 +18,8 @@ const availabilityStyle: Record<Availability, { dot: string; detail: string }> =
   "in-stock": { dot: "bg-mint", detail: "Ready to order." },
   "low-stock": { dot: "bg-peach", detail: "Only a few left." },
   "sold-out": { dot: "bg-ink-soft", detail: "This one is sold out right now." },
-  unavailable: { dot: "bg-ink-soft", detail: "This product isn't available." },
+  unavailable: { dot: "bg-ink-soft", detail: "Not available to order right now. Please check back soon." },
+  checking: { dot: "bg-sky", detail: "Checking live stock." },
 };
 
 /**
@@ -98,6 +99,7 @@ export function ProductShowcase({
                   </span>
                   {v.name}
                   {vAvail === "sold-out" && <span className="text-xs font-semibold text-ink-soft">(sold out)</span>}
+                  {vAvail === "unavailable" && <span className="text-xs font-semibold text-ink-soft">(unavailable)</span>}
                 </label>
               );
             })}

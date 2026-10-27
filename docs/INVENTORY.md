@@ -67,8 +67,8 @@ Safeguards:
 | Warning | When |
 | --- | --- |
 | Website orders need N more than you have | Promised website units exceed the shelf (contact those customers) |
-| On the website and TikTok with only N left — pause it | Item is listed on TikTok Shop (your toggle, a TikTok link in the catalog, or featured in the current LIVE), for sale on the website, not paused, and 5 or fewer free (tunable: **D-INV-1**) |
-| Low / Sold out on the website | 3 or fewer free / none free |
+| On the website and TikTok with only N left — pause it | Item is listed on TikTok Shop (your toggle, a TikTok link in the catalog, or featured in the current LIVE), for sale on the website, not paused, and 5 or fewer free (**D-INV-1**: kept at 5 by the owner) |
+| Low / Sold out on the website | 5 or fewer free (**D-INV-1**, `LOW_STOCK_WARNING_UNITS`) / none free |
 | Units still reserved for canceled website orders | A canceled order's units weren't freed (fix with one button) |
 | Paused on the website since … | Paused over 24 hours |
 | No starting count / Never counted here / Not counted in 30 days | Reminders to count |
@@ -93,17 +93,48 @@ featured on TikTok).
 
 - Stored in the same private Netlify Blobs store as orders (`stripe-live-orders` on production, `stripe-test-orders`
   on previews), one record per variant. The activity log is one small record per change, kept by day.
-- The variant record keeps its last 40 changes; the activity page shows 14 days. Older log records are kept but not yet
-  shown or exported — **decision D-INV-2**: how long to keep stock history (it holds no customer data; order numbers
-  only), and whether to add a CSV export for bookkeeping.
-- **Product pages still show the catalog's stock label** ("In stock", "Only a few left"); the cart and checkout always
-  use the live count (the cart says "Only 1 left" or "paused on the website" immediately). A live stock label on
-  product pages is follow-up **INV-F1**.
+- The variant record keeps its last 40 changes; the activity page shows 14 days. The log itself is **append-only and
+  never deleted** — no automatic deletion exists, and a test fails if code that deletes log records is added. How long
+  to keep it is **D-INV-2**, waiting on the accountant/attorney record-keeping answer (**Q-RET-1**).
+- **CSV export** (Activity page → *Download stock history*): `/partners/review/inventory/export?from=…&to=…`, owner
+  only (the same sign-in check as every owner page, so it needs two-step sign-in wherever that's required; anyone else
+  gets a plain 404). Eastern-Time dates, up to 92 days per file (download longer periods in parts; keeps each download
+  well inside the hosting time limit), one row per change: date/time, product, variant, SKU, what happened, change,
+  shelf before/after, who recorded it, order number, your note, undone/undoes, ids. No customer names, emails or
+  addresses. Never cached or indexed; spreadsheet formulas in notes are neutralised; logs show only the row count.
+
+## What shoppers see (live stock labels, follow-up INV-F1 — done)
+
+Every page that shows stock — product pages (badge, buy box, colour chips, mobile bar, search-engine data), shop and
+collection grids, drops, Squish Lab, TikTok LIVE page, quiz, Squish Box and wishlist — reads **the same record** this
+page changes (`src/commerce/live-stock.ts`):
+
+| Record says | Shoppers see |
+| --- | --- |
+| Free = owner's count (or catalog count until you set one) − website orders to ship − units in open checkouts | "In stock", or "Only a few left" at 3 or fewer (public label, unchanged), or "Sold out" |
+| Paused on the website | "Unavailable", no buy button |
+| Can't be read right now | "Unavailable", no buy button (never a guess) |
+| While loading | "Checking stock…", no buy button |
+
+- So a TikTok sale you record, a pause, or a shopper's open checkout shows on the site on the next page load; checkout
+  re-checks the same record, so a sale between page load and "Buy" is still refused.
+- Pages are never served from a cache with stock in them: the static page says "Checking stock…" and the live numbers
+  are read for each visit. Exact counts never reach browsers (at most 4 is sent, which gives the same labels).
+- **Today nothing changes:** while selling is switched off (`features.commerce`), no page can claim stock, so nothing is
+  read and pages stay static. Checked: the site also builds with selling switched on (not committed).
+- Search engines get stock data ("InStock"/"OutOfStock") only from these live numbers, and none for paused, unreadable
+  or loading items.
+- Cost: one record read per variant shown, per visit. Fine for a small catalog; if it grows large, a summary record can
+  be added later.
 - Supplier items use the same mechanism, with "On the shelf" meaning units the supplier has confirmed to you.
 
 ## Tests
 
-`tests/inventory/` (29 tests): managed count replaces the catalog's; a TikTok sale immediately limits checkout and the
+`tests/inventory/` (60 tests). Added 2026-10-27: live labels (15 — TikTok sales → "Only a few left" → "Sold out",
+shelf count 0, pause, open-checkout holds and their expiry, unshipped website orders, unreadable stock, "Checking
+stock…", exact counts hidden with identical labels, catalog objects untouched, production-only live reads), CSV export
+(11 — formula neutralising, ranges, Eastern dates, undo marks, owner-only 404, headers, no-deletion guard), owner
+thresholds (5 — low and both-channels at 5, public label at 3, $150 signature advisory only). Earlier: managed count replaces the catalog's; a TikTok sale immediately limits checkout and the
 cart; damaged/lost/returned with reasons and an activity log; never below zero; website-promised units need
 confirmation and late payments are flagged oversold; double-tap = one change; 10 concurrent TikTok sales on 5 units;
 TikTok sales racing website checkouts for the last units; pause blocks only that item; LIVE pauses/resumes only its own
