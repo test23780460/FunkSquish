@@ -39,15 +39,12 @@ export default function ShippingPage() {
       <h2>Processing time</h2>
       <p>
         We pack and ship items from our own stock within <strong>2 business days</strong> of receiving the order
-        (Monday–Friday, excluding U.S. federal holidays). Orders placed during a TikTok LIVE or a busy launch may take a little
-        longer — if so, we&apos;ll say so on the product or in the LIVE. If an item ships directly from one of our suppliers,
-        its product page shows its own shipping time, and an order with both kinds of items may arrive in separate packages.
+        (Monday–Friday, excluding U.S. federal holidays). If we advertise a longer processing time for a particular product or promotion, we&apos;ll clearly disclose it before checkout. A busy launch by itself does not automatically extend the ship-by date for an accepted order. Supplier-shipped items may have a different ship-by timeframe, which must be disclosed before purchase on the product page and at checkout. We will not offer a supplier-shipped item for sale until we can support its stated shipping timeframe. Mixed orders may arrive in separate packages.
       </p>
 
       <h2>Delivery times</h2>
       <p>
-        Delivery time depends on the carrier and your location. Any estimate shown at checkout comes from the carrier and
-        is not a guarantee. We don&apos;t guarantee delivery dates.
+        Delivery time depends on the carrier and your location. Any delivery estimate shown at checkout is an estimate, not a guarantee, unless we expressly promise a delivery date. We don&apos;t guarantee delivery dates.
       </p>
 
       <h2>Tracking</h2>
@@ -58,8 +55,7 @@ export default function ShippingPage() {
 
       <h2>If your order is delayed</h2>
       <p>
-        If we can&apos;t ship your order within the time stated above, we&apos;ll let you know before that time passes, give you a
-        new expected ship date, and offer you the choice to cancel for a full refund. Refunds for canceled orders are issued
+        If we cannot ship by the promised date, we&apos;ll contact you promptly and no later than that date. When required by law, we&apos;ll seek your consent to a revised ship date or cancel and promptly refund the affected unshipped items. We will not treat silence as permission to delay when the law requires express consent. If an order cannot be fulfilled, we&apos;ll cancel and refund it rather than hold the payment indefinitely. Refunds for canceled orders are issued
         promptly to your original payment method.
       </p>
 
@@ -71,8 +67,7 @@ export default function ShippingPage() {
         </li>
         <li>
           <strong>Tracking says delivered but it isn&apos;t there:</strong> check with neighbors and your mail carrier, then email
-          us within <strong>14 days of the delivery date</strong>. We&apos;ll open a claim with the carrier and work with you on
-          a replacement or refund.
+          us within <strong>14 days of the delivery date</strong>. We&apos;ll investigate promptly with the carrier and work with you on an appropriate replacement or refund; a carrier claim is not a condition of exercising any rights provided by law.
         </li>
         <li>
           <strong>Tracking hasn&apos;t moved in 10 days:</strong> email us and we&apos;ll contact the carrier.
