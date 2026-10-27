@@ -93,12 +93,8 @@ export function shippingOption(quote: ShippingQuote): Stripe.Checkout.SessionCre
 export function buildCheckoutSessionParams(input: {
   lines: CheckedLine[];
   checkoutId: string;
-  /**
-   * `shippingRateIds` is still required by the (unchanged) checkout locks in
-   * environment.ts, but the price now comes from `shipping` — see
-   * docs/MIXED-ORDER-SHIPPING.md ("Stripe shipping-rate ids").
-   */
-  config: Pick<StripeTestConfig, "returnOrigin" | "shippingRateIds" | "automaticTax"> & { secretKey?: string; webhookSecret?: string | null };
+  /** Shipping is priced from `shipping` (the server's verified quote); no Stripe shipping-rate ids are used. */
+  config: Pick<StripeTestConfig, "returnOrigin" | "automaticTax"> & { secretKey?: string; webhookSecret?: string | null };
   shipping: ShippingQuote;
   expiresAt: number;
   mode?: StripeMode;

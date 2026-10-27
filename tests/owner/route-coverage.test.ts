@@ -57,6 +57,25 @@ describe("owner area coverage", () => {
     }
   });
 
+  it("every owner download (route handler) checks the session, runs per request and only reads", () => {
+    const routes = files(ROOT, (f) => f === "route.ts");
+    expect(routes.map((f) => path.relative(ROOT, f)).sort()).toEqual(["inventory/export/route.ts"]);
+    for (const r of routes) {
+      const src = fs.readFileSync(r, "utf8");
+      const rel = path.relative(ROOT, r);
+      expect(src, rel).toMatch(/export async function GET\(/);
+      expect(src, rel).not.toMatch(/export async function (POST|PUT|PATCH|DELETE)\(/); // changes go through checked server actions
+      const body = src.slice(src.indexOf("export async function GET("));
+      const connectionAt = body.indexOf("await connection()");
+      const authAt = body.indexOf("requireReviewer()");
+      const dataAt = body.search(/inventoryContext\(|loadHistory\(|\.store\b/);
+      expect(connectionAt, `${rel}: never prerendered`).toBeGreaterThan(-1);
+      expect(authAt, `${rel}: checks the owner session`).toBeGreaterThan(connectionAt);
+      expect(authAt, `${rel}: session check before any data`).toBeLessThan(dataAt);
+      expect(src, rel).toMatch(/no-store/);
+    }
+  });
+
   it("every owner page checks the session before showing data", () => {
     const pages = files(ROOT, (f) => f === "page.tsx");
     expect(pages.length).toBeGreaterThanOrEqual(11);

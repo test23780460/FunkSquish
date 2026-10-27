@@ -118,7 +118,7 @@ describe("checkout records which policies applied, and says so before payment", 
   const params = buildCheckoutSessionParams({
     lines: auditLines,
     checkoutId: "11111111-2222-3333-4444-555555555555",
-    config: { returnOrigin: "https://preview.example", shippingRateIds: ["shr_1"], automaticTax: false },
+    config: { returnOrigin: "https://preview.example", automaticTax: false },
     shipping: quoteFor(auditLines),
     expiresAt: 2_000_000_000,
   });

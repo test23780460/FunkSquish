@@ -17,7 +17,6 @@ describe("Stripe test environment guard", () => {
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.config.returnOrigin).toBe("https://deploy-preview-6--ephemeral-syrniki-2b3f3c.netlify.app");
-      expect(r.config.shippingRateIds).toEqual(["shr_FAKE123"]);
       expect(r.config.webhookSecret).toBe("whsec_FAKE123");
       expect(r.config.automaticTax).toBe(false);
     }
@@ -53,8 +52,6 @@ describe("Stripe test environment guard", () => {
     expect(readStripeTestConfig({ ...ok, STRIPE_TEST_SECRET_KEY: "" })).toEqual({ ok: false, problem: "missing-secret-key" });
     expect(readStripeTestConfig({ ...ok, STRIPE_TEST_SECRET_KEY: "pk_test_FAKE" })).toEqual({ ok: false, problem: "invalid-secret-key" });
     expect(readStripeTestConfig({ ...ok, STRIPE_TEST_SECRET_KEY: "sk_test_has spaces" })).toEqual({ ok: false, problem: "invalid-secret-key" });
-    expect(readStripeTestConfig({ ...ok, STRIPE_TEST_SHIPPING_RATE_ID: "" })).toEqual({ ok: false, problem: "missing-shipping-rate" });
-    expect(readStripeTestConfig({ ...ok, STRIPE_TEST_SHIPPING_RATE_ID: "rate_123" })).toEqual({ ok: false, problem: "missing-shipping-rate" });
   });
 
   it("treats a malformed webhook secret as not configured", () => {
@@ -62,9 +59,11 @@ describe("Stripe test environment guard", () => {
     expect(r.ok && r.config.webhookSecret).toBe(null);
   });
 
-  it("supports several test shipping rates", () => {
+  it("no longer needs (or reads) Stripe shipping-rate ids: shipping is priced by the server (D-SHIP-3)", () => {
+    expect(readStripeTestConfig({ ...ok, STRIPE_TEST_SHIPPING_RATE_ID: "" }).ok).toBe(true);
+    expect(readStripeTestConfig({ ...ok, STRIPE_TEST_SHIPPING_RATE_ID: "rate_123" }).ok).toBe(true); // an old leftover value is harmless
     const r = readStripeTestConfig({ ...ok, STRIPE_TEST_SHIPPING_RATE_IDS: "shr_A1, shr_B2" });
-    expect(r.ok && r.config.shippingRateIds).toEqual(["shr_A1", "shr_B2"]);
+    expect(r.ok && Object.keys(r.config)).not.toContain("shippingRateIds");
   });
 
   it("only returns shoppers to safe, non-production origins", () => {

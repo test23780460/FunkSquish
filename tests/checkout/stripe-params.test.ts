@@ -5,7 +5,6 @@ import { checkedLine, quoteFor } from "./shipping-helpers";
 
 const config: StripeTestConfig = {
   secretKey: "sk_test_FAKEFAKEFAKE123",
-  shippingRateIds: ["shr_FAKE1", "shr_FAKE2"],
   webhookSecret: "whsec_FAKE",
   returnOrigin: "https://deploy-preview-6--ephemeral-syrniki-2b3f3c.netlify.app",
   automaticTax: false,

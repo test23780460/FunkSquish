@@ -13,6 +13,7 @@ import {
   signOutEverywhere,
   startEnrollment,
 } from "@/lib/owner/auth";
+import { forgetMfaGate } from "@/lib/owner/mfa-gate";
 import { SESSION_COOKIE, clientIp, hashIdentifier } from "@/lib/partners/security";
 import { takeRateLimits } from "@/lib/partners/store";
 import { sendSecurityEmail } from "@/lib/owner/security-email";
@@ -98,6 +99,7 @@ export async function confirmEnrollmentAction(_prev: CodesState, fd: FormData): 
   // Every other device is signed out; this one continues with both steps done.
   await setSessionCookie(auth.cfg, { aal: 2, mfa: mfaVersion(auth.cfg.secret, r.enrollment), epoch: r.epoch });
   console.info("[owner-auth] mfa enrolled");
+  forgetMfaGate(); // checkout / partner applications may open now (this instance; others within a minute)
   await sendSecurityEmail("mfa-on");
   return { error: null, codes: r.codes };
 }
@@ -126,6 +128,7 @@ export async function disableMfaAction(_prev: CodeState, fd: FormData): Promise<
   if (!r.ok) return { error: r.error };
   (await cookies()).delete({ name: SESSION_COOKIE, path: "/partners/review" });
   console.info("[owner-auth] mfa turned off");
+  forgetMfaGate();
   await sendSecurityEmail("mfa-off");
   redirect(`${LOGIN}?signedout=mfa-off`);
 }

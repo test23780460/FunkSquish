@@ -9,6 +9,7 @@ import { PageHero } from "@/components/layout/PageHero";
 import { Badge, Container, SectionHeading } from "@/components/ui/Primitives";
 import { ButtonAnchor } from "@/components/ui/Button";
 import { ProductCard } from "@/components/shop/ProductCard";
+import { LiveStock } from "@/components/shop/LiveStock";
 import { DropAlertForm } from "@/components/drops/DropAlertForm";
 import { DropTiming } from "@/components/drops/DropTiming";
 import { Mascot } from "@/components/illustrations/Mascot";
@@ -95,13 +96,17 @@ export default async function DropsPage() {
                       </div>
                     )}
                     {items.length > 0 && (
-                      <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                        {items.map((p) => (
-                          <li key={p.id}>
-                            <ProductCard product={p} />
-                          </li>
-                        ))}
-                      </ul>
+                      <LiveStock products={items}>
+                        {(shown) => (
+                          <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                            {shown.map((p) => (
+                              <li key={p.id}>
+                                <ProductCard product={p} />
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </LiveStock>
                     )}
                   </li>
                 );

@@ -77,12 +77,32 @@ checked out until you do this** (by design).
    agreement in `private/` only.
 4. Re-verify every 90 days (or set `reviewEveryDays`); expired origins stop checkout automatically.
 
-## 4. Stripe shipping-rate ids (`STRIPE_*_SHIPPING_RATE_IDS`)
+## 4. Stripe shipping-rate ids → replaced by verified, owner-approved rates (decision D-SHIP-3)
 
-The checkout locks in `src/commerce/checkout/environment.ts` are **unchanged**: they still require 1–5 `shr_…` ids for
-the test and live modes. The price no longer comes from them — Stripe receives the server's computed rate instead.
-Keeping the requirement means no lock was loosened. **Decision D-SHIP-3:** remove that requirement in a separate,
-reviewed PR, or keep it. Until then, keep any valid `shr_…` id in the variables.
+**Review (2026-10-27):** the old lock required 1–5 Stripe `shr_…` ids (`STRIPE_*_SHIPPING_RATE_IDS`). Since mixed-order
+shipping, checkout sends Stripe the server's own computed rate (`shipping_rate_data`), so those ids are never used: any
+valid-looking id opened the lock, it proved nothing about what customers are charged, and a stale id could give false
+confidence. The requirement is obsolete.
+
+**Replacement (its own draft PR, stacked on the MFA branch, so you can accept or decline it separately):**
+
+| Mode | Before | After |
+| --- | --- | --- |
+| Live | 1–5 `shr_…` ids in `STRIPE_LIVE_SHIPPING_RATE_IDS` | (a) at least one origin with **verified** rates (a rule, who/when/evidence, supplier agreement on file) **and** (b) `STRIPE_LIVE_SHIPPING_TABLE` = the **approval code (fingerprint) of the exact table** that will be charged |
+| Test (sandbox) | 1–5 `shr_…` ids in `STRIPE_TEST_SHIPPING_RATE_IDS` | nothing extra — test checkout already prices only the labeled test origins; the old variable is ignored |
+
+- Nothing is weakened: every other live lock is untouched (code switch, production only, env switch, live key,
+  webhook secret), the live lock goes from 6 to 7 conditions, and the checkout service also needs owner two-step
+  sign-in. The new conditions are tied to real prices; the old one wasn't.
+- The fingerprint (`src/commerce/shipping-approval.ts`) covers each origin's rule, verification, review period,
+  processing time, APO/FPO support, supplier agreement and $0 confirmation (not display wording). **Any change closes
+  live checkout until you approve the new table** — rates can't change on customers without you seeing them first.
+  The owner Orders page shows the code, how many origins are verified, and whether Production's value matches.
+- Review dates: the lock itself doesn't read the clock (pages that check it are built ahead of time, and Next.js
+  refuses clock reads there — caught by the build). A verification past its `reviewEveryDays` (or dated in the
+  future) is refused item by item at checkout, every time, exactly as before; if every origin lapses, nothing can be
+  bought. The owner Orders page counts only current verifications.
+- Tests: `tests/shipping/approval.test.ts` (9) and the live-lock cases in `tests/checkout/live-readiness.test.ts`.
 
 ## 5. After payment: packages on the order (`/partners/review/orders/<session>`)
 
@@ -110,6 +130,34 @@ Stripe's `charge.refunded` webhook arrives first.
 - Supplier ship-by dates are only as good as the supplier's performance — the delay-notice process still applies.
 - Signature confirmation is not offered to customers (see §7).
 
+### Abuse limits on the quote and on "Secure checkout" (`src/commerce/checkout/rate-limit.ts`)
+
+The cart's shipping quote reads the catalog and stock on every call, and "Secure checkout" holds stock for ~31 minutes
+and creates a Stripe session, so both are limited **per shopper network** (never site-wide, so one abuser can't close
+checkout for everyone):
+
+| Request | Burst guard (memory, per server instance) | Stored limits (all instances) |
+| --- | --- | --- |
+| Shipping quote | 40 per minute | 150 per 10 minutes |
+| Start checkout | 6 per minute | 10 per 30 minutes, 30 per day |
+
+- Quotes and checkout starts are counted **separately**: a shopper who edits the cart a lot can still pay. A limited
+  quote says the shipping and total will be shown on Stripe's page before paying, and doesn't disable the button.
+- Limits are far above real use (tested: 40 cart edits + checkout; 8 round trips to Stripe; 5 shoppers on one shared
+  school/office/phone-carrier address, 25 edits each).
+- The network is Netlify's `x-nf-client-connection-ip` (a spoofed `X-Forwarded-For` is ignored); IPv6 is grouped by
+  `/64`. Nothing is counted while checkout is closed; inputs are shape-checked (max 20 lines, 1–10 each) before any
+  storage read; Next.js server actions also refuse cross-site posts.
+- **Privacy:** the address is used in memory and as a keyed, truncated hash (`PARTNER_SECRET`); it's never stored or
+  logged. Counters live in the existing `partner-rate-limits` store, whose daily cleanup deletes them 2 days after
+  their window (tested). Proposed Privacy Policy sentence: see PR #19 (`docs/POLICY-COMPARISON.md`).
+- **Failure modes:** a storage outage lets requests through (checkout then succeeds or fails on its own); a flood of
+  parallel requests from one network that keeps colliding on its own counter is refused. Without `PARTNER_SECRET`
+  only the in-memory guard applies (a warning is logged).
+- **Residual risk:** an attacker with many addresses can still hold stock for up to ~31 minutes per checkout. The
+  owner sees units "in shoppers' checkouts" on the Inventory page and can pause a SKU; Netlify's platform rate limits
+  (plan-dependent) can be added later without code changes.
+
 ## 7. Signature confirmation (proposed $150 threshold)
 
 `src/commerce/signature.ts`: the owner order page **recommends** buying signature confirmation for orders of $150 or
@@ -129,6 +177,11 @@ experience. **Decision D-OPS-2b.**
 | SUP-5 | Our own packed weights and USPS costs → `funksquish` rule | Not started |
 
 ## 9. Tests
+
+`tests/checkout/rate-limit.test.ts` (22 tests): real shoppers still check out (heavy cart editing, repeated trips to
+Stripe, a shared network, rapid taps); quote floods, checkout-start floods (30-minute and daily caps; nothing held or
+sent to Stripe when refused), spoofed headers, IPv6 /64 grouping, colliding parallel requests, bounded memory; keyed
+hashes only, deleted by the daily cleanup, never logged; storage outage; nothing counted while closed.
 
 `tests/shipping/` (58 tests): single-origin weight tiers; one base charge per origin; supplier-only with two suppliers;
 mixed carts; blocked unverified/expired/agreement-less/unknown origins; $0 rates; promise mismatch; too-large and

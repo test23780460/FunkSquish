@@ -10,7 +10,7 @@ import { checkedLine, quoteFor } from "./shipping-helpers";
  * and preview check V-25 confirms the page doesn't show it.
  */
 const lines = [checkedLine({ variantId: "v1" }), checkedLine({ variantId: "v2", fulfillmentSource: "supplier", fulfillmentOrigin: "test-supplier-a" })];
-const cfg = { returnOrigin: "https://funksquish.com", shippingRateIds: ["shr_X"], automaticTax: true };
+const cfg = { returnOrigin: "https://funksquish.com", automaticTax: true };
 
 describe.each(["test", "live"] as const)("Checkout configuration (%s mode) matches the policies", (mode) => {
   const p = buildCheckoutSessionParams({ lines, checkoutId: "11111111-2222-3333-4444-555555555555", config: cfg, shipping: quoteFor(lines), expiresAt: 2_000_000_000, mode });

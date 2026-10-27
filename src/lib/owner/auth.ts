@@ -6,6 +6,7 @@ import { reviewConfig } from "@/lib/partners/config";
 import { partnerStores, type PartnerStores } from "@/lib/partners/store";
 import { PARTIAL_SESSION_SECONDS, SESSION_COOKIE, SESSION_SECONDS, hmac, issueSession, readSession, type Session } from "@/lib/partners/security";
 import { liveCheckoutEnabled } from "@/commerce/checkout/live";
+import { features } from "@/lib/features";
 import { decryptSecret, encryptSecret, hashRecoveryCode, newRecoveryCodes, normalizeRecoveryCode, sameHash } from "./mfa-crypto";
 import { newTotpSecret, stepAt, verifyTotp } from "./totp";
 
@@ -15,7 +16,8 @@ import { newTotpSecret, stepAt, verifyTotp } from "./totp";
  * Draft-safe by design: until the owner sets up two-step sign-in, the
  * passphrase alone still works exactly as before — UNLESS two-step sign-in is
  * required, which happens automatically when live checkout is switched on
- * (real customer orders), or when OWNER_MFA_REQUIRED=true. Once set up, every
+ * (real customer orders) or partner applications are switched on (private
+ * applicant details), or when OWNER_MFA_REQUIRED=true. Once set up, every
  * owner page and server action needs both steps.
  *
  * State (one record, compare-and-set) lives in a private Netlify Blobs store
@@ -79,9 +81,23 @@ export function activeEnrollment(state: AuthState, env: Record<string, string | 
   return reset && reset === e.id ? null : e;
 }
 
-/** Two-step sign-in is mandatory once live checkout is on (real orders), or when the owner turns it on explicitly. */
-export function mfaRequired(env: Record<string, string | undefined> = process.env, live = liveCheckoutEnabled()): boolean {
-  return live || env.OWNER_MFA_REQUIRED === "true";
+/** The partner-applications switch (code or env), whether or not the rest of its setup is complete. */
+export function partnerApplicationsSwitchedOn(env: Record<string, string | undefined> = process.env): boolean {
+  return features.partnerApplications || env.PARTNER_APPLICATIONS_ENABLED === "true";
+}
+
+/**
+ * Two-step sign-in is mandatory once live checkout is on (real customer orders),
+ * once partner applications (private applicant details) are switched on, or when
+ * the owner turns it on explicitly. Those features also refuse to open until an
+ * enrollment exists (src/lib/owner/mfa-gate.ts), so set it up first, while it's optional.
+ */
+export function mfaRequired(
+  env: Record<string, string | undefined> = process.env,
+  live = liveCheckoutEnabled(),
+  partners = partnerApplicationsSwitchedOn(env),
+): boolean {
+  return live || partners || env.OWNER_MFA_REQUIRED === "true";
 }
 
 export const mfaVersion = (serverSecret: string, enrollment: Enrollment) => hmac(serverSecret, "mfa-version", enrollment.id).slice(0, 12);
