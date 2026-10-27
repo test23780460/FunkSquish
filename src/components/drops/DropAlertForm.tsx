@@ -39,8 +39,8 @@ export function DropAlertForm({ enabled, productName, className }: { enabled: bo
           </label>
           <p className="mt-1 text-[0.95rem] text-ink-soft">
             {productName
-              ? `We'll email when new drops or restocks are announced — including if ${productName} becomes available.`
-              : "One email when a new drop or restock is announced. No spam."}
+              ? `We'll email everyone on the alert list when new drops or restocks are announced. We don't track individual products, so it's a general alert — not a reservation for ${productName}.`
+              : "An email when a new drop or restock is announced. No spam."}
           </p>
           <div aria-hidden="true" className="absolute left-[-9999px] h-px w-px overflow-hidden">
             <label>

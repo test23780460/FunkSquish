@@ -37,6 +37,17 @@ function media(cell, slug) {
   });
 }
 
+/** Optional per-product sales terms (shown before purchase). Empty cells = our standard terms. */
+function salesTerms(r, slug) {
+  const terms = {};
+  const finalSale = (r.final_sale_once_opened ?? "").trim().toLowerCase();
+  if (finalSale && !["true", "false"].includes(finalSale)) throw new Error(`${slug}: final_sale_once_opened must be true, false or empty`);
+  if (finalSale) terms.finalSaleOnceOpened = finalSale === "true"; // an explicit "false" is a recorded decision too
+  const days = numOrNull(r.processing_business_days ?? "");
+  if (days !== null) terms.processingBusinessDays = days;
+  return Object.keys(terms).length ? { salesTerms: terms } : {};
+}
+
 rows.forEach((r, i) => {
   const line = i + 2;
   try {
@@ -69,6 +80,7 @@ rows.forEach((r, i) => {
         },
         tags: list(r.tags),
         textures: list(r.texture_types ?? ""),
+        ...salesTerms(r, slug),
         featuredRank: numOrNull(r.featured_rank) ?? 100,
         createdAt: new Date().toISOString().slice(0, 10),
       });
@@ -108,6 +120,8 @@ rows.forEach((r, i) => {
         testDate: textOrNull(r.private_test_date),
         trackingLabelPhoto: textOrNull(r.private_tracking_label_photo),
       },
+      // Evidence that a compare-at ("was") price was a real, recent selling price (16 CFR 233.1).
+      compareAtBasis: textOrNull(r.private_compare_at_basis ?? ""),
       notes: textOrNull(r.private_notes),
     };
   } catch (err) {

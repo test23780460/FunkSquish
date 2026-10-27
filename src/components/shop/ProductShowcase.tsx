@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Availability, Product } from "@/commerce/types";
 import { availabilityLabel, canPurchase, formatMoney, getAvailability, showCompareAt } from "@/commerce/availability";
 import { generalCare, CPSC_SQUISHY_ALERT_URL } from "@/content/product-care";
+import { hasLabelWarnings, isFinalSaleOnceOpened, needsDisclosureBeforePurchase, processingBusinessDays } from "@/commerce/sales-terms";
 import { ProductGallery } from "./ProductGallery";
 import { PurchaseButton } from "./PurchaseButton";
 import { CheckIcon, ChevronDownIcon } from "@/components/icons/Icons";
@@ -54,6 +55,10 @@ export function ProductShowcase({
   }, []);
 
   const dims = variant.dimensions;
+  const published = product.publication === "published";
+  const warnings = hasLabelWarnings(product) ? product.safety.warnings.filter((w) => w.trim()) : [];
+  const finalSale = isFinalSaleOnceOpened(product);
+  const shipDays = processingBusinessDays(product);
   const specs: [string, string][] = [
     ["Material", product.specs.material ?? TBC],
     ["Filling", product.specs.fill ?? TBC],
@@ -141,6 +146,34 @@ export function ProductShowcase({
             </span>
           </p>
 
+          {/* Disclosures that must come before the buy button (see src/commerce/sales-terms.ts). */}
+          {warnings.length > 0 && (
+            <div className="mt-4 rounded-2xl border-2 border-ink bg-white p-3.5" role="note" aria-label="Safety warning">
+              <p className="font-display font-bold uppercase tracking-wide text-ink">⚠ Warning</p>
+              <ul className="mt-1 list-disc space-y-1 pl-5 font-semibold text-ink">
+                {warnings.map((w) => (
+                  <li key={w}>{w}</li>
+                ))}
+              </ul>
+              {product.safety.ageGrade && <p className="mt-2 text-sm text-ink">Age grading: {product.safety.ageGrade}</p>}
+            </div>
+          )}
+          {published && (
+            <ul className="mt-3 space-y-1.5 text-[0.95rem] text-ink">
+              {finalSale && (
+                <li>
+                  <strong className="font-display">Final sale once opened.</strong> Opened items can&apos;t be returned for a change of mind.
+                  Damaged, defective or wrong items are always covered —{" "}
+                  <Link href="/returns" className="font-semibold text-royal underline underline-offset-2">Returns policy</Link>.
+                </li>
+              )}
+              <li>
+                <strong className="font-display">Ships within {shipDays} business day{shipDays === 1 ? "" : "s"}</strong> after we receive your paid order.{" "}
+                <Link href="/shipping" className="font-semibold text-royal underline underline-offset-2">Shipping policy</Link>
+              </li>
+            </ul>
+          )}
+
           <PurchaseButton product={product} variant={variant} size="lg" className="mt-4" />
           <p className="mt-3 text-center text-sm text-ink-soft">
             {live ? "Payment happens on our secure checkout provider." : "Checkout will open after launch through a secure payment provider."}
@@ -208,12 +241,14 @@ export function ProductShowcase({
 
           <Section title="Shipping & returns">
             <p className="text-ink-soft">
-              Shipping options, costs, and our returns policy will be confirmed before the shop opens. Shipping and tax will be
-              calculated at checkout.
+              {published
+                ? `Ships within ${shipDays} business day${shipDays === 1 ? "" : "s"} after we receive your paid order. Shipping options and prices, and any sales tax, are shown at checkout before you pay.`
+                : "Shipping options and prices, and any sales tax, will be shown at checkout before you pay once the shop opens."}{" "}
+              Damaged, defective or wrong items are replaced or refunded; unopened items can be returned within 30 days of delivery{finalSale ? " (opened items of this product are final sale)" : ""}.
             </p>
             <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
               <Link href="/shipping" className="font-semibold text-royal underline underline-offset-2">Shipping information</Link>
-              <Link href="/returns" className="font-semibold text-royal underline underline-offset-2">Returns &amp; exchanges</Link>
+              <Link href="/returns" className="font-semibold text-royal underline underline-offset-2">Returns &amp; refunds</Link>
             </p>
           </Section>
         </div>
@@ -239,7 +274,18 @@ export function ProductShowcase({
             </p>
           </div>
           <div className="w-40 shrink-0">
-            <PurchaseButton product={product} variant={variant} />
+            {live && needsDisclosureBeforePurchase(product) ? (
+              // The sticky bar can't show the warnings and terms, so it sends shoppers back to the buy box.
+              <button
+                type="button"
+                onClick={() => buyBox.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                className="inline-flex min-h-10 w-full items-center justify-center rounded-full bg-royal px-2 font-display text-[0.8rem] font-semibold text-white shadow-[0_4px_0_var(--color-navy)] sm:min-h-11 sm:text-sm"
+              >
+                {warnings.length ? "See warning & buy" : "See terms & buy"}
+              </button>
+            ) : (
+              <PurchaseButton product={product} variant={variant} />
+            )}
           </div>
         </div>
       </div>

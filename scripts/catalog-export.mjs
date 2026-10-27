@@ -48,6 +48,8 @@ const rows = products.flatMap((p) =>
       width_cm: v.dimensions?.widthCm ?? "",
       height_cm: v.dimensions?.heightCm ?? "",
       external_purchase_url: v.externalPurchaseUrl,
+      final_sale_once_opened: p.salesTerms?.finalSaleOnceOpened === undefined ? "" : String(p.salesTerms.finalSaleOnceOpened),
+      processing_business_days: p.salesTerms?.processingBusinessDays ?? "",
       private_cost_per_unit_usd: money(x.costPerUnit),
       private_supplier_name: x.supplierName,
       private_supplier_sku: x.supplierSku,
@@ -59,6 +61,7 @@ const rows = products.flatMap((p) =>
       private_test_lab: x.compliance?.testLab,
       private_test_date: x.compliance?.testDate,
       private_tracking_label_photo: x.compliance?.trackingLabelPhoto,
+      private_compare_at_basis: x.compareAtBasis,
       private_notes: x.notes,
     };
   }),

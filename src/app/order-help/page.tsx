@@ -19,8 +19,9 @@ const topics: { title: string; body: ReactNode }[] = [
     title: "Where's my order?",
     body: (
       <>
-        Once our shop is open, your order confirmation and shipping updates will come by email from our checkout provider,
-        or in the TikTok app for TikTok Shop orders. If something looks wrong, email us with your order number.
+        Once our shop is open, you&apos;ll get an order confirmation email from us (Stripe, our payment provider, may also send a
+        payment receipt), and we&apos;ll email your tracking number when the order ships (TikTok Shop orders show this in the TikTok
+        app). Items from our own stock ship within 2 business days. If something looks wrong, email us with your order number.
       </>
     ),
   },
@@ -28,8 +29,9 @@ const topics: { title: string; body: ReactNode }[] = [
     title: "Something arrived damaged or wrong",
     body: (
       <>
-        Email us your order number and a photo of the item and packaging. Please stop using any squishy that is torn,
-        leaking, or sticky. See our <Link href="/returns">returns policy</Link>.
+        Email us your order number and, if you can, a photo of the item and packaging — ideally within 7 days of delivery, but
+        please tell us even if it&apos;s later. Please stop using any squishy that is torn, leaking, or sticky. See our{" "}
+        <Link href="/returns">returns policy</Link>.
       </>
     ),
   },
@@ -38,7 +40,8 @@ const topics: { title: string; body: ReactNode }[] = [
     body: (
       <>
         Email us as soon as possible with your order number. If it hasn&apos;t shipped yet, we&apos;ll cancel it and refund
-        you in full. See our <Link href="/returns">returns policy</Link>.
+        you in full, including shipping and tax. If part of it has shipped, we can cancel the packages that haven&apos;t. See our{" "}
+        <Link href="/returns">returns policy</Link>.
       </>
     ),
   },
@@ -46,8 +49,9 @@ const topics: { title: string; body: ReactNode }[] = [
     title: "Shipping questions",
     body: (
       <>
-        Destinations, costs, and processing times will be on our <Link href="/shipping">shipping page</Link> before launch.
-        Shipping costs are always shown at checkout before you pay.
+        Destinations, costs, processing times and what happens if an order is delayed are on our{" "}
+        <Link href="/shipping">shipping page</Link>. Shipping is calculated for your cart and always shown, with your total,
+        before you pay.
       </>
     ),
   },
@@ -84,7 +88,10 @@ export default function OrderHelpPage() {
               <li>The name used on the order</li>
               <li>What went wrong, with a photo if something is damaged</li>
             </ul>
-            <p className="mt-3 text-ink-soft">Please don&apos;t send card numbers or passwords by email — we will never ask for them.</p>
+            <p className="mt-3 text-ink-soft">
+              Please email us from the address you used for the order — for your privacy, we only discuss an order with its buyer.
+              Don&apos;t send card numbers or passwords by email — we will never ask for them.
+            </p>
             <ButtonAnchor href={`mailto:${siteConfig.email}?subject=Order%20help`} className="mt-5">
               <MailIcon className="size-5" />
               Email {siteConfig.email}

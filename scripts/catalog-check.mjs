@@ -37,6 +37,11 @@ for (const p of products) {
   if (!p.safety.countryOfOrigin) warn.push("country of origin not entered");
   if (p.safety.warnings.length === 0) warn.push("no warnings listed — confirm none are required by the label/CPC");
   if (!p.specs.material) warn.push("material not entered");
+  const mystery = p.tags.some((t) => /mystery|blind/i.test(t)) || /mystery|blind/i.test(p.name);
+  if (mystery && p.salesTerms?.finalSaleOnceOpened === undefined)
+    (live ? problems : warn).push("looks like a mystery/blind-bag item: set final_sale_once_opened to true (opened ones are final sale — shown before purchase) or false");
+  if (p.salesTerms?.processingBusinessDays && p.salesTerms.processingBusinessDays !== 2)
+    warn.push(`ships within ${p.salesTerms.processingBusinessDays} business days (shown on the product page) — keep proof you can meet it (FTC Mail Order Rule)`);
 
   for (const v of p.variants) {
     const x = internal[v.sku];
@@ -47,6 +52,8 @@ for (const p of products) {
     if (!v.inventory.tracked) problems.push(`${tag} inventory not tracked (set inventory_tracked to true)`);
     else if (v.inventory.available === null) problems.push(`${tag} inventory count missing`);
     if (v.compareAtPrice && v.price && v.compareAtPrice.amount <= v.price.amount) problems.push(`${tag} compare-at price must be higher than price`);
+    if (v.compareAtPrice && !x?.compareAtBasis)
+      problems.push(`${tag} compare-at ("was") price needs private_compare_at_basis: when and where it was really offered at that price (FTC 16 CFR 233.1)`);
     if (!x) {
       problems.push(`${tag} no private record (cost, supplier, compliance)`);
       continue;

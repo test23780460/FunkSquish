@@ -25,3 +25,14 @@ describe("catalog validation", () => {
     expect(() => validateProducts([badCaptions])).toThrow(/captions/);
   });
 });
+
+describe("sales terms shown before purchase", () => {
+  it("accepts final-sale and processing-time terms", () => {
+    expect(() => validateProducts([{ ...clone(), salesTerms: { finalSaleOnceOpened: true, processingBusinessDays: 5 } }])).not.toThrow();
+  });
+
+  it("rejects unknown keys, non-booleans and impossible processing times", () => {
+    for (const salesTerms of [{ freeShipping: true }, { finalSaleOnceOpened: "yes" }, { processingBusinessDays: 0 }, { processingBusinessDays: 2.5 }, { processingBusinessDays: 45 }, "final"])
+      expect(() => validateProducts([{ ...clone(), salesTerms }]), JSON.stringify(salesTerms)).toThrow(/salesTerms/);
+  });
+});
