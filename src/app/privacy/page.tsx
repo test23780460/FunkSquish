@@ -170,6 +170,11 @@ export default function PrivacyPage() {
         <Todo>attorney/accountant: required order-record retention period</Todo>
       </p>
       <p>
+        To protect checkout from abuse (for example, someone repeatedly holding stock without buying), we count how often the cart
+        and checkout are used from each network. For that we make a scrambled code (a keyed hash) from your IP address — never
+        storing the address itself — and the codes are deleted automatically after 2 days.
+      </p>
+      <p>
         If you buy through TikTok Shop and we ship the order, TikTok gives us the details needed to deliver it (your name, shipping
         address and what you bought). We use them only for that order and its support, under TikTok Shop&apos;s rules.
       </p>
@@ -263,7 +268,7 @@ export default function PrivacyPage() {
       <ul>
         <li>Emails with us: as long as needed for customer support and legitimate business and legal purposes; the precise schedule is under review.</li>
         <li>Email-list subscribers: until they unsubscribe or ask to be deleted (Brevo may keep a record of the unsubscribe so you aren&apos;t emailed again).</li>
-        <li>Partner applications: the schedule above, enforced automatically. Spam-prevention codes: 2 days.</li>
+        <li>Partner applications: the schedule above, enforced automatically. Spam- and abuse-prevention codes (partner form and checkout): 2 days.</li>
         <li>Orders: the period stated above, once decided.</li>
         <li>Analytics records: kept by Umami under its data-retention settings. They don&apos;t contain your name, email or IP address.</li>
         <li>Website request logs: kept by Netlify under its own retention settings.</li>
@@ -272,8 +277,8 @@ export default function PrivacyPage() {
       <h2>Security</h2>
       <p>
         Private application and order records are stored with Netlify and are meant to be reachable only through a signed-in owner
-        area, not public pages. The owner area needs a passphrase and, before we take customer orders, two-step sign-in (a code from
-        an authenticator app). We avoid placing customer details in application logs and never in our public source code. Card
+        area, not public pages. The owner area needs a passphrase and, before we take customer orders or open partner applications,
+        two-step sign-in (a code from an authenticator app). We avoid placing customer details in application logs and never in our public source code. Card
         payments are entered on Stripe&apos;s encrypted checkout page. No method of storing or sending information is perfectly
         secure, but we work to protect it. If a security incident affects your personal information, we&apos;ll give you, and any
         authorities, the notices the law requires.

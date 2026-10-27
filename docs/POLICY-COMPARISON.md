@@ -110,3 +110,14 @@ renewed approval before merge** (they're live pages once merged).
 | Terms | Cards and card wallets at launch (Decision tag removed); per-package shipping; pricing errors need express agreement, decline → cancel and refund, deadlines kept; limits stated (10 per item, 20 items) and excess units refunded incl. shipping | Parts 7 and 8 | **A** (still Draft) |
 | Privacy | Supplier items sold only after a written agreement limiting address use to fulfilling the order; two-step sign-in before customer orders; card-only plan; Link sentence kept accurate either way | Parts 6 and 8 | **A** (still Draft) |
 | FAQ, Order help | Per-package shipping and cancellation wording | Part 2 | — |
+
+### Follow-up proposals (2026-10-27, second round) — **proposed, need your OK**
+
+Only the Privacy Policy (still **Draft**) changes; Shipping, Returns and Terms are untouched. Each edit keeps the draft
+accurate to code added in this round.
+
+| Section | Before | Proposed | Why |
+| --- | --- | --- | --- |
+| Privacy → When you buy from us | (nothing about abuse limits) | "To protect checkout from abuse (for example, someone repeatedly holding stock without buying), we count how often the cart and checkout are used from each network. For that we make a scrambled code (a keyed hash) from your IP address — never storing the address itself — and the codes are deleted automatically after 2 days." | New checkout rate limits (#16) store keyed IP hashes for 2 days |
+| Privacy → How long we keep information | "Spam-prevention codes: 2 days." | "Spam- and abuse-prevention codes (partner form and checkout): 2 days." | Same |
+| Privacy → Security | "…before we take customer orders, two-step sign-in…" | "…before we take customer orders or open partner applications, two-step sign-in…" | Owner decision: MFA before partner applications too (#18) |

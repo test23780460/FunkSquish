@@ -96,7 +96,9 @@ describe("privacy and partner directions", () => {
     expect(text.privacy).toMatch(/Before sharing order details or a delivery address, we may ask for your order number/);
     expect(text.privacy).toMatch(/We sell supplier-shipped items only once a written agreement with that supplier is in place/);
     expect(text.privacy).toMatch(/never for their own marketing/);
-    expect(text.privacy).toMatch(/before we take customer orders, two-step sign-in/);
+    expect(text.privacy).toMatch(/before we take customer orders or open partner applications,\s+two-step sign-in/);
+    // Checkout abuse limits (PR #16): keyed hashes only, deleted after 2 days — matches src/commerce/checkout/rate-limit.ts.
+    expect(text.privacy).toMatch(/scrambled code \(a keyed hash\) from your IP address — never\s+storing the address itself — and the codes are deleted automatically after 2 days/);
     expect(text.privacy).toMatch(/\[period to be decided\]/); // order retention stays open until the accountant/attorney answer
     expect(text.privacy).not.toMatch(/\b(unhackable|bank-level|military-grade|100% secure|completely secure)\b/i);
   });
