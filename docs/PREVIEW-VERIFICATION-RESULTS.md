@@ -45,7 +45,7 @@ activity pages; no horizontal scrolling; no page errors.
    domains. The person running the checks in their own browser doesn't need this.
 2. **Deploy Previews environment variables (Netlify, owner only):** `STRIPE_TEST_CHECKOUT_ENABLED=true`,
    `STRIPE_TEST_SECRET_KEY` (sandbox **restricted** key with Checkout Sessions **and Refunds** write),
-   `STRIPE_TEST_SHIPPING_RATE_IDS`, `STRIPE_TEST_WEBHOOK_SECRET`, `STRIPE_TEST_SEND_EMAILS=true` (only while testing,
+   `STRIPE_TEST_WEBHOOK_SECRET` (`STRIPE_TEST_SHIPPING_RATE_IDS` no longer needed with PR #21), `STRIPE_TEST_SEND_EMAILS=true` (only while testing,
    with your own email addresses), owner sign-in variables. Previews scope only — never Production.
 3. **Stripe sandbox webhook** to `https://deploy-preview-15--ephemeral-syrniki-2b3f3c.netlify.app/api/stripe/test-webhook`
    with the 8 events in the plan (including the three `charge.dispute.*`).

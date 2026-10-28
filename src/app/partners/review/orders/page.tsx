@@ -13,6 +13,8 @@ import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav } from "@/components/owner/OwnerNav";
 import { cn } from "@/lib/cn";
 import { reconcileAction } from "./actions";
+import { SHIPPING_ORIGINS } from "@/commerce/origins";
+import { SHIPPING_LOCK_TEXT, shippingApprovalStatus } from "@/commerce/shipping-approval";
 
 export const metadata: Metadata = { title: "Orders", robots: { index: false, follow: false } };
 
@@ -74,6 +76,7 @@ async function Orders({ searchParams }: { searchParams: PageProps<"/partners/rev
         </p>
       )}
       {one(sp.error) && <p role="alert" className="rounded-2xl bg-berry-soft px-4 py-3 font-semibold text-ink">{one(sp.error) === "closed" ? "Checkout isn't switched on here." : one(sp.error)}</p>}
+      {mode !== "test" && <LiveShippingApproval />}
 
       {orders.length === 0 ? (
         <p className="rounded-[2rem] bg-white p-8 text-center text-ink-soft ring-1 ring-inset ring-sky-200">No orders yet.</p>
@@ -101,5 +104,28 @@ async function Orders({ searchParams }: { searchParams: PageProps<"/partners/rev
         </ul>
       )}
     </div>
+  );
+}
+
+/** Live checkout's shipping lock: verified rates + the owner's approval of this exact table (D-SHIP-3). */
+function LiveShippingApproval() {
+  const st = shippingApprovalStatus(SHIPPING_ORIGINS);
+  return (
+    <details className="rounded-[2rem] bg-white p-4 ring-1 ring-inset ring-sky-200">
+      <summary className="cursor-pointer font-display font-semibold text-ink">
+        Shipping rates for live checkout: {st.problem ? "not ready" : "approved"}
+      </summary>
+      <div className="mt-2 space-y-2 text-sm text-ink">
+        <p>
+          Places with verified, current rates: <strong>{st.verifiedOrigins}</strong> of {SHIPPING_ORIGINS.length}.{" "}
+          {st.problem ? SHIPPING_LOCK_TEXT[st.problem] : "Live checkout may use this table."}
+        </p>
+        <p>
+          This table&apos;s approval code: <span className="select-all font-mono">{st.fingerprint}</span>. After checking the rates, set{" "}
+          <span className="font-mono">STRIPE_LIVE_SHIPPING_TABLE</span> to it for Production in Netlify (not a secret).
+          Production value: {st.approval === "matches" ? "matches ✓" : st.approval === "different" ? "different — the rates changed since you approved them" : "not set"}.
+        </p>
+      </div>
+    </details>
   );
 }

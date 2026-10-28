@@ -45,7 +45,7 @@ Checkout Session settings: `mode=payment`, U.S. shipping address required (`allo
 3. **Test shipping rate:** Product catalog → Shipping rates. Created Oct 24: "TEST standard (not a real rate)", $5.00, `shr_1UUBDKDGCeAlIfUisH1g8nVc` — a placeholder, **not** a real shipping price.
 4. **Where to put them** (never in GitHub, never in chat):
    - **Local:** a file named `.env.local` in the project (already git-ignored):
-     `STRIPE_TEST_CHECKOUT_ENABLED=true`, `STRIPE_TEST_SECRET_KEY=…`, `STRIPE_TEST_SHIPPING_RATE_IDS=shr_…`
+     `STRIPE_TEST_CHECKOUT_ENABLED=true`, `STRIPE_TEST_SECRET_KEY=…`, (`STRIPE_TEST_SHIPPING_RATE_IDS` is no longer needed once PR #21 is merged; shipping is priced by the server)
    - **Netlify:** Environment variables → add each with **Deploy Previews only** (Production left empty); tick **Contains secret values** for the key.
 5. **Webhooks (local):** install the Stripe CLI (`npm install -g @stripe/cli`), log in with `stripe login` and authorize **only the sandbox** (done Oct 24 as project `funksquish`), then run
    `stripe listen --forward-to localhost:3000/api/stripe/test-webhook --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired,charge.refunded,charge.dispute.created,charge.dispute.updated,charge.dispute.closed`

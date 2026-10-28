@@ -40,7 +40,7 @@ describe("shipping destinations (policy S2)", () => {
     const params = buildCheckoutSessionParams({
       lines,
       checkoutId: "x",
-      config: { secretKey: "sk_test_FAKE", shippingRateIds: ["shr_FAKE"], webhookSecret: null, returnOrigin: "http://localhost:3000", automaticTax: false },
+      config: { secretKey: "sk_test_FAKE", webhookSecret: null, returnOrigin: "http://localhost:3000", automaticTax: false },
       shipping: quoteFor(lines),
       expiresAt: 1,
     });
