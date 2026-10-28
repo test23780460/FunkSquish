@@ -13,3 +13,5 @@ branch) once preview testing is done. Each real change is reviewed and merged th
 A deploy preview is not production: it uses the **Deploy Previews** environment variables only, its own "-preview"
 data stores and the Stripe **test** store. Live payments are impossible there (the live lock requires the production
 build), purchasing stays off in code (`features.commerce = false`), and nothing here changes production settings.
+
+Rebuilt 2026-10-28 so the preview picks up the sandbox Deploy Preview variables (no code change).
