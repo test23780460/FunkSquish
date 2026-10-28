@@ -49,6 +49,8 @@ export const NOINDEX_PATHS: Record<string, string> = {
   "/partners/review/inventory": "Private owner area: inventory (sign-in required)",
   "/partners/review/inventory/live": "Private owner area: TikTok LIVE stock (sign-in required)",
   "/partners/review/inventory/activity": "Private owner area: stock activity log (sign-in required)",
+  "/partners/review/verify": "Private owner area: two-step sign-in code (sign-in required)",
+  "/partners/review/security": "Private owner area: two-step sign-in settings (sign-in required)",
   "/checkout/test": "Stripe test-mode harness (404 unless test checkout is on; never on production)",
   "/checkout/test-result": "Stripe test-mode result page (404 unless test checkout is on)",
   "/checkout/complete": "Order confirmation (404 unless live checkout is approved and switched on)",

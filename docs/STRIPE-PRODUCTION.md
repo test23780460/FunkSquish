@@ -71,9 +71,9 @@ Built on top of this PR's head; nothing here unlocks live payments.
    mixed carts are allowed; the server prices one package per origin from verified rates and sends Stripe one inline
    shipping charge for all packages (`docs/MIXED-ORDER-SHIPPING.md`). The `shr_…` ids are still required by the unchanged
    locks but no longer set the price (decision D-SHIP-3).
-2. **MFA for the owner area.** Orders (names, emails, addresses) sit behind the same single passphrase as partner review
-   (rate-limited, 8-hour sessions). Recommended: a TOTP second factor before real customer data (proposal P-SEC-1 in the
-   legal audit), plus 2-step verification on Stripe, Netlify, Google and Brevo accounts.
+2. ~~MFA for the owner area.~~ **Decided and built (branch `claude/upbeat-hawking-aonyc6-mfa`):** authenticator-app
+   two-step sign-in, required automatically once live checkout (or partner applications) is on, and **live checkout
+   refuses to open until an enrollment exists** (`src/lib/owner/mfa-gate.ts`, `docs/OWNER-SECURITY.md`).
 3. **Deploy-preview verification is not done.** Refund, delay-notice and dispute flows have automated tests only; see
    `docs/PREVIEW-VERIFICATION-PLAN.md` for the sandbox run and its pass criteria.
 
@@ -87,8 +87,10 @@ a real bank delay.
 **Sandbox finding (2026-10-27):** even with cards only, Stripe Checkout still showed **Link**. It offered "Save my
 information with Link" (ticked by default, asking for a phone number) and Link's **Bank ($5 back)** and **Klarna**
 options. Stripe rejects excluding Link per session, and our restricted key can't manage payment-method configurations
-(correctly). **Owner action:** in the Stripe Dashboard → Settings → Payment methods, turn **Link off** in the sandbox
-and in live before launch, then re-check the Checkout page. If you keep Link instead, the Privacy Policy must mention it.
+(correctly). **Owner decision (2026-10-27): cards and card wallets only; Link off at launch.** Owner steps:
+`docs/OWNER-ACTIONS.md` (Stripe). Then preview check **V-25** confirms Stripe's page shows no Link. The code side is
+tested: sessions request cards only and never a payment-method configuration, saved cards or promotion codes
+(`tests/checkout/policy-config.test.ts`).
 
 ## Live settings (Netlify → Production, mark secrets as secret)
 
@@ -160,6 +162,12 @@ The **sandbox** key is restricted to Checkout Sessions only, so the owner page's
    documents (`npm run catalog:check`); final-sale labels before any blind-bag items.
 6. Live keys and webhook created **by you** in the Stripe Dashboard and saved in Netlify Production as secrets (never in
    chat or GitHub).
-7. A reviewed **launch PR** that flips `features.commerce` / `checkoutMode`; merge it only after steps 1–6.
-8. Launch-day check: buy one real low-cost item with your own card, confirm the order, emails and shipping flow, then
+7. Owner security: two-step sign-in set up **on production** (checkout stays closed without it), then `OWNER_MFA_REQUIRED=true` for Production
+   (`docs/OWNER-SECURITY.md`); two-step verification on Stripe, Netlify, Google, GitHub, Brevo and TikTok Shop.
+8. Inventory: starting counts confirmed on the production inventory page for every product being sold
+   (`docs/INVENTORY.md`).
+9. A reviewed **launch PR** that flips `features.commerce` / `checkoutMode` (and updates `EXPECTED` in
+   `scripts/safeguards-check.mjs`); merge it only after steps 1–8 and a passing preview run
+   (`docs/PREVIEW-VERIFICATION-PLAN.md`).
+10. Launch-day check: buy one real low-cost item with your own card, confirm the order, emails and shipping flow, then
    refund it from the owner page.

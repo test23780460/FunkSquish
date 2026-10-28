@@ -1,6 +1,7 @@
 # Deploy-preview verification plan — refunds, delays and disputes (sandbox only)
 
-**Status (2026-10-27): NOT RUN.** The refund, shipment-delay and chargeback flows on this branch pass their automated
+**Status (2026-10-27): NOT RUN on a preview.** A combined preview now exists (PR #15, DO NOT MERGE) and CI passed on it;
+results so far and blockers: `docs/PREVIEW-VERIFICATION-RESULTS.md`. The refund, shipment-delay and chargeback flows on this branch pass their automated
 tests (249/249) and a local build, but **none of them has been exercised on a real Netlify deploy preview with Stripe
 sandbox data.** This plan is what has to happen before that can be claimed. It uses Stripe **test mode only**; nothing
 here touches live keys, production settings or real customers.
@@ -20,9 +21,9 @@ here touches live keys, production settings or real customers.
 
 | Step | Who |
 | --- | --- |
-| 1. Get a preview built for a branch containing this code. Options: (a) a temporary draft PR into `main` titled "PREVIEW ONLY — DO NOT MERGE", closed after testing; or (b) a Netlify **branch deploy** for `claude/upbeat-hawking-aonyc6-checkout`. Both are previews/branch deploys, never production. | Owner chooses |
+| 1. Preview: **done** — PR #15 (DO NOT MERGE) into `main` has a deploy preview of everything combined: `https://deploy-preview-15--ephemeral-syrniki-2b3f3c.netlify.app`. Close it after testing. | ✅ |
 | 2. Netlify env vars, **Deploy Previews / branch deploys scope only**: `STRIPE_TEST_CHECKOUT_ENABLED=true`, `STRIPE_TEST_SECRET_KEY` = sandbox restricted key with Checkout Sessions **and Refunds** write, `STRIPE_TEST_SHIPPING_RATE_IDS`, `STRIPE_TEST_SEND_EMAILS=true`, `ORDER_NOTIFY_EMAIL` = owner. Review login vars already exist for previews. | Owner (secrets) |
-| 3. Stripe **sandbox** → Developers → Webhooks: endpoint `https://<preview-host>/api/stripe/test-webhook`, events `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.updated`, `charge.dispute.closed`; put its signing secret in `STRIPE_TEST_WEBHOOK_SECRET` (previews only). | Owner |
+| 3. Stripe **sandbox** → Developers → Webhooks: endpoint `https://deploy-preview-15--ephemeral-syrniki-2b3f3c.netlify.app/api/stripe/test-webhook`, events `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.updated`, `charge.dispute.closed`; put its signing secret in `STRIPE_TEST_WEBHOOK_SECRET` (previews only). | Owner |
 | 4. Use only the owner's own email addresses at checkout (test emails will really be sent). | Owner |
 
 ## Tests and pass criteria
@@ -59,6 +60,21 @@ here touches live keys, production settings or real customers.
 | V-18 | Concurrent last unit | Two browsers: one opens Stripe checkout for the last TEST Jelly Blue unit; the other records a TikTok sale of it | The sale asks for confirmation ("in shoppers' checkouts"); if confirmed and the first shopper pays, the order is flagged "oversold" |
 | V-19 | LIVE routine | Start a LIVE with two items (pause on website), record sales, end with TikTok numbers that differ by one, resume | Items paused only during the LIVE; difference recorded with "End-of-LIVE reconciliation"; counts correct |
 | V-20 | Shipping deducts once | Ship a paid test order, then update its tracking | Shelf count drops once; "Website order shipped" logged once |
+
+### Owner two-step sign-in (branch `claude/upbeat-hawking-aonyc6-mfa`)
+
+| # | Flow | Steps (preview) | PASS when |
+| --- | --- | --- | --- |
+| V-21 | Set up | Sign in → Security → set up with a real authenticator app → save recovery codes | Code accepted; other browser's session signed out |
+| V-22 | Two-step sign-in | Sign out, sign in: passphrase → code; try a wrong code; try the same code again | Wrong and reused codes refused; right code reaches Today |
+| V-23 | Bypass attempts | With only the passphrase done, open `/partners/review/orders`, `/inventory`, and replay a captured server-action request | No data shown; actions refused (redirect to sign-in) |
+| V-24 | Recovery + turn off | Sign in with a recovery code; turn two-step off; set up again | Code works once; turning off signs out everywhere |
+
+### Payment methods (owner decision: cards only, Link off)
+
+| # | Flow | Steps | PASS when |
+| --- | --- | --- | --- |
+| V-25 | No Link, cards only | After turning Link off in the Stripe sandbox (docs/OWNER-ACTIONS.md), open any test checkout on the preview | Stripe's page offers card entry (and Apple Pay / Google Pay where the device supports them) only — no "Save my information with Link", no Link bank or Klarna options |
 
 Record results (date, preview URL, Stripe event ids, PASS/FAIL) in the PR. Afterwards: remove `STRIPE_TEST_SEND_EMAILS`,
 delete test orders if desired, and close any temporary PR/branch deploy. **Production variables are never touched.**
