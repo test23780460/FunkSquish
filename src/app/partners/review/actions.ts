@@ -171,7 +171,11 @@ export async function completeDeletionRequestAction(formData: FormData) {
   if (!ctx || !id) redirect("/partners/review/requests");
   if (formData.get("confirm") !== id) redirect(`/partners/review/requests?error=confirm`);
   const done = await completeDeletionRequest(ctx.stores, ctx.cfg.secret, id);
-  console.info(`[partners] deletion request ${id} ${done ? `completed: ${done.matchedIds.length} deleted` : "not open"}`);
+  if (done.status === "held") {
+    console.info(`[partners] deletion request ${id} not completed: ${done.heldIds.length} on legal hold`);
+    redirect(`/partners/review/requests?error=held`);
+  }
+  console.info(`[partners] deletion request ${id} ${done.status === "completed" ? `completed: ${done.request.matchedIds.length} deleted` : "not open"}`);
   redirect(`/partners/review/requests?saved=${id}`);
 }
 

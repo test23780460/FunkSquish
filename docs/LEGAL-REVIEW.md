@@ -1,3 +1,6 @@
+> **Update (2026-10-27):** a full adversarial legal audit builds on this review — start with
+> `docs/FINAL-AUDIT-SUMMARY.md`. Several rows below were revised again (see `docs/POLICY-COMPARISON.md`).
+
 # Legal document review — 2026-10-27
 
 **Status: prepared for attorney and owner review. Nothing here is legal advice, and nothing is approved.**

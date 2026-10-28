@@ -6,6 +6,7 @@ import { availabilityLabel, canPurchase, formatMoney, getAvailability, startingP
 import { ProductArt } from "@/components/illustrations/ProductArt";
 import { Badge } from "@/components/ui/Primitives";
 import { PurchaseButton } from "./PurchaseButton";
+import { needsDisclosureBeforePurchase } from "@/commerce/sales-terms";
 import { WishlistButton } from "@/components/wishlist/WishlistButton";
 import { themeClasses } from "@/components/theme";
 import { cn } from "@/lib/cn";
@@ -19,6 +20,8 @@ export function ProductCard({ product, priority = false }: { product: Product; p
   const soldOut = availability === "sold-out";
   const image = product.media.find((m) => m.type === "image");
   const sellable = product.variants.some((v) => canPurchase(product, v));
+  // Warnings, final-sale terms or a longer ship time must be seen before buying: send shoppers to the product page.
+  const buyOnProductPage = sellable && needsDisclosureBeforePurchase(product);
   const badgeTone = availability === "preview" ? "lemon" : availability === "in-stock" || availability === "low-stock" ? "mint" : "white";
 
   return (
@@ -82,9 +85,9 @@ export function ProductCard({ product, priority = false }: { product: Product; p
           <p className="font-display text-base font-bold text-ink sm:text-lg">
             {price ? (product.variants.length > 1 ? `From ${formatMoney(price)}` : formatMoney(price)) : "Price TBA"}
           </p>
-          {sellable && product.variants.length > 1 ? (
+          {sellable && (product.variants.length > 1 || buyOnProductPage) ? (
             <span className="inline-flex min-h-10 items-center justify-center rounded-full bg-royal px-3 font-display text-sm font-semibold text-white shadow-[0_4px_0_var(--color-navy)]">
-              Choose a color
+              {buyOnProductPage ? "See details to buy" : "Choose a color"}
             </span>
           ) : (
             <PurchaseButton product={product} variant={product.variants[0]} />

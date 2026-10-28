@@ -1,6 +1,7 @@
 import { features } from "@/lib/features";
 import { brevoConfigured, dropAlertsConfigured } from "@/lib/newsletter/brevo";
 import { partnerSetup } from "@/lib/partners/config";
+import { isUmamiWebsiteId } from "@/components/analytics/before-send";
 
 /**
  * Single source of truth for which third-party integrations are ACTIVE in
@@ -35,7 +36,7 @@ export function partnerApplicationsActive() {
   return partnerSetup().ready;
 }
 
-/** Analytics: Umami site id present AND this is the production build. */
+/** Analytics: a valid Umami site id AND this is the production build (same test the loader uses). */
 export function analyticsActive() {
-  return !!process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID && context === "production";
+  return isUmamiWebsiteId(process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID) && context === "production";
 }
