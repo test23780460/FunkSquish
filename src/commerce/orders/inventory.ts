@@ -149,3 +149,17 @@ export async function commitStock(
 export async function getReservation(store: KvStore, checkoutId: string) {
   return (await store.get<ReservationRecord>(reservationKey(checkoutId)))?.value ?? null;
 }
+
+/**
+ * Owner canceled an order before it shipped: the units are still on the
+ * shelf, so remove this checkout's "sold" entries. Safe to repeat.
+ */
+export async function unsellStock(store: KvStore, checkoutId: string, variantIds: string[]): Promise<void> {
+  for (const variantId of new Set(variantIds)) {
+    await updateWithRetry<VariantLedger>(store, ledgerKey(variantId), (current) => {
+      if (!current?.entries[checkoutId] || current.entries[checkoutId].state !== "sold") return undefined;
+      delete current.entries[checkoutId];
+      return current;
+    });
+  }
+}

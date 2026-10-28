@@ -53,10 +53,11 @@ Current decisions: U.S. only (50 states + APO/FPO/DPO), buyer-paid shipping with
 - [ ] Stripe account verified by you; **live** keys created by you at launch time only
 - [ ] Shipping rates from real package weights
 - [ ] Kentucky sales tax permit; Stripe Tax registration added
-- [ ] Order storage moved to transactional database (approval needed)
-- [ ] Order confirmation + shipping/tracking emails
+- [x] Order storage: Netlify Blobs with compare-and-set, timeouts and separate test/live stores (enough for launch volume; a database stays optional — see docs/STRIPE-PRODUCTION.md)
+- [x] Order confirmation, owner alert and shipping/tracking emails (built; live sending needs ORDER_EMAIL_FROM verified in Brevo)
 - [ ] Stock sync or split allocation with TikTok Shop
 - [ ] Privacy & Terms final (B5 retention, B6 legal review), Stripe named in Privacy Policy
-- [ ] Separate, owner-approved **live launch PR** (never by pasting a live key into the test code)
+- [ ] Separate, owner-approved **live launch PR** (never by pasting a live key into the test code) — the live path itself is built and locked; see docs/STRIPE-PRODUCTION.md
+- [ ] Link (and its Bank/Klarna options) turned off in the Stripe Dashboard so checkout is cards-only
 
 Sources: [Stripe Tax setup](https://docs.stripe.com/tax/set-up) · [Stripe Tax in Checkout](https://docs.stripe.com/tax/checkout/automatic-tax-default) · [Stripe fulfillment](https://docs.stripe.com/checkout/fulfillment) · [Kentucky sales tax guide (Numeral)](https://www.numeral.com/blog/kentucky-sales-tax-guide) · [Kentucky sales tax (Zamp)](https://zamp.com/guides/kentucky-sales-tax) · [KY DOR on delivery charges (2004 newsletter)](https://revenue.ky.gov/News/Publications/Sales%20Tax%20Newsletters/Sales%20Tax%20Facts%202004%20-%20Jun.pdf)

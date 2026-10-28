@@ -68,7 +68,7 @@ export function isTestFixtureVariant(variantId: string): boolean {
 }
 
 /** Deliberately bad carts the server must reject (shown on the test harness). */
-export const TEST_BAD_CARTS: { label: string; lines: unknown }[] = [
+export const TEST_BAD_CARTS: { label: string; lines: unknown; acceptedAtCatalogPrice?: boolean }[] = [
   { label: "Quantity 0", lines: [{ variantId: "test-var-jelly-blue", quantity: 0 }] },
   { label: "Quantity 11", lines: [{ variantId: "test-var-jelly-blue", quantity: 11 }] },
   { label: "Quantity 1.5", lines: [{ variantId: "test-var-jelly-blue", quantity: 1.5 }] },
@@ -78,6 +78,7 @@ export const TEST_BAD_CARTS: { label: string; lines: unknown }[] = [
   { label: "Sold-out item", lines: [{ variantId: "test-var-jelly-gone", quantity: 1 }] },
   { label: "Unknown product", lines: [{ variantId: "test-var-does-not-exist", quantity: 1 }] },
   { label: "Preview sample (not for sale)", lines: [{ variantId: "pv-berry-slushie-strawberry", quantity: 1 }] },
-  { label: "Tampered price ($0.01 sent by browser)", lines: [{ variantId: "test-var-jelly-blue", quantity: 1, price: 1, unitAmount: 1 }] },
+  // Not rejected: the browser's price fields are ignored and the server's price is used (verified in Stripe: $5.00).
+  { label: "Tampered price ($0.01 sent by browser)", lines: [{ variantId: "test-var-jelly-blue", quantity: 1, price: 1, unitAmount: 1 }], acceptedAtCatalogPrice: true },
   { label: "Empty cart", lines: [] },
 ];

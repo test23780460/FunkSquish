@@ -1,0 +1,138 @@
+# Stripe production (live) readiness
+
+**Status: built, tested in the Stripe sandbox, LOCKED.** Nothing in this document is switched on. Real payments need
+your explicit approval and the steps at the end.
+
+## Architecture
+
+| | Test (sandbox) | Live |
+| --- | --- | --- |
+| Where it can run | Deploy previews and local dev only | Production only |
+| Locks | `STRIPE_TEST_CHECKOUT_ENABLED=true` + a `sk_/rk_test_` key | **Code switch** (`features.commerce = true`, `checkoutMode = "hosted-checkout"`) + production + `STRIPE_LIVE_CHECKOUT_ENABLED=true` + a `sk_/rk_live_` key + webhook secret + shipping rate |
+| Rejects | live keys, live sessions, live events | test keys, test sessions, test events |
+| Products | labelled test fixtures | real catalog, only where `canPurchase()` is true |
+| Webhook | `/api/stripe/test-webhook` | `/api/stripe/webhook` |
+| Return page | `/checkout/test-result` | `/checkout/complete` (404 unless live is unlocked) |
+| Order store (Netlify Blobs) | `stripe-test-orders` | `stripe-live-orders` (refuses to open off production) |
+| Order numbers | `FS-T-YYYYMMDD-XXXXXXXX` | `FS-YYYYMMDD-XXXXXXXX` |
+
+Flow:
+1. The browser sends only variant ids and quantities.
+2. The server re-prices everything from the catalog, checks stock and **reserves** it (about 31 minutes).
+3. The server creates a Stripe Checkout Session with an idempotency key; the shopper pays on Stripe.
+4. An order is created only from a **verified webhook**, or from the server re-fetching the session from Stripe. A
+   browser redirect is never enough.
+5. Stock is committed exactly once and order emails are sent once.
+6. The owner ships, refunds or cancels from `/partners/review/orders`.
+
+Code: `src/commerce/checkout/{environment,live,stripe,service}.ts`,
+`src/commerce/orders/{fulfill,inventory,webhook,notify,admin,store}.ts`.
+
+## Safeguards (all covered by tests)
+
+- **Server-side cart validation:** integer quantities 1–10, at most 20 lines, prices and stock from the catalog only;
+  preview, sold-out and unknown items are refused. Prices the browser sends are ignored.
+- **No overselling:** compare-and-set stock ledger, all-or-nothing reservations, holds that expire on their own,
+  sales committed once, and late payments that oversell flagged `oversold` for refund.
+- **Durable, private orders:** Netlify Blobs (private to the site, encrypted at rest, strong consistency, 5 s
+  timeouts, missing-key workaround). Customer data never goes to GitHub, logs or the return page.
+- **Signed webhooks:** raw-body HMAC check with Stripe's library, a 5-minute replay window, a 256 KB limit, and
+  rejection of events from the other mode. Processing is idempotent per event **and** per session, and a 5xx makes
+  Stripe retry.
+- **Card payments only:** `allowed_payment_method_types: ["card"]` (Apple Pay / Google Pay count as cards).
+  ⚠ See "Payment methods".
+- **Refunds:** from the owner page, through Stripe, with an idempotency key, recorded immediately. Stripe's
+  `charge.refunded` webhook then finds nothing new, so a refund is never double-counted.
+- **Emails:** customer confirmation, owner alert (no customer contact details) and a shipping notice. Each is claimed
+  before sending, so it goes out exactly once; failed sends can be retried. Test mode sends nothing unless
+  `STRIPE_TEST_SEND_EMAILS=true`.
+- **Owner-only management:** same sign-in as partner review; every action re-checks the session; refund and cancel
+  need the order number typed.
+- **U.S. territories:** Stripe's form can't hide them. A note is shown, and such orders are flagged
+  `restricted_destination` for a full refund.
+
+## Payment methods
+
+Start with **cards only** (credit/debit, plus Apple Pay and Google Pay). Don't offer delayed methods (bank debits/ACH,
+buy-now-pay-later) until their "payment pending, then succeeded or failed" path has been tested end to end. The code
+supports it (`async_payment_*` events, `processing` orders that never ship until paid), but it hasn't been tested with
+a real bank delay.
+
+**Sandbox finding (2026-10-27):** even with cards only, Stripe Checkout still showed **Link**. It offered "Save my
+information with Link" (ticked by default, asking for a phone number) and Link's **Bank ($5 back)** and **Klarna**
+options. Stripe rejects excluding Link per session, and our restricted key can't manage payment-method configurations
+(correctly). **Owner action:** in the Stripe Dashboard → Settings → Payment methods, turn **Link off** in the sandbox
+and in live before launch, then re-check the Checkout page. If you keep Link instead, the Privacy Policy must mention it.
+
+## Live settings (Netlify → Production, mark secrets as secret)
+
+| Variable | Value |
+| --- | --- |
+| `STRIPE_LIVE_CHECKOUT_ENABLED` | `true` — only on launch day |
+| `STRIPE_LIVE_SECRET_KEY` | A **restricted** live key (`rk_live_…`) with **Checkout Sessions: write** and **Refunds: write**. Nothing else is needed (prices are sent inline). |
+| `STRIPE_LIVE_WEBHOOK_SECRET` | From the live webhook endpoint `https://funksquish.com/api/stripe/webhook`, listening to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded` |
+| `STRIPE_LIVE_SHIPPING_RATE_IDS` | 1–5 live `shr_…` ids, comma-separated |
+| `STRIPE_LIVE_AUTOMATIC_TAX` | `true` once Stripe Tax has your Kentucky registration |
+| `ORDER_EMAIL_FROM` / `ORDER_NOTIFY_EMAIL` | Sender (verified in Brevo) and owner address; default to the `PARTNER_NOTIFY_*` values |
+| `BREVO_API_KEY` | Already set for Production |
+
+The **sandbox** key is restricted to Checkout Sessions only, so the owner page's **Refund** button gets
+`more_permissions_required` in test mode. That's expected; refunds were tested through the Stripe CLI instead.
+
+## Failure recovery
+
+| Problem | What happens / what to do |
+| --- | --- |
+| Webhook delivery fails | Stripe retries for up to 3 days. **"Check Stripe for missed orders"** on the orders page records any paid checkout from the last 3 days that has no order (idempotent). |
+| Stripe down when checkout starts | Stock is released; the shopper sees "Nothing was charged — please try again". |
+| Shopper closes the tab | The hold expires with the session (`checkout.session.expired` frees it, or it times out on its own). |
+| Item sold out during a long checkout | The order is flagged `oversold`; refund that item and email the customer. |
+| Email provider fails | The order page shows "failed"; press **Retry failed emails**. |
+| Delayed payment fails | The order is canceled and stock freed (`async_payment_failed`). |
+| Storage slow or unavailable | Every call times out after 5 s; the webhook returns 5xx and Stripe retries. |
+
+## Rollback
+
+1. **Stop new payments now:** Netlify → Environment variables → remove `STRIPE_LIVE_CHECKOUT_ENABLED` (Production) and
+   redeploy (about 15 credits). Or merge a PR setting `features.commerce = false`. The cart goes back to "Checkout
+   isn't open yet". Paid orders stay in Stripe and in `stripe-live-orders`.
+2. **Bad deploy:** Netlify → Deploys → pick the last good production deploy → **Publish deploy** (instant, no build).
+3. **Key exposed:** Stripe Dashboard → Developers → roll the restricted key and the webhook secret, then update Netlify.
+4. Afterwards, press **Check Stripe for missed orders**, and refund any order that can't be fulfilled.
+
+## Sandbox test results (2026-10-27, local dev + Stripe CLI webhooks, sandbox account)
+
+| Test | Result |
+| --- | --- |
+| 11 bad carts (quantity 0/11/1.5/text, duplicates over limit, over stock, sold out, unknown, preview item, empty) | All rejected with clear messages |
+| Tampered price ($0.01 from the browser) | Ignored; Stripe session subtotal **$5.00** (catalog price) |
+| Card-only session | `payment_method_types: ["card"]` ✅, but Link still shown on the page ⚠ (see above) |
+| Paid (4242) | Order recorded, $17.50, two fulfillment groups, supplier group "awaiting supplier" |
+| 3-D Secure (4000 0025 0000 3155) | **Fail** → Stripe error, no order; **Complete** → order recorded |
+| Declined (4000 0000 0000 0002) | "Your credit card was declined", no order |
+| Last-unit hold | A second shopper was refused ("just sold out") while the first checkout was open |
+| Cancel (back link) | Session expired, stock released; the second shopper could then check out |
+| Interrupted checkout (session expired via API) | `checkout.session.expired` processed, hold released |
+| Refund (CLI, $5) | `charge.refunded` synced: "partially refunded", $12.50 remaining |
+| Duplicate webhooks (resent completed + refunded) | Both logged "duplicate"; still 2 orders, refund still $5 |
+| Mark shipped | Tracking saved, order "partially fulfilled", shipping email claimed once |
+| Refund from owner page | Wrong confirmation refused; correct one → Stripe `more_permissions_required` (restricted sandbox key), safe error, order unchanged |
+| Reconcile | Found 4 paid sandbox checkouts, recorded the 2 whose orders were lost by a dev restart |
+
+## Exactly what must happen before the first real payment
+
+1. Legal: Privacy Policy and Terms approved after attorney review (PR #11), including the Stripe/order sections and the
+   order-record retention period.
+2. Tax: Kentucky sales and use tax permit; Kentucky registration added in Stripe Tax; `STRIPE_LIVE_AUTOMATIC_TAX=true`;
+   a test order showing the tax line.
+3. Stripe account: business verification complete; payouts bank account added by you; **Link (and its Bank/Klarna)
+   turned off**; statement descriptor and support details set.
+4. Shipping: real package weights, then 1–3 live shipping rates created in Stripe; policy wording matches (flat or
+   calculated).
+5. Products: real, sellable products in the catalog with price, tracked stock, SKU, weight, age grade and safety
+   documents (`npm run catalog:check`); final-sale labels before any blind-bag items.
+6. Live keys and webhook created **by you** in the Stripe Dashboard and saved in Netlify Production as secrets (never in
+   chat or GitHub).
+7. A reviewed **launch PR** that flips `features.commerce` / `checkoutMode`; merge it only after steps 1–6.
+8. Launch-day check: buy one real low-cost item with your own card, confirm the order, emails and shipping flow, then
+   refund it from the owner page.

@@ -12,7 +12,7 @@ import { CartProvider, useCart } from "@/components/cart/Cart";
  * buttons that send deliberately bad carts to prove the server rejects them.
  */
 
-export type Attack = { label: string; lines: unknown };
+export type Attack = { label: string; lines: unknown; acceptedAtCatalogPrice?: boolean };
 
 function Products({ products }: { products: Product[] }) {
   const cart = useCart()!;
@@ -55,7 +55,12 @@ function Attacks({ attacks }: { attacks: Attack[] }) {
   async function run(a: Attack) {
     setBusy(a.label);
     const r = await startCheckout(a.lines as { variantId: string; quantity: number }[]);
-    setResults((prev) => ({ ...prev, [a.label]: r.ok ? "⚠️ ACCEPTED (unexpected)" : `Rejected: ${r.error}` }));
+    const verdict = r.ok
+      ? a.acceptedAtCatalogPrice
+        ? "OK: accepted at the catalog price — the browser's price was ignored (a test session was created; it expires on its own)"
+        : "⚠️ ACCEPTED (unexpected)"
+      : `Rejected: ${r.error}`;
+    setResults((prev) => ({ ...prev, [a.label]: verdict }));
     setBusy(null);
   }
   return (

@@ -105,6 +105,21 @@ export interface OrderEventRecord {
   at: string;
 }
 
+export interface NotificationRecord {
+  /** "sending" is a claim taken just before sending, so two processes can't both send. */
+  status: "sending" | "sent" | "failed" | "skipped";
+  at: string;
+  /** Short reason/code, e.g. "test-mode" or "brevo-401". Never message content. */
+  code?: string;
+}
+
+export interface OrderNotifications {
+  customer?: NotificationRecord;
+  owner?: NotificationRecord;
+  /** Per fulfillment group id. */
+  shipping?: Record<string, NotificationRecord>;
+}
+
 export interface Order {
   /** Our order number, e.g. FS-T-20261024-7K3QX (T = test mode). */
   id: string;
@@ -128,4 +143,6 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
   history: OrderEventRecord[];
+  /** Order emails sent (or skipped) — each one at most once. */
+  notifications?: OrderNotifications;
 }
