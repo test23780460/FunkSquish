@@ -71,6 +71,11 @@ export class MemoryKvStore implements KvStore {
   async list(prefix: string) {
     return [...this.data.keys()].filter((k) => k.startsWith(prefix)).sort();
   }
+
+  /** Test helper: every key, in insertion order. */
+  keys(): string[] {
+    return [...this.data.keys()];
+  }
 }
 
 export class StorageTimeoutError extends Error {

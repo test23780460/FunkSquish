@@ -1,6 +1,6 @@
 # Ecommerce roadmap & platform decision
 
-_Last reviewed: October 23, 2026. Prices change — re-check each vendor's pricing page before you sign up. Nothing has been purchased or subscribed to._
+_Updated for approved B4 test-mode decision: October 24, 2026. Last pricing review: October 23, 2026. Prices change — re-check each vendor's pricing page before you sign up. Nothing has been purchased or subscribed to._
 
 ## Recommendation (short version)
 
@@ -34,9 +34,11 @@ Whatever you choose, **no product can be sold until it has its safety paperwork*
 | Private data split (cost, supplier, invoices, compliance) | `private/` + `scripts/` (git-ignored) | Ready |
 | CSV import/export + launch gate | `npm run catalog:import / export / check` | Ready — see `docs/CATALOG.md` |
 | Availability rules (never claims stock unless sellable and tracked) | `src/commerce/availability.ts` | Ready |
-| Checkout provider interface + Shopify adapter | `src/commerce/provider.ts`, `providers/shopify-checkout.ts` | Built, **disabled** |
-| Server-side checkout action (re-validates every line) | `src/app/actions/checkout.ts` | Built, **disabled** |
-| Cart drawer + header cart button | `src/components/cart/Cart.tsx` | Built, **not rendered** |
+| Stripe Checkout **test mode** (B4): environment guard, cart validation, stock holds, session creation | `src/commerce/checkout/` | Built + unit-tested; runs **only** on Deploy Previews / local dev — see `docs/STRIPE-TEST-SETUP.md` |
+| Orders: data model, idempotent fulfillment, signed webhook, refunds | `src/commerce/orders/`, `src/app/api/stripe/test-webhook` | Built + unit-tested, **test mode only** — see `docs/ORDER-MANAGEMENT.md` |
+| Live checkout provider | `src/commerce/provider.ts` | **Not approved** — always refuses (legacy Shopify adapter kept, unused) |
+| Server-side checkout action (re-validates every line) | `src/app/actions/checkout.ts` | Built; test mode only |
+| Cart drawer + header cart button | `src/components/cart/Cart.tsx` | Built; used on the test harness, **not rendered** on the public site |
 | "Buy on TikTok Shop" links per variant | `PurchaseButton` + `externalPurchaseUrl` column | Built, **disabled** |
 | Shipping configuration (packages, weights, carriers) | `src/commerce/shipping.ts` | Prepared, all decisions `null` |
 
@@ -50,7 +52,7 @@ The site never handles card numbers. Purchases only ever happen on the provider'
 4. In `src/lib/features.ts` set `commerce: true` and `checkoutMode: "external-links"`.
 5. Push to a branch, test the Netlify deploy preview, then merge (see `docs/LAUNCH-RUNBOOK.md`).
 
-## Switching on — Option B: Shopify hosted checkout
+## Historical option B (not selected): Shopify hosted checkout
 
 1. Create the Shopify store (Basic or higher), add products with the **same SKUs** as your catalog sheet.
 2. Create a Storefront API token (Headless channel or custom app). Add `SHOPIFY_STORE_DOMAIN` and `SHOPIFY_STOREFRONT_TOKEN` in Netlify environment variables (server-only; never `NEXT_PUBLIC_`).

@@ -43,4 +43,6 @@ export const NOINDEX_PATHS: Record<string, string> = {
   "/partners/review": "Private owner area (sign-in required)",
   "/partners/review/[id]": "Private owner area (sign-in required)",
   "/partners/review/requests": "Private owner area (sign-in required)",
+  "/checkout/test": "Stripe test-mode harness (404 unless test checkout is on; never on production)",
+  "/checkout/test-result": "Stripe test-mode result page (404 unless test checkout is on)",
 };

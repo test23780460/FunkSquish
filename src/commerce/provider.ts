@@ -1,17 +1,18 @@
 /**
- * Checkout provider interface (server-side).
+ * Checkout provider selection for REAL purchases.
  *
- * The site never handles card data. A provider only turns cart lines into a
- * URL on the provider's own secure, hosted checkout page.
+ * Decision B4 (Oct 24, 2026): Stripe Checkout on funksquish.com, TikTok Shop
+ * separately, PayPal possibly later. Only TEST-mode preparation is approved,
+ * so there is deliberately no live provider here: this always refuses.
+ * The Stripe test integration lives in src/commerce/checkout/ and is gated
+ * separately so it can never run on production.
  *
- * Only import this from Server Actions / server components — it reads secrets
- * from environment variables.
+ * A live provider must come in a separate, owner-approved launch PR — not by
+ * swapping a live key into the test code.
  */
 import { features } from "@/lib/features";
-import { shopifyCheckoutProvider } from "./providers/shopify-checkout";
 
 export interface CheckoutLine {
-  /** Provider variant id (for Shopify: the ProductVariant GID). */
   variantId: string;
   sku: string;
   quantity: number;
@@ -19,22 +20,18 @@ export interface CheckoutLine {
 
 export interface CheckoutProvider {
   id: string;
-  /** True when credentials are present. */
   isConfigured(): boolean;
-  /** Create a hosted checkout session and return its URL. */
   createCheckout(lines: CheckoutLine[]): Promise<{ url: string }>;
 }
 
 export class CheckoutDisabledError extends Error {
-  constructor(reason = "Checkout is not open yet.") {
-    super(reason);
+  constructor(message = "Checkout is not enabled.") {
+    super(message);
+    this.name = "CheckoutDisabledError";
   }
 }
 
-/** Returns a usable provider, or throws if purchasing is not fully switched on. */
 export function getCheckoutProvider(): CheckoutProvider {
   if (!features.commerce || features.checkoutMode !== "hosted-checkout") throw new CheckoutDisabledError();
-  const provider = shopifyCheckoutProvider;
-  if (!provider.isConfigured()) throw new CheckoutDisabledError("Checkout provider is not configured.");
-  return provider;
+  throw new CheckoutDisabledError("Live checkout has not been approved (B4 covers test mode only).");
 }
