@@ -145,6 +145,28 @@ describe("review actions", () => {
     expect(await catchRedirect(deletionExceptionAction(fd({ id: req.id, reason: "late" })))).toContain("error=reason");
   });
 
+  it("a deletion request never deletes an application under legal hold", async () => {
+    await catchRedirect(loginAction({ error: null }, fd({ passphrase: PASS })));
+    const stores = await partnerStores({ storage: "memory", storeSuffix: "-dev" });
+    const held = await seed(); // email b@b.co
+    await catchRedirect(legalHoldAction(fd({ id: held.id, reason: "Supplier dispute — counsel advised keeping records" })));
+    const today = new Date().toISOString().slice(0, 10);
+    await catchRedirect(createDeletionRequestAction(fd({ email: "b@b.co", receivedOn: today })));
+    const [req] = await listDeletionRequests(stores.ops);
+
+    expect(await catchRedirect(completeDeletionRequestAction(fd({ id: req.id, confirm: req.id })))).toContain("error=held");
+    expect(await getApplication(stores.apps, held.id)).not.toBeNull();
+    const [still] = await listDeletionRequests(stores.ops);
+    expect(still.status).toBe("open");
+    expect(still.log.at(-1)?.text).toContain("legal hold");
+
+    // After the hold is released, the same request completes normally.
+    await catchRedirect(releaseHoldAction(fd({ id: held.id })));
+    await catchRedirect(completeDeletionRequestAction(fd({ id: req.id, confirm: req.id })));
+    expect(await getApplication(stores.apps, held.id)).toBeNull();
+    expect((await listDeletionRequests(stores.ops))[0].status).toBe("completed");
+  });
+
   it("legal holds and 'still working together' don't fake activity on other applications", async () => {
     await catchRedirect(loginAction({ error: null }, fd({ passphrase: PASS })));
     const stores = await partnerStores({ storage: "memory", storeSuffix: "-dev" });

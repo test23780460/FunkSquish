@@ -61,14 +61,29 @@ async function update(ops: KvStore, id: string, fn: (r: DeletionRequest) => Dele
   return changed ? value : null;
 }
 
-/** Deletes every application that matches now (re-checked at this moment) and closes the request. */
-export async function completeDeletionRequest(stores: PartnerStores, secret: string, id: string, now = new Date()) {
+export type CompleteDeletionResult =
+  | { status: "completed"; request: DeletionRequest }
+  /** Nothing was deleted: at least one match is under a documented legal hold. */
+  | { status: "held"; heldIds: string[] }
+  | { status: "not-open" };
+
+/**
+ * Deletes every application that matches now (re-checked at this moment) and closes the request.
+ * Refuses — and deletes nothing — if any match is under a legal hold: a hold means "don't delete
+ * until released", so the owner must either release it (after advice) or record a legal exception.
+ */
+export async function completeDeletionRequest(stores: PartnerStores, secret: string, id: string, now = new Date()): Promise<CompleteDeletionResult> {
   const req = await getDeletionRequest(stores.ops, id);
-  if (!req || req.status !== "open") return null;
+  if (!req || req.status !== "open") return { status: "not-open" };
   const matched = await matchingApplications(stores, secret, req.requesterHash);
-  for (const app of matched) await deleteApplication(stores.apps, app.id);
+  const held = matched.filter((a) => a.legalHold);
   const at = now.toISOString();
-  return update(stores.ops, id, (r) => ({
+  if (held.length) {
+    await update(stores.ops, id, (r) => ({ ...r, log: [...r.log, { at, text: `Not deleted: ${held.map((a) => a.id).join(", ")} on legal hold.` }] }));
+    return { status: "held", heldIds: held.map((a) => a.id) };
+  }
+  for (const app of matched) await deleteApplication(stores.apps, app.id);
+  const request = await update(stores.ops, id, (r) => ({
     ...r,
     status: "completed",
     completedAt: at,
@@ -76,6 +91,7 @@ export async function completeDeletionRequest(stores: PartnerStores, secret: str
     outcome: matched.length ? `Deleted ${matched.length} application(s).` : "No matching application was found.",
     log: [...r.log, { at, text: matched.length ? `Deleted ${matched.map((a) => a.id).join(", ")}.` : "Closed: nothing matched." }],
   }));
+  return request ? { status: "completed", request } : { status: "not-open" };
 }
 
 /** A documented legal reason to keep the data for now. The request stays visible until closed. */
@@ -92,7 +108,7 @@ export async function reopenDeletionRequest(ops: KvStore, id: string, now = new 
   return update(ops, id, (r) => (r.status !== "exception" ? undefined : { ...r, status: "open", log: [...r.log, { at, text: "Exception ended; request re-opened." }] }));
 }
 
-/** Matching applications for display (references, business names and stages only). */
+/** Matching applications for display (references, business names, stages and legal-hold flag only). */
 export async function requestMatches(stores: PartnerStores, secret: string, req: DeletionRequest) {
-  return (await matchingApplications(stores, secret, req.requesterHash)).map((a) => ({ id: a.id, business: String(a.fields.business ?? ""), status: a.status }));
+  return (await matchingApplications(stores, secret, req.requesterHash)).map((a) => ({ id: a.id, business: String(a.fields.business ?? ""), status: a.status, held: !!a.legalHold }));
 }

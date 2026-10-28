@@ -138,17 +138,22 @@ export default async function PartnersPage() {
             </h3>
             <ul className="mt-3 list-disc space-y-1.5 pl-5 text-[0.95rem] leading-relaxed text-ink-soft marker:text-sky">
               <li>We use your answers only to review your application and reply to you. We don&apos;t sell them or add you to any marketing list.</li>
-              <li>Prices, terms and safety answers you share are kept confidential. They&apos;re never shown on our website.</li>
+              <li>We treat prices, terms and safety answers you share as confidential: they&apos;re never shown on our website, and we share them only with our professional advisers or when the law requires it.</li>
               <li>Applications are stored privately by our website host (Netlify) and are visible only to FunkSquish&apos;s owner after signing in. A person reviews every application — nothing is approved automatically.</li>
               <li>We get an email that a new application arrived (via our email provider, Brevo) with its reference, business name and country — not your contact details.</li>
-              <li>To prevent spam we keep scrambled codes made from your IP and email address, not the addresses themselves, and delete them after 2 days.</li>
+              <li>
+                To prevent spam we make scrambled codes from your IP address and email address. We never store your IP address itself
+                (your email address is stored with your application so we can reply). The rate-limit codes are deleted by a daily automatic cleanup once they&apos;re 2 days old;
+                one IP code is kept with your application and deleted with it.
+              </li>
               <li>
                 Applications are deleted automatically: declined ones {RETENTION.declinedMonths} months after the last activity, others (including future reseller interest) after{" "}
                 {RETENTION.openMonths} months. If we work together, we keep yours while the partnership is active.
               </li>
               <li>
                 Want yours deleted sooner? Email <a href={`mailto:${siteConfig.email}`} className="font-semibold text-royal underline">{siteConfig.email}</a> from the
-                address you applied with and we&apos;ll delete it within 30 days. Details are in our <a href="/privacy" className="font-semibold text-royal underline">privacy policy</a>.
+                address you applied with and we&apos;ll delete it within 30 days — unless the law requires us to keep it or it&apos;s part of
+                an active legal dispute, in which case we&apos;ll tell you why. Details are in our <a href="/privacy" className="font-semibold text-royal underline">privacy policy</a>.
               </li>
             </ul>
           </div>

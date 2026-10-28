@@ -64,11 +64,11 @@ export const faqGroups: FaqGroup[] = [
       },
       {
         q: "Where do you ship, and how much does shipping cost?",
-        a: "Once the shop opens, we'll ship to all 50 U.S. states and military APO/FPO/DPO addresses (not U.S. territories yet). Shipping is paid by the buyer and always shown at checkout before you pay. Orders ship within 2 business days, and every order has tracking. Full details are in our Shipping Policy.",
+        a: "Once the shop opens, we'll ship to all 50 U.S. states, Washington, D.C., and military APO/FPO/DPO addresses (not U.S. territories yet). Shipping is paid by the buyer and calculated for your cart before you pay: items from the same place ship together with one charge, and items from different places (our stock or a supplier partner) ship separately, each with its own charge and tracking. Your cart and checkout show the shipping and total before you pay, and we never add shipping later. Items from our own stock ship within 2 business days (any item that takes longer shows its own time on the product page). Full details are in our Shipping Policy.",
       },
       {
         q: "What is your return policy?",
-        a: "Unopened, unused items can be returned within 30 days of delivery (the buyer pays return shipping). If something arrives damaged, defective, or wrong, email us within 7 days of delivery with photos and we'll send a free replacement or a full refund. Full details are in our Returns & Refunds Policy.",
+        a: "Unopened, unused items can be returned within 30 days of delivery (the buyer pays return shipping). If something arrives damaged, defective, or wrong, email us — ideally within 7 days of delivery, with photos if you can — and we'll send a free replacement or a full refund, your choice. Full details are in our Returns & Refunds Policy.",
       },
       {
         q: "Which payment methods will you accept?",
@@ -92,7 +92,7 @@ export const faqGroups: FaqGroup[] = [
       },
       {
         q: "Will your squishies be safety tested?",
-        a: "We will only sell children's toys that come with the required U.S. safety documentation, including a Children's Product Certificate based on testing by a CPSC-accepted lab. Each product page will show its age grading and warnings exactly as they appear on the label.",
+        a: "We will only sell children's toys that come with the required U.S. safety documentation, including a Children's Product Certificate based on testing by a CPSC-accepted lab. Each product page will show its age grading and any warnings exactly as they appear on the label, right next to the buy button.",
         pending: true,
       },
       {
@@ -111,7 +111,7 @@ export const faqGroups: FaqGroup[] = [
       },
       {
         q: "I'm a supplier or creator. Who do I talk to?",
-        a: "We'd love to hear from you! Email travis@funksquish.com with a little about yourself.",
+        a: "We'd love to hear from you! Suppliers, makers and future resellers can use our Become a partner page. Creators can email travis@funksquish.com with a little about yourself — if we ever gift products or pay for a post, we'll ask you to say so clearly in it.",
       },
     ],
   },

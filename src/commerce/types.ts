@@ -142,6 +142,17 @@ export interface ProductSafety {
   countryOfOrigin: string | null;
 }
 
+/**
+ * Per-product terms the Returns and Shipping policies say we disclose before
+ * purchase. Only set from real decisions about a real product.
+ */
+export interface ProductSalesTerms {
+  /** Opened item can't be returned for a change of mind (e.g. mystery / blind-bag). Damaged, defective or wrong items are still covered. */
+  finalSaleOnceOpened?: boolean;
+  /** Business days to ship after a paid order, when longer than our standard 2 (e.g. supplier-shipped). Whole number 1–30. */
+  processingBusinessDays?: number;
+}
+
 export interface Product {
   id: string;
   slug: string;
@@ -162,6 +173,12 @@ export interface Product {
    * preview concepts, the texture the concept is designed around). Optional.
    */
   textures?: TextureId[];
+  /**
+   * Sales terms that must be shown BEFORE purchase (product page buy box, and
+   * product cards hand off to the product page instead of buying directly).
+   * Missing = our standard terms. See src/commerce/sales-terms.ts.
+   */
+  salesTerms?: ProductSalesTerms;
   /** Lower = shown first under "Featured" sort. */
   featuredRank: number;
   /** ISO date the product was added (used by "Newest" sort). */

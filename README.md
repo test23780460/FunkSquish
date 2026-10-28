@@ -128,4 +128,6 @@ docs/
 
 ## Before launch
 
-Follow `docs/LAUNCH-RUNBOOK.md`. The detailed internal checklist is in `private/LAUNCH-CHECKLIST.md` (local only, not in git).
+Follow `docs/LAUNCH-RUNBOOK.md`. The legal & compliance audit (2026-10-27) lists what must be true before each feature is
+switched on: start with `docs/FINAL-AUDIT-SUMMARY.md`, then `docs/COMPLIANCE-LAUNCH-GATES.md` and
+`docs/OWNER-REVIEW-FLAGS.md`. The detailed internal checklist is in `private/LAUNCH-CHECKLIST.md` (local only, not in git).

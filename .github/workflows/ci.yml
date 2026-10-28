@@ -1,0 +1,69 @@
+name: CI
+
+# Runs on every pull request (any base branch, so stacked PRs are checked too
+# once their branch contains this file) and on pushes to main.
+# It only reads the code and runs checks: no secrets, no deploys, no writes.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Least privilege: the token can only read the repository.
+permissions:
+  contents: read
+
+# A newer push to the same PR/branch cancels the older run (saves minutes).
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Tests, lint, types, build and safeguards
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      # Actions pinned to full commit SHAs (tags can be moved; SHAs can't).
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Secret scan (tracked files)
+        run: node scripts/secret-scan.mjs
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install exactly what the lockfile says (no install scripts)
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Launch safeguards still off (checkout, payments, partner applications, email lists, draft policies)
+        run: node scripts/safeguards-check.mjs
+
+      - name: Dependency security (production dependencies, high and critical)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx next typegen && npm run typecheck
+
+      - name: Policy, privacy and SEO consistency
+        run: npx vitest run tests/legal tests/seo --passWithNoTests
+
+      - name: All automated tests
+        run: npm test
+
+      - name: Product catalog validation
+        run: npm run catalog:check
+
+      - name: Production build
+        run: npm run build

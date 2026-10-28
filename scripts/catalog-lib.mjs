@@ -72,12 +72,12 @@ export const PUBLIC_COLUMNS = [
   "featured_rank", "art", "age_grade", "warnings", "care_instructions", "manufacturer_or_importer",
   "country_of_origin", "material", "fill", "texture", "texture_types", "size_description", "media", "variant_sku", "variant_name",
   "swatch_hex", "price_usd", "compare_at_usd", "inventory_tracked", "inventory_available", "weight_grams",
-  "length_cm", "width_cm", "height_cm", "external_purchase_url",
+  "length_cm", "width_cm", "height_cm", "external_purchase_url", "final_sale_once_opened", "processing_business_days",
 ];
 export const PRIVATE_COLUMNS = [
   "private_cost_per_unit_usd", "private_supplier_name", "private_supplier_sku", "private_supplier_reference",
   "private_invoice_ref", "private_compliance_status", "private_cpc_file", "private_test_report_file",
-  "private_test_lab", "private_test_date", "private_tracking_label_photo", "private_notes",
+  "private_test_lab", "private_test_date", "private_tracking_label_photo", "private_compare_at_basis", "private_notes",
 ];
 export const COMPLIANCE_STATUSES = ["missing", "requested", "received", "verified"];
 
