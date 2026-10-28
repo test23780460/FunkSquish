@@ -114,6 +114,12 @@ export interface ProductVariant {
    * Missing = "in_house".
    */
   fulfillmentSource?: FulfillmentSource;
+  /**
+   * Opaque id of the place this variant ships from (see src/commerce/origins.ts),
+   * e.g. "supplier-a". Our own stock defaults to "funksquish"; supplier items
+   * must name their origin or they can't be checked out.
+   */
+  fulfillmentOrigin?: string;
 }
 
 export type FulfillmentSource = "in_house" | "supplier";

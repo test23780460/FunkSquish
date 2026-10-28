@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { isLiveKey, type StripeLiveConfig, type StripeTestConfig } from "./environment";
 import type { CheckedLine } from "./validate-cart";
+import { encodeShippingPlan, packageNote, shippingDisplayName, type ShippingQuote } from "./shipping-quote";
 import { SHIPPING_AREA_NOTE } from "../orders/shipping-restrictions";
 import { POLICIES } from "@/content/policies";
 
@@ -68,15 +69,44 @@ export const RETURN_PATHS: Record<StripeMode, { success: string; cancel: string 
   live: { success: "/checkout/complete", cancel: "/checkout/complete" },
 };
 
-/** Pure: build the Checkout Session request from server-validated lines. */
+/** Stripe Tax code for shipping/delivery charges, so tax on shipping follows each state's rules. */
+export const SHIPPING_TAX_CODE = "txcd_92010001";
+
+/**
+ * The one shipping option shown on Stripe's page: the server-calculated total
+ * for every package in the cart (src/commerce/checkout/shipping-quote.ts). The
+ * shopper sees it, and the order total, before paying; it can't change later.
+ */
+export function shippingOption(quote: ShippingQuote): Stripe.Checkout.SessionCreateParams.ShippingOption {
+  return {
+    shipping_rate_data: {
+      type: "fixed_amount",
+      display_name: shippingDisplayName(quote),
+      fixed_amount: { amount: quote.totalCents, currency: "usd" },
+      tax_behavior: "exclusive",
+      tax_code: SHIPPING_TAX_CODE,
+    },
+  };
+}
+
+/** Pure: build the Checkout Session request from server-validated lines and the server's shipping quote. */
 export function buildCheckoutSessionParams(input: {
   lines: CheckedLine[];
   checkoutId: string;
+  /**
+   * `shippingRateIds` is still required by the (unchanged) checkout locks in
+   * environment.ts, but the price now comes from `shipping` — see
+   * docs/MIXED-ORDER-SHIPPING.md ("Stripe shipping-rate ids").
+   */
   config: Pick<StripeTestConfig, "returnOrigin" | "shippingRateIds" | "automaticTax"> & { secretKey?: string; webhookSecret?: string | null };
+  shipping: ShippingQuote;
   expiresAt: number;
   mode?: StripeMode;
 }): Stripe.Checkout.SessionCreateParams {
-  const { lines, checkoutId, config, expiresAt, mode = "test" } = input;
+  const { lines, checkoutId, config, shipping, expiresAt, mode = "test" } = input;
+  if (shipping.packages.length === 0) throw new Error("A shipping quote is required.");
+  const quoted = new Set(shipping.packages.flatMap((p) => p.variantIds));
+  if (!lines.every((l) => quoted.has(l.variantId))) throw new Error("Every line must be in the shipping quote.");
   const origin = config.returnOrigin;
   const paths = RETURN_PATHS[mode];
   return {
@@ -84,13 +114,15 @@ export function buildCheckoutSessionParams(input: {
     // A filter on what Stripe would otherwise offer: only cards (and card wallets) get through.
     allowed_payment_method_types: PAYMENT_METHOD_TYPES,
     client_reference_id: checkoutId,
-    metadata: { checkout_id: checkoutId, funksquish_mode: mode, policy_versions: policyVersionsTag() },
+    metadata: { checkout_id: checkoutId, funksquish_mode: mode, policy_versions: policyVersionsTag(), shipping_plan: encodeShippingPlan(shipping) },
     payment_intent_data: { metadata: { checkout_id: checkoutId, funksquish_mode: mode } },
     line_items: lines.map((line) => ({
       quantity: line.quantity,
       price_data: {
         currency: line.currency,
         unit_amount: line.unitAmount,
+        // U.S. sales tax is added on top of the price (never included in it).
+        tax_behavior: "exclusive",
         product_data: {
           name: line.name,
           metadata: {
@@ -98,6 +130,7 @@ export function buildCheckoutSessionParams(input: {
             product_id: line.productId,
             sku: line.sku,
             fulfillment_source: line.fulfillmentSource,
+            fulfillment_origin: line.fulfillmentOrigin ?? "",
           },
         },
       },
@@ -106,8 +139,8 @@ export function buildCheckoutSessionParams(input: {
     // as states and hosted Checkout can't hide them, so shoppers see a note here
     // and any territory order is flagged for refund (see shipping-restrictions.ts).
     shipping_address_collection: { allowed_countries: ["US"] },
-    custom_text: { shipping_address: { message: SHIPPING_AREA_NOTE }, submit: { message: TERMS_NOTICE } },
-    shipping_options: config.shippingRateIds.map((id) => ({ shipping_rate: id })),
+    custom_text: { shipping_address: { message: `${SHIPPING_AREA_NOTE} ${packageNote(shipping)}`.slice(0, 1200) }, submit: { message: TERMS_NOTICE } },
+    shipping_options: [shippingOption(shipping)],
     automatic_tax: { enabled: config.automaticTax },
     expires_at: expiresAt,
     submit_type: "pay",

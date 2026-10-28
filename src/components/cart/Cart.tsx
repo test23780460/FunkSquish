@@ -3,7 +3,8 @@
 import { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { Money } from "@/commerce/types";
 import { formatMoney } from "@/commerce/availability";
-import { startCheckout } from "@/app/actions/checkout";
+import { quoteCheckout, startCheckout } from "@/app/actions/checkout";
+import type { CartQuote } from "@/commerce/checkout/service";
 import { CloseIcon, LockIcon } from "@/components/icons/Icons";
 
 /**
@@ -145,6 +146,29 @@ function CartDrawer() {
   const dialog = useRef<HTMLDialogElement>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [quote, setQuote] = useState<CartQuote | null>(null);
+  const cartKey = cart.lines.map((l) => `${l.variantId}:${l.quantity}`).join("|");
+
+  // Shipping is calculated on the server from the cart (same calculation as checkout),
+  // so the shopper sees the combined shipping charge before leaving for payment.
+  useEffect(() => {
+    if (!cart.open || cart.lines.length === 0) return;
+    let stale = false;
+    const t = setTimeout(async () => {
+      try {
+        const q = await quoteCheckout(cart.lines.map((l) => ({ variantId: l.variantId, quantity: l.quantity })));
+        if (!stale) setQuote(q);
+      } catch {
+        if (!stale) setQuote(null);
+      }
+    }, 250);
+    return () => {
+      stale = true;
+      clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- cartKey captures the lines
+  }, [cart.open, cartKey]);
+  const blocked = quote && !quote.ok ? new Map(quote.blocked.map((b) => [b.variantId, b.message])) : new Map<string, string>();
 
   useEffect(() => {
     const d = dialog.current;
@@ -208,6 +232,11 @@ function CartDrawer() {
                   </label>
                   <span className="font-display font-semibold">{formatMoney(l.price)}</span>
                 </div>
+                {blocked.get(l.variantId) && (
+                  <p role="alert" className="mt-2 rounded-xl bg-berry-soft px-3 py-2 text-sm text-ink">
+                    {blocked.get(l.variantId)}
+                  </p>
+                )}
                 <button type="button" onClick={() => cart.remove(l.variantId)} className="mt-2 text-sm font-semibold text-royal underline">
                   Remove
                 </button>
@@ -220,7 +249,34 @@ function CartDrawer() {
           <p className="flex justify-between font-display text-lg font-bold">
             Subtotal <span>{formatMoney(subtotal)}</span>
           </p>
-          <p className="mt-1 text-sm text-ink-soft">Shipping and tax are calculated at checkout.</p>
+          {quote?.ok ? (
+            <div className="mt-2 space-y-1 text-sm">
+              <p className="flex justify-between font-semibold">
+                Shipping{quote.packages.length > 1 ? ` (${quote.packages.length} packages)` : ""} <span>{formatMoney({ amount: quote.shipping, currency: "USD" })}</span>
+              </p>
+              {quote.packages.length > 1 && (
+                <ul className="space-y-0.5 text-ink-soft">
+                  {quote.packages.map((p, i) => (
+                    <li key={i} className="flex justify-between gap-3">
+                      <span>
+                        From {p.label}: {p.units} item{p.units === 1 ? "" : "s"}, ships within {p.shipsWithinBusinessDays} business day{p.shipsWithinBusinessDays === 1 ? "" : "s"}
+                      </span>
+                      <span>{formatMoney({ amount: p.cents, currency: "USD" })}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="flex justify-between font-display text-base font-bold">
+                Total before tax <span>{formatMoney({ amount: quote.totalBeforeTax, currency: "USD" })}</span>
+              </p>
+              <p className="text-ink-soft">
+                {quote.packages.length > 1 ? "Items from different places ship separately, each with its own tracking. " : ""}
+                Any sales tax is added on the secure checkout page, which shows your final total before you pay. No shipping is ever added later.
+              </p>
+            </div>
+          ) : (
+            <p className="mt-1 text-sm text-ink-soft">{quote && !quote.ok && quote.blocked.length === 0 ? quote.error : "Shipping is calculated for your cart before you pay; tax is shown on the secure checkout page."}</p>
+          )}
           {error && (
             <p role="alert" className="mt-3 rounded-xl bg-berry-soft px-3 py-2 text-sm text-ink">
               {error}
@@ -229,7 +285,7 @@ function CartDrawer() {
           <button
             type="button"
             onClick={checkout}
-            disabled={pending || cart.lines.length === 0}
+            disabled={pending || cart.lines.length === 0 || blocked.size > 0}
             className="mt-4 inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-royal font-display text-lg font-semibold text-white shadow-[0_6px_0_var(--color-navy)] disabled:opacity-60"
           >
             <LockIcon className="size-5" />

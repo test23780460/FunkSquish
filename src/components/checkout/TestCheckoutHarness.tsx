@@ -24,7 +24,8 @@ function Products({ products }: { products: Product[] }) {
             <p className="font-display text-lg font-bold text-ink">{p.name}</p>
             <p className="text-ink-soft">{v.name}</p>
             <p className="mt-2 text-sm text-ink-soft">
-              {formatMoney(v.price)} · test stock {v.inventory.available} · ships from {v.fulfillmentSource === "supplier" ? "supplier (manual)" : "us"}
+              {formatMoney(v.price)} · test stock {v.inventory.available} · ships from {v.fulfillmentOrigin ?? (v.fulfillmentSource === "supplier" ? "supplier (no origin)" : "us")}
+              {v.weightGrams ? ` · ${v.weightGrams} g` : ""}
             </p>
             <button
               type="button"
@@ -93,7 +94,9 @@ export function TestCheckoutHarness({ products, attacks }: { products: Product[]
           <h2 className="font-display text-2xl font-bold text-ink">1. Happy path</h2>
           <p className="mt-1 text-ink-soft">
             Add items, open the cart, press <strong>Secure checkout</strong>, and pay on Stripe with test card{" "}
-            <code>4242 4242 4242 4242</code> (any future date, any CVC). Use <code>4000 0000 0000 0002</code> for a declined card.
+            <code>4242 4242 4242 4242</code> (any future date, any CVC). Use <code>4000 0000 0000 0002</code> for a declined card and{" "}
+            <code>4000 0025 0000 3155</code> for 3-D Secure. Mix items from different test origins to see per-package shipping in the
+            cart and on Stripe&apos;s page; the Lime item&apos;s supplier has no verified rates, so checkout must refuse it.
           </p>
           <div className="mt-4">
             <Products products={products} />

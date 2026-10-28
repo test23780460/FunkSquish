@@ -67,12 +67,10 @@ Built on top of this PR's head; nothing here unlocks live payments.
 
 ### Open review items (need an explicit owner decision before live payments)
 
-1. **One shipping charge per mixed order.** Checkout offers the same fixed `shr_…` rates whatever the cart holds
-   (`buildCheckoutSessionParams` → `shipping_options`). A cart with our stock *and* supplier-shipped items ships as two
-   packages but pays one shipping charge, so FunkSquish absorbs the second shipment's cost. Options: launch with our own
-   stock only (no mixed carts possible); price the flat rate to cover the worst case; or compute a cart-dependent rate at
-   checkout (Stripe accepts inline `shipping_rate_data`; small change, not built). The Shipping Policy only promises no
-   extra charge *after* checkout, which holds under all three.
+1. ~~One shipping charge per mixed order.~~ **Decided and built (2026-10-27, branch `claude/upbeat-hawking-aonyc6-shipping`):**
+   mixed carts are allowed; the server prices one package per origin from verified rates and sends Stripe one inline
+   shipping charge for all packages (`docs/MIXED-ORDER-SHIPPING.md`). The `shr_…` ids are still required by the unchanged
+   locks but no longer set the price (decision D-SHIP-3).
 2. **MFA for the owner area.** Orders (names, emails, addresses) sit behind the same single passphrase as partner review
    (rate-limited, 8-hour sessions). Recommended: a TOTP second factor before real customer data (proposal P-SEC-1 in the
    legal audit), plus 2-step verification on Stripe, Netlify, Google and Brevo accounts.
@@ -99,7 +97,7 @@ and in live before launch, then re-check the Checkout page. If you keep Link ins
 | `STRIPE_LIVE_CHECKOUT_ENABLED` | `true` — only on launch day |
 | `STRIPE_LIVE_SECRET_KEY` | A **restricted** live key (`rk_live_…`) with **Checkout Sessions: write** and **Refunds: write**. Nothing else is needed (prices are sent inline). |
 | `STRIPE_LIVE_WEBHOOK_SECRET` | From the live webhook endpoint `https://funksquish.com/api/stripe/webhook`, listening to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.updated`, `charge.dispute.closed` |
-| `STRIPE_LIVE_SHIPPING_RATE_IDS` | 1–5 live `shr_…` ids, comma-separated |
+| `STRIPE_LIVE_SHIPPING_RATE_IDS` | 1–5 live `shr_…` ids, comma-separated. Still required by the unchanged live lock; the price itself now comes from the verified origin rates in `src/commerce/origins.ts` (`docs/MIXED-ORDER-SHIPPING.md` §4) |
 | `STRIPE_LIVE_AUTOMATIC_TAX` | `true` once Stripe Tax has your Kentucky registration |
 | `ORDER_EMAIL_FROM` / `ORDER_NOTIFY_EMAIL` | Sender (verified in Brevo) and owner address; default to the `PARTNER_NOTIFY_*` values |
 | `BREVO_API_KEY` | Already set for Production |
@@ -155,8 +153,9 @@ The **sandbox** key is restricted to Checkout Sessions only, so the owner page's
    a test order showing the tax line.
 3. Stripe account: business verification complete; payouts bank account added by you; **Link (and its Bank/Klarna)
    turned off**; statement descriptor and support details set.
-4. Shipping: real package weights, then 1–3 live shipping rates created in Stripe; policy wording matches (flat or
-   calculated).
+4. Shipping: real packed weights and carrier costs entered as the verified `funksquish` origin rule, each supplier's
+   signed agreement and rate card entered as its origin (`docs/MIXED-ORDER-SHIPPING.md` §3), and one live `shr_…` id kept
+   for the unchanged lock; Shipping Policy wording matches the per-package calculation.
 5. Products: real, sellable products in the catalog with price, tracked stock, SKU, weight, age grade and safety
    documents (`npm run catalog:check`); final-sale labels before any blind-bag items.
 6. Live keys and webhook created **by you** in the Stripe Dashboard and saved in Netlify Production as secrets (never in

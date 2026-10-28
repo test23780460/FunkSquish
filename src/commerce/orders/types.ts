@@ -20,6 +20,8 @@ export interface Amounts {
   tax: number;
   discount: number;
   total: number;
+  /** Sales tax on the shipping charge (part of `tax`). Missing on orders recorded before packages were priced separately. */
+  shippingTax?: number;
 }
 
 export type PaymentStatus =
@@ -43,6 +45,8 @@ export type FulfillmentStatus =
   | "packed"
   | "shipped" // tracking number known
   | "delivered"
+  | "lost" // carrier confirmed it lost (or never arrived after investigation): replace or refund
+  | "returned" // came back to us undeliverable: reship or refund (Shipping Policy: refund within 5 business days)
   | "canceled";
 
 export interface OrderLineItem {
@@ -54,16 +58,29 @@ export interface OrderLineItem {
   unitAmount: number;
   /** Amount actually charged for this line after discounts, from Stripe. */
   amountTotal: number;
+  /** Sales tax on this line, from Stripe (0 when tax is off). */
+  amountTax?: number;
   fulfillmentSource: FulfillmentSource;
+  /** Origin it ships from (src/commerce/origins.ts). Missing on older orders. */
+  fulfillmentOrigin?: string | null;
 }
 
 /**
- * One shipment. Orders mixing our stock and supplier stock are split into
- * one group per source, each with its own tracking.
+ * One package. Each origin in the cart (our studio, each supplier) is one
+ * package with its own shipping charge, ship-by date, tracking and emails.
+ * (Orders recorded before origins existed have one group per source.)
  */
 export interface FulfillmentGroup {
   id: string;
   source: FulfillmentSource;
+  /** Origin id (src/commerce/origins.ts). */
+  origin?: string;
+  /** Shipping charged for this package at checkout, in cents. Null on older orders (one charge for everything). */
+  shippingAmount?: number | null;
+  /** Business days from payment to ship-by, as promised at checkout. */
+  processingBusinessDays?: number;
+  /** False when this origin can't ship to APO/FPO/DPO addresses. */
+  militaryAddresses?: boolean;
   /** Private reference to the partner, set manually by the owner (never public). */
   supplierRef: string | null;
   variantIds: string[];
@@ -82,6 +99,27 @@ export interface FulfillmentGroup {
   shipBy?: string | null;
   /** FTC Mail Order Rule delay notices sent for this package (16 CFR 435.2(b)). */
   delayNotices?: DelayNoticeRecord[];
+  canceledAt?: string | null;
+  /** When the owner recorded the package as lost. */
+  lostAt?: string | null;
+  /** When an undeliverable package came back to us, and why. */
+  returnedAt?: string | null;
+  returnCause?: ReturnCause | null;
+  /** How a lost/returned package was settled. */
+  resolution?: "reshipped" | "refunded" | null;
+  /** Earlier shipments of this package (a replacement was sent after a loss or return). */
+  previousShipments?: PreviousShipment[];
+}
+
+/** Why a package came back undeliverable. "address" = the address given at checkout was wrong. */
+export type ReturnCause = "address" | "refused" | "carrier" | "us";
+
+export interface PreviousShipment {
+  carrier: string | null;
+  trackingNumber: string | null;
+  shippedAt: string | null;
+  outcome: "lost" | "returned";
+  at: string;
 }
 
 export interface DelayNoticeRecord {
@@ -129,6 +167,8 @@ export interface RefundRecord {
   amount: number;
   reason: string | null;
   createdAt: string;
+  /** The package this refund was for, when refunded per package. */
+  groupId?: string | null;
 }
 
 export interface OrderEventRecord {

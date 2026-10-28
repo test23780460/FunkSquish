@@ -84,3 +84,20 @@ export const COMPLIANCE_STATUSES = ["missing", "requested", "received", "verifie
 export function readJson(file, fallback) {
   return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : fallback;
 }
+
+/**
+ * Optional columns for where a variant ships from (src/commerce/origins.ts).
+ * Empty = our own stock ("in_house", origin "funksquish"). Supplier rows need
+ * fulfillment_source=supplier AND an origin id that has verified rates —
+ * otherwise checkout refuses them (docs/MIXED-ORDER-SHIPPING.md).
+ */
+export const FULFILLMENT_COLUMNS = ["fulfillment_source", "fulfillment_origin"];
+
+export function fulfillmentFields(r, sku) {
+  const source = (r.fulfillment_source ?? "").trim().toLowerCase();
+  const origin = (r.fulfillment_origin ?? "").trim().toLowerCase();
+  if (source && !["in_house", "supplier"].includes(source)) throw new Error(`${sku}: fulfillment_source must be in_house, supplier or empty`);
+  if (origin && !/^[a-z][a-z0-9-]{1,30}$/.test(origin)) throw new Error(`${sku}: fulfillment_origin must be lowercase letters, digits and dashes`);
+  if (source === "supplier" && !origin) throw new Error(`${sku}: supplier-shipped items need a fulfillment_origin`);
+  return { ...(source ? { fulfillmentSource: source } : {}), ...(origin ? { fulfillmentOrigin: origin } : {}) };
+}

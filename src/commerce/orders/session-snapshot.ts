@@ -1,6 +1,7 @@
 import type Stripe from "stripe";
 import type { FulfillmentSource } from "../types";
 import type { Customer, ShippingAddress } from "./types";
+import { decodeShippingPlan, type PlannedPackage } from "../checkout/shipping-quote";
 
 /**
  * The parts of a Stripe Checkout Session that order processing needs, in a
@@ -15,12 +16,14 @@ export interface SessionSnapshot {
   paymentStatus: "paid" | "unpaid" | "no_payment_required";
   checkoutId: string | null;
   paymentIntentId: string | null;
-  amounts: { subtotal: number; shipping: number; tax: number; discount: number; total: number };
+  amounts: { subtotal: number; shipping: number; tax: number; discount: number; total: number; shippingTax?: number };
   customer: Customer;
   shippingAddress: ShippingAddress | null;
   shippingRateId: string | null;
   /** Policy versions the checkout showed (session metadata "policy_versions"), if any. */
   policyVersions?: string | null;
+  /** Packages priced at checkout (session metadata "shipping_plan"); null if missing or malformed. */
+  shippingPlan?: PlannedPackage[] | null;
   lineItems: {
     variantId: string;
     productId: string;
@@ -29,7 +32,10 @@ export interface SessionSnapshot {
     quantity: number;
     unitAmount: number;
     amountTotal: number;
+    /** Sales tax Stripe calculated on this line (0 when tax is off). */
+    amountTax?: number;
     fulfillmentSource: FulfillmentSource;
+    fulfillmentOrigin?: string | null;
   }[];
 }
 
@@ -65,6 +71,7 @@ export function snapshotFromStripeSession(session: Stripe.Checkout.Session): Ses
       tax: session.total_details?.amount_tax ?? 0,
       discount: session.total_details?.amount_discount ?? 0,
       total: session.amount_total ?? 0,
+      shippingTax: session.shipping_cost?.amount_tax ?? 0,
     },
     customer: {
       email: session.customer_details?.email ?? null,
@@ -84,6 +91,7 @@ export function snapshotFromStripeSession(session: Stripe.Checkout.Session): Ses
       : null,
     shippingRateId: idOf(session.shipping_cost?.shipping_rate),
     policyVersions: typeof session.metadata?.policy_versions === "string" ? session.metadata.policy_versions.slice(0, 200) : null,
+    shippingPlan: decodeShippingPlan(session.metadata?.shipping_plan),
     lineItems: items.map((item) => {
       const product = item.price?.product;
       const meta = (product && typeof product === "object" && "metadata" in product ? product.metadata : {}) as Record<string, string>;
@@ -95,7 +103,9 @@ export function snapshotFromStripeSession(session: Stripe.Checkout.Session): Ses
         quantity: item.quantity ?? 0,
         unitAmount: item.price?.unit_amount ?? 0,
         amountTotal: item.amount_total,
+        amountTax: item.amount_tax ?? 0,
         fulfillmentSource: meta.fulfillment_source === "supplier" ? "supplier" : "in_house",
+        fulfillmentOrigin: /^[a-z][a-z0-9-]{1,30}$/.test(meta.fulfillment_origin ?? "") ? meta.fulfillment_origin : null,
       };
     }),
   };

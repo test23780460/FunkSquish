@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { checkedLine, quoteFor } from "../checkout/shipping-helpers";
 import { isAllowedDestination } from "@/commerce/orders/shipping-restrictions";
 import { fulfillCheckoutSession } from "@/commerce/orders/fulfill";
 import { buildCheckoutSessionParams } from "@/commerce/checkout/stripe";
@@ -35,10 +36,12 @@ describe("shipping destinations (policy S2)", () => {
   });
 
   it("tells shoppers on Stripe's address form before they pay", () => {
+    const lines = [checkedLine({ variantId: "v" })];
     const params = buildCheckoutSessionParams({
-      lines: [],
+      lines,
       checkoutId: "x",
       config: { secretKey: "sk_test_FAKE", shippingRateIds: ["shr_FAKE"], webhookSecret: null, returnOrigin: "http://localhost:3000", automaticTax: false },
+      shipping: quoteFor(lines),
       expiresAt: 1,
     });
     expect(params.custom_text?.shipping_address).toEqual({ message: expect.stringContaining("can't ship to U.S. territories") });
