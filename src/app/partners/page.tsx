@@ -143,7 +143,7 @@ export default async function PartnersPage() {
               <li>We get an email that a new application arrived (via our email provider, Brevo) with its reference, business name and country — not your contact details.</li>
               <li>
                 To prevent spam we make scrambled codes from your IP address and email address. We never store your IP address itself
-                (your email address is stored with your application so we can reply). The rate-limit codes are deleted after 2 days;
+                (your email address is stored with your application so we can reply). The rate-limit codes are deleted by a daily automatic cleanup once they&apos;re 2 days old;
                 one IP code is kept with your application and deleted with it.
               </li>
               <li>

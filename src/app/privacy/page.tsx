@@ -129,7 +129,7 @@ export default function PrivacyPage() {
       </p>
       <p>
         To prevent spam, we make scrambled codes (keyed hashes) from the applicant&apos;s IP address and email address. The codes used
-        for rate limits are deleted automatically after 2 days. One code made from the IP address is also kept with the
+        for rate limits are deleted by our daily automatic cleanup once they&apos;re 2 days old. One code made from the IP address is also kept with the
         application, so we can spot repeated abuse, and is deleted together with the application. We never store the IP address
         itself. (The email address you type into the form is, of course, stored as part of your application so we can reply.)
       </p>
@@ -172,7 +172,7 @@ export default function PrivacyPage() {
       <p>
         To protect checkout from abuse (for example, someone repeatedly holding stock without buying), we count how often the cart
         and checkout are used from each network. For that we make a scrambled code (a keyed hash) from your IP address — never
-        storing the address itself — and the codes are deleted automatically after 2 days.
+        storing the address itself — and the codes are deleted by our daily automatic cleanup once they&apos;re 2 days old.
       </p>
       <p>
         If you buy through TikTok Shop and we ship the order, TikTok gives us the details needed to deliver it (your name, shipping
@@ -268,7 +268,7 @@ export default function PrivacyPage() {
       <ul>
         <li>Emails with us: as long as needed for customer support and legitimate business and legal purposes; the precise schedule is under review.</li>
         <li>Email-list subscribers: until they unsubscribe or ask to be deleted (Brevo may keep a record of the unsubscribe so you aren&apos;t emailed again).</li>
-        <li>Partner applications: the schedule above, enforced automatically. Spam- and abuse-prevention codes (partner form and checkout): 2 days.</li>
+        <li>Partner applications: the schedule above, enforced automatically. Spam- and abuse-prevention codes (partner form and checkout): deleted by a daily automatic cleanup once 2 days old.</li>
         <li>Orders: the period stated above, once decided.</li>
         <li>Analytics records: kept by Umami under its data-retention settings. They don&apos;t contain your name, email or IP address.</li>
         <li>Website request logs: kept by Netlify under its own retention settings.</li>
