@@ -163,9 +163,15 @@ export async function checkCheckoutRateLimit(
   if (!h) return { ok: true };
   const limits = CHECKOUT_RATE_LIMITS[kind];
   const refuse = (): RateLimitResult => ({ ok: false, message: RATE_LIMIT_MESSAGES[kind] });
-  const id = hmac(hashKey().key, "checkout-client", clientNetwork(h)).slice(0, 22);
+  const network = clientNetwork(h);
+  const id = hmac(hashKey().key, "checkout-client", network).slice(0, 22);
 
   if (!takeBurst(`${kind}/${id}`, limits.burst, nowMs)) return refuse();
+
+  // No usable client address (never expected on Netlify): don't put every such shopper
+  // into one shared stored counter, where one abuser could lock out all of them.
+  // The per-instance burst guard above still applies.
+  if (network.startsWith("unknown")) return { ok: true };
 
   try {
     const s = store === undefined ? await defaultStore() : store;

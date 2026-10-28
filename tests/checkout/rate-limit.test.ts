@@ -299,6 +299,14 @@ describe("privacy and safety of the limiter", () => {
     expect(state.limits.keys()).toEqual([]);
   });
 
+  it("requests with no usable client address share no stored counter (only the burst guard)", async () => {
+    state.headers = new Headers();
+    const results = [];
+    for (let i = 0; i < 60; i++) results.push((await quoteCheckout(CART)).ok);
+    expect(results.filter(Boolean)).toHaveLength(CHECKOUT_RATE_LIMITS.quote.burst.max);
+    expect(state.limits.keys()).toEqual([]);
+  });
+
   it("calls from outside a web request (tests, scripts) aren't counted", async () => {
     state.headers = null;
     for (let i = 0; i < 60; i++) expect((await quoteCheckout(CART)).ok).toBe(true);
