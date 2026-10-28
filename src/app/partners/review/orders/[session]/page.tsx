@@ -6,12 +6,12 @@ import { connection } from "next/server";
 import { reviewConfig } from "@/lib/partners/config";
 import { requireReviewer } from "@/lib/partners/review-auth";
 import { activeMode, orderDeps } from "@/commerce/checkout/service";
-import { getOrder, refundedSoFar } from "@/commerce/orders/admin";
+import { getOrder, orderAttention, refundedSoFar } from "@/commerce/orders/admin";
 import { formatMoney } from "@/commerce/availability";
 import { Container } from "@/components/ui/Primitives";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { ArrowLeftIcon } from "@/components/icons/Icons";
-import { cancelAction, markShippedAction, refundAction, resendEmailsAction } from "../actions";
+import { cancelAction, delayNoticeAction, markShippedAction, refundAction, resendEmailsAction, setShipByAction } from "../actions";
 
 export const metadata: Metadata = { title: "Order", robots: { index: false, follow: false } };
 
@@ -35,7 +35,14 @@ const usd = (cents: number) => formatMoney({ amount: cents, currency: "USD" });
 const fmt = (iso: string) => new Date(iso).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "America/New_York" });
 const box = "rounded-[2rem] bg-white p-6 ring-1 ring-inset ring-sky-200";
 const input = "min-h-11 rounded-xl bg-ice-50 px-3 text-ink ring-2 ring-inset ring-sky-200";
-const saved: Record<string, string> = { shipped: "Marked shipped — tracking email handled.", refund: "Refund sent to Stripe.", canceled: "Order canceled.", emails: "Emails retried." };
+const saved: Record<string, string> = {
+  shipped: "Marked shipped — tracking email handled.",
+  refund: "Refund sent to Stripe.",
+  canceled: "Order canceled.",
+  emails: "Emails retried.",
+  "ship-by": "Ship-by date saved.",
+  delay: "Delay notice recorded.",
+};
 
 async function Detail({ params, searchParams }: { params: PageProps<"/partners/review/orders/[session]">["params"]; searchParams: PageProps<"/partners/review/orders/[session]">["searchParams"] }) {
   await connection();
@@ -53,6 +60,7 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
   const a = order.shippingAddress;
   const n = order.notifications;
   const shipped = order.fulfillments.some((f) => f.shippedAt);
+  const attention = orderAttention(order);
 
   return (
     <div className="space-y-6">
@@ -68,12 +76,14 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
         <p className="mt-1 text-ink-soft">
           {fmt(order.createdAt)} · {order.status.replace("_", " ")} · payment {order.paymentStatus.replace("_", " ")}
         </p>
-        {order.flags.length > 0 && (
-          <ul className="mt-3 space-y-1">
-            {order.flags.includes("restricted_destination") && <li className="rounded-xl bg-berry-soft px-3 py-2 text-sm font-semibold text-ink">U.S. territory address — cancel and refund in full (we don&apos;t ship there).</li>}
-            {order.flags.includes("oversold") && <li className="rounded-xl bg-berry-soft px-3 py-2 text-sm font-semibold text-ink">Oversold — an item sold out while checkout was open. Contact the customer and refund.</li>}
+        {attention.length > 0 && (
+          <ul className="mt-3 space-y-1" aria-label="Needs your attention">
+            {attention.map((x, i) => (
+              <li key={i} className="rounded-xl bg-berry-soft px-3 py-2 text-sm font-semibold text-ink">{x.label}</li>
+            ))}
           </ul>
         )}
+        <p className="mt-2 text-sm text-ink-soft">Policies shown at checkout: {order.policyVersions ?? "not recorded (order placed before versions were recorded)"}</p>
       </header>
 
       <section aria-labelledby="items" className={box}>
@@ -119,6 +129,31 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
               {f.source === "supplier" && f.status === "awaiting_supplier" && (
                 <p className="mt-1 text-sm text-ink-soft">Place this with the supplier yourself — nothing is ordered from suppliers automatically.</p>
               )}
+              <p className="mt-1 text-sm text-ink">
+                Ship by: <strong>{f.shipBy ?? "not set"}</strong>
+                {(f.delayNotices?.length ?? 0) > 0 && ` · ${f.delayNotices!.length} delay notice(s), last ${fmt(f.delayNotices!.at(-1)!.at)} (${f.delayNotices!.at(-1)!.email})`}
+              </p>
+              {!f.shippedAt && order.status !== "canceled" && !f.shipBy && (
+                <form action={setShipByAction} className="mt-2 flex flex-wrap items-end gap-2">
+                  <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
+                  <input type="hidden" name="group" value={f.id} />
+                  <label className="grid gap-1 text-sm font-semibold text-ink">Ship-by date (from the product&apos;s stated processing time)<input name="shipBy" type="date" required className={input} /></label>
+                  <button type="submit" className="min-h-11 rounded-full bg-white px-4 font-display text-sm font-semibold text-ink ring-1 ring-inset ring-sky-200">Save</button>
+                </form>
+              )}
+              {!f.shippedAt && order.status !== "canceled" && f.shipBy && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-sm font-semibold text-royal">Can&apos;t ship by {f.shipBy}? Send a delay notice</summary>
+                  <form action={delayNoticeAction} className="mt-2 grid gap-2 rounded-xl bg-white p-3">
+                    <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
+                    <input type="hidden" name="group" value={f.id} />
+                    <p className="text-sm text-ink-soft">Send it <strong>before</strong> the ship-by date. The email offers a free cancel-and-refund. Over 30 days late, no date, or a second delay: the customer must say yes, or you cancel and refund.</p>
+                    <label className="grid gap-1 text-sm font-semibold text-ink">New ship-by date<input name="newShipBy" type="date" className={input} /></label>
+                    <label className="flex items-center gap-2 text-sm text-ink"><input type="checkbox" name="unknown" value="yes" /> We can&apos;t give a date yet</label>
+                    <button type="submit" className="justify-self-start rounded-full bg-royal px-4 py-2 font-display text-sm font-semibold text-white">Email delay notice</button>
+                  </form>
+                </details>
+              )}
               {order.status !== "canceled" && (order.paymentStatus === "paid" || order.paymentStatus === "partially_refunded") && (
                 <form action={markShippedAction} className="mt-3 grid gap-2 sm:grid-cols-[8rem_1fr_1fr_auto] sm:items-end">
                   <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
@@ -133,6 +168,18 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
           ))}
         </div>
       </section>
+
+      {(order.disputes?.length ?? 0) > 0 && (
+        <section aria-labelledby="disputes" className={box}>
+          <h2 id="disputes" className="font-display text-xl font-bold text-ink">Card disputes</h2>
+          <p className="mt-1 text-sm text-ink-soft">Respond in the Stripe Dashboard before the deadline with the order, delivery tracking and your messages with the customer (see docs/COMPLIANCE-LAUNCH-GATES.md, chargeback evidence).</p>
+          <ul className="mt-2 space-y-1 text-ink">
+            {order.disputes!.map((d) => (
+              <li key={d.stripeDisputeId}>{d.stripeDisputeId}: {usd(d.amount)} · {d.reason ?? "no reason"} · <strong>{d.status.replaceAll("_", " ")}</strong>{d.evidenceDueBy ? ` · evidence due ${fmt(d.evidenceDueBy)}` : ""}</li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {remaining > 0 && order.paymentStatus !== "processing" && (
         <section aria-labelledby="money" className="rounded-[2rem] bg-white p-6 ring-2 ring-inset ring-berry/40">

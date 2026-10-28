@@ -58,3 +58,18 @@ Under `npm run dev` the store is in memory (not durable) — fine for local test
 ## Still to build before launch
 
 Order confirmation and shipping emails (with tracking); an owner-only order screen (needs login); stock sync with TikTok Shop so the same unit can't sell twice across channels; data retention rule (decision B5); export for bookkeeping.
+
+## Ship-by dates, delay notices and disputes (legal audit, 2026-10-27)
+
+- Each package gets a **ship-by date**: our own stock = 2 business days after payment (Eastern Time, U.S. federal holidays
+  skipped). Supplier packages start without one — set it on the order page from the product's stated processing time.
+- The orders list and each order show what needs you, most urgent first: open card disputes, **ship-by passed**,
+  territory addresses, oversold items, ships today, missing ship-by date.
+- **Can't make the date?** Before it passes, use "Send a delay notice" on the package. The email gives the new date (or
+  says you can't give one), offers a free cancel-and-refund by replying, and says what happens if the customer doesn't
+  reply. A first delay to a date within 30 days of the original ship-by date: silence = agreement. Longer, unknown or a
+  second delay: they must say yes — if they don't, cancel and refund the items (within 7 business days at the latest).
+- **Disputes:** `charge.dispute.*` webhooks add the dispute, its reason, status and evidence deadline to the order. Respond
+  in the Stripe Dashboard with: the order record, tracking and delivery confirmation, the emails sent (confirmation,
+  shipping, any delay notice), the policy versions shown at checkout (stored on the order), and your messages with the
+  customer.

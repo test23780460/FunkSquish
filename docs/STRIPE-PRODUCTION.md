@@ -51,6 +51,34 @@ Code: `src/commerce/checkout/{environment,live,stripe,service}.ts`,
 - **U.S. territories:** Stripe's form can't hide them. A note is shown, and such orders are flagged
   `restricted_destination` for a full refund.
 
+## Compliance additions (legal audit, 2026-10-27 — branch `claude/upbeat-hawking-aonyc6-checkout`)
+
+Built on top of this PR's head; nothing here unlocks live payments.
+
+| Change | Why | Where |
+| --- | --- | --- |
+| Refund recorded once even if `charge.refunded` lands while the owner's refund is being saved | The race recorded a $5 refund as $10 and capped the owner page's "can still refund" amount too low | `orders/admin.ts` `refundOrder`, `tests/audit/refund-race.test.ts` |
+| Ship-by date on every package (2 business days, Eastern Time, federal holidays skipped); owner list/detail flag "due today", "overdue", "set ship-by" | Shipping Policy + FTC Mail Order Rule: the owner must know before a ship-by date passes | `orders/ship-by.ts`, `orderAttention()` |
+| Delay notice email from the order page (new date or "unknown"; free cancel; silence = consent only for a first delay ≤ 30 days) with a record on the package | 16 CFR 435.2(b); the Shipping Policy promises it | `sendDelayNotice()`, `delayNoticeEmail()` |
+| Card disputes recorded from `charge.dispute.*` with the evidence deadline; order flagged "disputed" while open | Chargeback evidence in one place; Stripe deadlines are 7–21 days | `recordDispute()`; **subscribe the live endpoint to the three dispute events** |
+| Policy versions stored on the session and order (`policy_versions` metadata) | Terms: "the versions in effect when you placed it" | `policyVersionsTag()`, `src/content/policies.ts` (identical copy of PR #11's file) |
+| Terms notice above Stripe's Pay button (`custom_text.submit`) | Turns "by placing an order you agree" into a visible notice at the moment of purchase | `TERMS_NOTICE` |
+| Shipping email: the 7-day damage window is "ideally", not a cutoff; confirmation email promises a delay email with a refund option | Matched to the Returns and Shipping policies (PR #11) | `orders/notify.ts` |
+
+### Open review items (need an explicit owner decision before live payments)
+
+1. **One shipping charge per mixed order.** Checkout offers the same fixed `shr_…` rates whatever the cart holds
+   (`buildCheckoutSessionParams` → `shipping_options`). A cart with our stock *and* supplier-shipped items ships as two
+   packages but pays one shipping charge, so FunkSquish absorbs the second shipment's cost. Options: launch with our own
+   stock only (no mixed carts possible); price the flat rate to cover the worst case; or compute a cart-dependent rate at
+   checkout (Stripe accepts inline `shipping_rate_data`; small change, not built). The Shipping Policy only promises no
+   extra charge *after* checkout, which holds under all three.
+2. **MFA for the owner area.** Orders (names, emails, addresses) sit behind the same single passphrase as partner review
+   (rate-limited, 8-hour sessions). Recommended: a TOTP second factor before real customer data (proposal P-SEC-1 in the
+   legal audit), plus 2-step verification on Stripe, Netlify, Google and Brevo accounts.
+3. **Deploy-preview verification is not done.** Refund, delay-notice and dispute flows have automated tests only; see
+   `docs/PREVIEW-VERIFICATION-PLAN.md` for the sandbox run and its pass criteria.
+
 ## Payment methods
 
 Start with **cards only** (credit/debit, plus Apple Pay and Google Pay). Don't offer delayed methods (bank debits/ACH,
@@ -70,7 +98,7 @@ and in live before launch, then re-check the Checkout page. If you keep Link ins
 | --- | --- |
 | `STRIPE_LIVE_CHECKOUT_ENABLED` | `true` — only on launch day |
 | `STRIPE_LIVE_SECRET_KEY` | A **restricted** live key (`rk_live_…`) with **Checkout Sessions: write** and **Refunds: write**. Nothing else is needed (prices are sent inline). |
-| `STRIPE_LIVE_WEBHOOK_SECRET` | From the live webhook endpoint `https://funksquish.com/api/stripe/webhook`, listening to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded` |
+| `STRIPE_LIVE_WEBHOOK_SECRET` | From the live webhook endpoint `https://funksquish.com/api/stripe/webhook`, listening to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.updated`, `charge.dispute.closed` |
 | `STRIPE_LIVE_SHIPPING_RATE_IDS` | 1–5 live `shr_…` ids, comma-separated |
 | `STRIPE_LIVE_AUTOMATIC_TAX` | `true` once Stripe Tax has your Kentucky registration |
 | `ORDER_EMAIL_FROM` / `ORDER_NOTIFY_EMAIL` | Sender (verified in Brevo) and owner address; default to the `PARTNER_NOTIFY_*` values |

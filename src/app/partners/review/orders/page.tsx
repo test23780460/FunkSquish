@@ -6,7 +6,7 @@ import { connection } from "next/server";
 import { reviewConfig } from "@/lib/partners/config";
 import { requireReviewer } from "@/lib/partners/review-auth";
 import { activeMode, orderDeps } from "@/commerce/checkout/service";
-import { listOrders, refundedSoFar } from "@/commerce/orders/admin";
+import { listOrders, orderAttention, refundedSoFar } from "@/commerce/orders/admin";
 import { formatMoney } from "@/commerce/availability";
 import { Container } from "@/components/ui/Primitives";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
@@ -93,8 +93,8 @@ async function Orders({ searchParams }: { searchParams: PageProps<"/partners/rev
                   </span>
                 </span>
                 <span className="text-sm text-ink-soft">{new Date(o.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "America/New_York" })}</span>
-                {o.flags.map((f) => (
-                  <span key={f} className="rounded-full bg-berry-soft px-2.5 py-1 text-xs font-bold text-ink">{f.replace("_", " ")}</span>
+                {orderAttention(o).map((x, i) => (
+                  <span key={i} className="rounded-full bg-berry-soft px-2.5 py-1 text-xs font-bold text-ink">{x.code.replaceAll("_", " ").replaceAll("-", " ")}</span>
                 ))}
                 {o.fulfillments.some((f) => f.status === "awaiting_supplier") && <span className="rounded-full bg-lemon-soft px-2.5 py-1 text-xs font-bold text-ink">place with supplier</span>}
               </Link>

@@ -73,6 +73,39 @@ export interface FulfillmentGroup {
   trackingUrl: string | null;
   shippedAt: string | null;
   deliveredAt: string | null;
+  /**
+   * Ship-by date (YYYY-MM-DD, Eastern Time) promised by the Shipping Policy:
+   * 2 business days after payment for our own stock. Null = not known yet
+   * (supplier-shipped: the owner sets it from the product's stated time).
+   * Moved later only by a delay notice to the customer.
+   */
+  shipBy?: string | null;
+  /** FTC Mail Order Rule delay notices sent for this package (16 CFR 435.2(b)). */
+  delayNotices?: DelayNoticeRecord[];
+}
+
+export interface DelayNoticeRecord {
+  at: string;
+  /** The ship-by date before this notice. */
+  previousShipBy: string | null;
+  /** Revised date offered, or null when we couldn't give one. */
+  newShipBy: string | null;
+  /** True when silence does NOT count as agreement (over 30 days late, no date, or a renewed delay). */
+  expressConsentNeeded: boolean;
+  email: "sent" | "failed" | "skipped";
+  code?: string;
+}
+
+/** A card dispute (chargeback or inquiry) reported by Stripe's charge.dispute.* webhooks. */
+export interface DisputeRecord {
+  stripeDisputeId: string;
+  amount: number;
+  reason: string | null;
+  status: string;
+  /** When evidence is due (ISO), if Stripe gave one. */
+  evidenceDueBy: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ShippingAddress {
@@ -145,4 +178,8 @@ export interface Order {
   history: OrderEventRecord[];
   /** Order emails sent (or skipped) — each one at most once. */
   notifications?: OrderNotifications;
+  /** Card disputes on this order's payment. */
+  disputes?: DisputeRecord[];
+  /** Policy versions shown when the customer paid, e.g. "terms=2026-10-27;shipping=2026-10-27;returns=2026-10-27". */
+  policyVersions?: string | null;
 }

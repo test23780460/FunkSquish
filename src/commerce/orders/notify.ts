@@ -105,7 +105,7 @@ export function customerConfirmationEmail(order: Order, cfg: Pick<NotifyConfig, 
 <p>We've received your order <b>${esc(order.id)}</b> and your payment. We'll email your tracking number when it ships.</p>
 ${itemsTable(order)}
 ${address ? `<p><b>Shipping to</b><br>${address}</p>` : ""}
-<p>Items from our own stock ship within 2 business days.${supplier ? " Items shipped by our supplier partner follow the time shown on their product page and may arrive separately." : ""}</p>
+<p>Items from our own stock ship within 2 business days.${supplier ? " Items shipped by our supplier partner ship within the processing time shown on their product page when you ordered, and may arrive separately." : ""} If anything will be late, we'll email you before the ship-by date with your options, including a full refund.</p>
 <p>Questions? Reply to this email or write to ${esc(cfg.contactEmail)}. See our <a href="${esc(cfg.siteUrl)}/shipping">Shipping</a> and <a href="${esc(cfg.siteUrl)}/returns">Returns</a> policies.</p>
 </body></html>`,
   };
@@ -134,7 +134,7 @@ export function shippingEmail(order: Order, groupId: string) {
 <h2>It's on its way!</h2>
 <p>Part or all of your order <b>${esc(order.id)}</b> shipped${g?.carrier ? ` with ${esc(g.carrier)}` : ""}.</p>
 <p>Tracking: ${tracking}</p>
-<p>If anything arrives damaged, email us within 7 days of delivery with photos — see our Returns policy.</p>
+<p>If anything arrives damaged, defective or wrong, please email us — ideally within 7 days of delivery, with photos if you can. See our Returns policy.</p>
 </body></html>`,
   };
 }
@@ -165,5 +165,37 @@ export function brevoMailer(apiKey: string, from: string): Mailer {
         return { ok: false, code: (err as Error)?.name === "TimeoutError" ? "timeout" : "network" };
       }
     },
+  };
+}
+
+/**
+ * Delay notice (FTC Mail Order Rule, 16 CFR 435.2(b)): the revised date (or that
+ * we can't give one), a free way to cancel for a full refund, and what happens
+ * if the customer doesn't reply. Matches the Shipping Policy's "If your order
+ * is delayed" section.
+ */
+export function delayNoticeEmail(
+  order: Order,
+  groupId: string,
+  d: { newShipBy: string | null; originalShipBy: string | null; expressConsentNeeded: boolean; cancelBy: string | null },
+  cfg: Pick<NotifyConfig, "siteUrl" | "contactEmail">,
+) {
+  const g = order.fulfillments.find((f) => f.id === groupId);
+  const items = order.lineItems.filter((l) => g?.variantIds.includes(l.variantId)).map((l) => `<li>${esc(l.name)} × ${l.quantity}</li>`).join("");
+  const when = d.newShipBy ? `We now expect to ship them by <b>${esc(d.newShipBy)}</b>.` : "We can't give you a new shipping date yet.";
+  const silence = d.expressConsentNeeded
+    ? `<p><b>Please reply to let us know you're happy to wait.</b> Unless you do, we'll cancel these items and refund them in full${d.cancelBy ? ` if they haven't shipped by ${esc(d.cancelBy)}` : ""}.</p>`
+    : `<p>If you're happy to wait, you don't need to do anything — if we don't hear from you, we'll take that as agreeing to wait until ${esc(d.newShipBy)}.</p>`;
+  return {
+    subject: `${prefix(order)}Your FunkSquish order ${order.id} is delayed — your options`,
+    html: `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#0e2a5c">
+<h2>Sorry — part of your order is running late</h2>
+<p>We can't ship these items from order <b>${esc(order.id)}</b> by the date we promised${d.originalShipBy ? ` (${esc(d.originalShipBy)})` : ""}:</p>
+<ul>${items}</ul>
+<p>${when}</p>
+<p><b>You can cancel these items for a full refund</b> at no cost: just reply to this email with "cancel" (or write to ${esc(cfg.contactEmail)}). We'll refund them to your original payment method within 7 business days.</p>
+${silence}
+<p>You can cancel any time before the items ship. See our <a href="${esc(cfg.siteUrl)}/shipping">Shipping Policy</a>.</p>
+</body></html>`,
   };
 }

@@ -1,4 +1,4 @@
-import { fulfillCheckoutSession, handleSessionExpired, markPaymentFailed, recordRefund, type OrderDeps } from "./fulfill";
+import { fulfillCheckoutSession, handleSessionExpired, markPaymentFailed, recordDispute, recordRefund, type OrderDeps } from "./fulfill";
 
 /**
  * Routes a signature-VERIFIED Stripe event to order processing.
@@ -26,6 +26,10 @@ export const HANDLED_EVENT_TYPES = [
   "checkout.session.async_payment_failed",
   "checkout.session.expired",
   "charge.refunded",
+  // Card disputes (chargebacks and inquiries): recorded on the order with Stripe's evidence deadline.
+  "charge.dispute.created",
+  "charge.dispute.updated",
+  "charge.dispute.closed",
 ] as const;
 
 const eventKey = (id: string) => `event/${id}`;
@@ -58,6 +62,23 @@ export async function handleStripeEvent(event: VerifiedEvent, deps: OrderDeps): 
     case "checkout.session.expired":
       await handleSessionExpired(checkoutId, deps);
       break;
+    case "charge.dispute.created":
+    case "charge.dispute.updated":
+    case "charge.dispute.closed": {
+      const pi = str(object.payment_intent);
+      const id = str(object.id);
+      const status = str(object.status);
+      const due = (object.evidence_details as { due_by?: unknown } | undefined)?.due_by;
+      if (pi && id && status && typeof object.amount === "number")
+        await recordDispute(
+          pi,
+          { id, amount: object.amount, reason: str(object.reason), status, evidenceDueBy: typeof due === "number" ? new Date(due * 1000).toISOString() : null },
+          deps,
+          event.id,
+          event.type,
+        );
+      break;
+    }
     case "charge.refunded": {
       const pi = str(object.payment_intent);
       const amount = typeof object.amount_refunded === "number" ? object.amount_refunded : null;
