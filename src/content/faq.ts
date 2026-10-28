@@ -64,7 +64,7 @@ export const faqGroups: FaqGroup[] = [
       },
       {
         q: "Where do you ship, and how much does shipping cost?",
-        a: "Once the shop opens, we'll ship to all 50 U.S. states and military APO/FPO/DPO addresses (not U.S. territories yet). Shipping is paid by the buyer and always shown at checkout before you pay. Orders ship within 2 business days, and every order has tracking. Full details are in our Shipping Policy.",
+        a: "Once the shop opens, we'll ship to all 50 U.S. states and military APO/FPO/DPO addresses (not U.S. territories yet). Shipping is paid by the buyer and always shown at checkout before you pay. Items from our own stock ship within 2 business days (supplier-shipped items show their own time), and every order has tracking. Full details are in our Shipping Policy.",
       },
       {
         q: "What is your return policy?",

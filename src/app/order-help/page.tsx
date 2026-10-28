@@ -19,8 +19,9 @@ const topics: { title: string; body: ReactNode }[] = [
     title: "Where's my order?",
     body: (
       <>
-        Once our shop is open, your order confirmation and shipping updates will come by email from our checkout provider,
-        or in the TikTok app for TikTok Shop orders. If something looks wrong, email us with your order number.
+        Once our shop is open, you&apos;ll get a payment receipt and an order confirmation by email, and we&apos;ll email your
+        tracking number when the order ships (TikTok Shop orders show this in the TikTok app). If something looks wrong, email
+        us with your order number.
       </>
     ),
   },

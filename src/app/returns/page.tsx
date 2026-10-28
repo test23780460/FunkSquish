@@ -25,9 +25,9 @@ export default function ReturnsPage() {
 
       <h2>Damaged, defective, or wrong items</h2>
       <p>
-        If your order arrives damaged, leaking, defective, or isn&apos;t what you ordered, email us within{" "}
+        If your order arrives damaged, leaking, defective, or isn&apos;t what you ordered, please email us preferably within{" "}
         <strong>7 days of delivery</strong> at <a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a> with your order
-        number and a photo of the item and packaging. We&apos;ll send a <strong>free replacement or a full refund</strong>{" "}
+        number and, if possible, a photo of the item and packaging. Missing this preferred reporting window or a photo does not remove statutory rights. We&apos;ll offer a <strong>free replacement or a full refund</strong>{" "}
         including the original shipping cost — your choice. We may not need the item back; if we do, we&apos;ll pay for
         return shipping.
       </p>
@@ -36,15 +36,14 @@ export default function ReturnsPage() {
       <h2>Changed your mind?</h2>
       <p>
         You can return <strong>unopened, unused items in their original packaging</strong> within{" "}
-        <strong>30 days of delivery</strong> for a refund of the item price. Because squishies are squeezed and handled, we
+        <strong>30 days of delivery</strong> for a refund of the item price. This voluntary change-of-mind policy does not restrict legally required remedies for faulty, unsafe, misdescribed or undelivered goods. Because squishies are squeezed and handled, we
         can&apos;t accept change-of-mind returns of opened or used items.
       </p>
       <ul>
         <li>Return shipping for change-of-mind returns is paid by the buyer. There are no restocking fees.</li>
         <li>Original shipping charges aren&apos;t refunded for change-of-mind returns.</li>
         <li>
-          <strong>Final sale:</strong> opened mystery and blind-bag items can&apos;t be returned for change of mind. Product
-          pages will say when an item is final sale. Damaged or wrong items are always covered.
+          <strong>Final sale:</strong> opened mystery and blind-bag items aren&apos;t eligible for voluntary change-of-mind returns where clearly disclosed before purchase. Any applicable statutory rights for damaged, defective, unsafe or incorrect items still apply.
         </li>
       </ul>
 
@@ -61,7 +60,7 @@ export default function ReturnsPage() {
       <h2>Refunds</h2>
       <p>
         Approved refunds go back to your original payment method through our payment provider, within{" "}
-        <strong>5 business days</strong> after we receive and check the return (or after we approve a damaged-item claim).
+        <strong>5 business days</strong> after we receive and check a voluntary change-of-mind return (or after we approve a damaged-item claim). Canceled and unshipped orders are refunded promptly within applicable legal deadlines; we do not require an item to be returned if it was never delivered.
         Your bank or card issuer may take a few more days to show it.
       </p>
 
