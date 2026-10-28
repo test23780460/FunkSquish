@@ -40,15 +40,23 @@ export function showCompareAt(variant: ProductVariant) {
  * What we tell shoppers about a variant. Conservative by design:
  * stock is only claimed when the product is published, selling is switched
  * on, the variant has a price, and inventory is tracked with a known count.
+ *
+ * While selling is on, pages first show "checking" and then the live shared
+ * stock (src/commerce/live-stock.ts): variants the owner paused, or whose
+ * live stock couldn't be read, are never offered.
  */
 export function getAvailability(product: Product, variant?: ProductVariant): Availability {
   if (product.publication === "preview") return "preview";
   if (product.publication !== "published") return "unavailable";
 
-  const variants = variant ? [variant] : product.variants;
+  const all = variant ? [variant] : product.variants;
+  if (all.some((v) => v.inventory.status === "checking")) return "checking";
+  // Paused or not readable: no stock claim, not for sale.
+  const variants = all.filter((v) => !v.inventory.status);
+  if (variants.length === 0) return "unavailable";
   const known = variants.filter((v) => v.inventory.tracked && v.inventory.available !== null);
   const allSoldOut = known.length === variants.length && known.every((v) => (v.inventory.available ?? 0) <= 0);
-  if (allSoldOut) return "sold-out";
+  if (allSoldOut) return variants.length < all.length ? "unavailable" : "sold-out";
 
   // Sellable only with a price AND (for our own checkout) verified shipping from where it ships.
   const sellable = purchasingEnabled && variants.some((v) => v.price !== null && shippingReadyForCheckout(v));
@@ -66,6 +74,7 @@ export const availabilityLabel: Record<Availability, string> = {
   "low-stock": "Only a few left",
   "sold-out": "Sold out",
   unavailable: "Unavailable",
+  checking: "Checking stock…",
 };
 
 /** Purchasable only when every safety gate is open — including, for our own checkout, verified shipping for where it ships from. */

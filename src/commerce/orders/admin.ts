@@ -5,7 +5,8 @@ import { updateWithRetry, type KvStore } from "./store";
 import type { DelayNoticeRecord, FulfillmentGroup, Order, ReturnCause } from "./types";
 import { addBusinessDays, addCalendarDays, easternDate, isValidDay, shipByFor, shipByState } from "./ship-by";
 import { isOpenDispute } from "./fulfill";
-import { delayNoticeEmail, type NotifyConfig } from "./notify";
+import { delayNoticeEmail, shippingSlotId, type NotifyConfig } from "./notify";
+import { deductWebsiteShipment } from "./stock-admin";
 
 /**
  * Owner-only order operations (called from signed-in server actions only).
@@ -27,15 +28,20 @@ export async function getOrder(store: KvStore, sessionId: string): Promise<Order
 
 export const refundedSoFar = (order: Order) => order.refunds.reduce((n, r) => n + r.amount, 0);
 
-export type AdminResult = { ok: true; order: Order } | { ok: false; error: string };
+export type AdminResult = { ok: true; order: Order; warning?: string } | { ok: false; error: string };
 
-/** Record that one package shipped. Tracking URL must be https. */
+/**
+ * Record that one package shipped. Tracking URL must be https. With
+ * `catalogOnHand`, the package's units also come off the stock count (once per
+ * shipment — see stock-admin.ts `deductWebsiteShipment`).
+ */
 export async function markShipped(
   store: KvStore,
   sessionId: string,
   groupId: string,
   input: { carrier: string; trackingNumber: string; trackingUrl: string },
   now = new Date(),
+  catalogOnHand?: (variantId: string) => number | null,
 ): Promise<AdminResult> {
   const carrier = input.carrier.trim().slice(0, 40);
   const trackingNumber = input.trackingNumber.trim().replace(/\s+/g, "").slice(0, 60);
@@ -65,7 +71,12 @@ export async function markShipped(
     current.history.push({ source: "owner", type: `shipped:${groupId}`, at: now.toISOString() });
     return current;
   });
-  return error ? { ok: false, error } : { ok: true, order: value! };
+  if (error) return { ok: false, error };
+  if (!catalogOnHand) return { ok: true, order: value! };
+  const { shortfall } = await deductWebsiteShipment(store, value!, groupId, shippingSlotId(value!, groupId), catalogOnHand, now);
+  return shortfall.length
+    ? { ok: true, order: value!, warning: `Your stock count was lower than what this package holds (${shortfall.map((x) => `${x.units} × ${x.variantId}`).join(", ")}). It's now 0 — recount the shelf.` }
+    : { ok: true, order: value! };
 }
 
 /** Refund part or all of what's left. Amount in cents. `groupId` ties the refund to one package. */

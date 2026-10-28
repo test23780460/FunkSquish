@@ -66,7 +66,13 @@ export function PurchaseButton({
   }
 
   const label =
-    availability === "sold-out" ? "Sold out" : availability === "preview" ? "Not for sale yet" : availabilityLabel["coming-soon"];
+    availability === "sold-out"
+      ? "Sold out"
+      : availability === "preview"
+        ? "Not for sale yet"
+        : availability === "unavailable" || availability === "checking"
+          ? availabilityLabel[availability]
+          : availabilityLabel["coming-soon"];
 
   return (
     <button

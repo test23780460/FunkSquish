@@ -7,6 +7,7 @@ import { Container } from "@/components/ui/Primitives";
 import { SmileIcon } from "@/components/icons/Icons";
 import { SquishQuiz, SquishQuizFromUrl } from "@/components/quiz/SquishQuiz";
 import { pageMetadata } from "@/lib/seo";
+import { LiveStock } from "@/components/shop/LiveStock";
 
 export const metadata = pageMetadata({
   title: "Squish Personality Quiz",
@@ -15,7 +16,7 @@ export const metadata = pageMetadata({
 });
 
 export default async function QuizPage() {
-  const products = (await listProducts()).map(toProductSummary);
+  const products = await listProducts();
   return (
     <PageTransition>
       <PageHero
@@ -33,9 +34,13 @@ export default async function QuizPage() {
       />
       <section className="bg-white pb-28 pt-4 sm:pb-36">
         <Container>
-          <Suspense fallback={<SquishQuiz products={products} />}>
-            <SquishQuizFromUrl products={products} />
-          </Suspense>
+          <LiveStock products={products}>
+            {(shown) => (
+              <Suspense fallback={<SquishQuiz products={shown.map(toProductSummary)} />}>
+                <SquishQuizFromUrl products={shown.map(toProductSummary)} />
+              </Suspense>
+            )}
+          </LiveStock>
           <p className="mx-auto mt-8 max-w-xl text-center text-sm text-ink-soft">
             Just for fun. Your answers stay in your browser — we don&apos;t collect them.
           </p>

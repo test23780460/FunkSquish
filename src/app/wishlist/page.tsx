@@ -7,6 +7,7 @@ import { Container } from "@/components/ui/Primitives";
 import { HeartIcon } from "@/components/icons/Icons";
 import { WishlistFromUrl, WishlistView } from "@/components/wishlist/WishlistView";
 import { pageMetadata } from "@/lib/seo";
+import { LiveStock } from "@/components/shop/LiveStock";
 
 export const metadata = pageMetadata({
   title: "Wishlist",
@@ -17,7 +18,7 @@ export const metadata = pageMetadata({
 });
 
 export default async function WishlistPage() {
-  const products = (await listProducts()).map(toProductSummary);
+  const products = await listProducts();
   return (
     <PageTransition>
       <PageHero
@@ -35,9 +36,13 @@ export default async function WishlistPage() {
       />
       <section className="bg-white pb-28 pt-4 sm:pb-36">
         <Container>
-          <Suspense fallback={<WishlistView products={products} />}>
-            <WishlistFromUrl products={products} />
-          </Suspense>
+          <LiveStock products={products}>
+            {(shown) => (
+              <Suspense fallback={<WishlistView products={shown.map(toProductSummary)} />}>
+                <WishlistFromUrl products={shown.map(toProductSummary)} />
+              </Suspense>
+            )}
+          </LiveStock>
         </Container>
       </section>
     </PageTransition>

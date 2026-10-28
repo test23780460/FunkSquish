@@ -4,6 +4,7 @@ import { PageTransition } from "@/components/layout/PageTransition";
 import { PageHero } from "@/components/layout/PageHero";
 import { Container, Notice } from "@/components/ui/Primitives";
 import { ShopCatalog, ShopCatalogFromUrl } from "@/components/shop/ShopCatalog";
+import { LiveStock } from "@/components/shop/LiveStock";
 import { SparklesIcon, StoreIcon } from "@/components/icons/Icons";
 import { siteConfig } from "@/lib/site";
 import { pageMetadata } from "@/lib/seo";
@@ -54,10 +55,14 @@ export default async function ShopPage() {
             to see the real squishies first.
           </Notice>
 
-          {/* Static fallback renders the full catalog; the URL-aware version hydrates in. */}
-          <Suspense fallback={<ShopCatalog products={products} />}>
-            <ShopCatalogFromUrl products={products} />
-          </Suspense>
+          {/* Static fallback renders the full catalog; the URL-aware version hydrates in. Stock: see LiveStock. */}
+          <LiveStock products={products}>
+            {(shown) => (
+              <Suspense fallback={<ShopCatalog products={shown} />}>
+                <ShopCatalogFromUrl products={shown} />
+              </Suspense>
+            )}
+          </LiveStock>
         </Container>
       </section>
     </PageTransition>

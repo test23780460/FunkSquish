@@ -45,7 +45,7 @@ export interface Money {
 export type PublicationStatus = "draft" | "preview" | "published" | "archived";
 
 /** What a shopper is told. Derived — never stored. See `getAvailability`. */
-export type Availability = "preview" | "coming-soon" | "in-stock" | "low-stock" | "sold-out" | "unavailable";
+export type Availability = "preview" | "coming-soon" | "in-stock" | "low-stock" | "sold-out" | "unavailable" | "checking";
 
 /** Squishy texture styles (see src/content/textures.ts). */
 export type TextureId = "soft" | "slow-rise" | "jelly" | "crunchy" | "buttery";
@@ -87,6 +87,13 @@ export interface Dimensions {
 export interface InventoryLevel {
   tracked: boolean;
   available: number | null;
+  /**
+   * Set only for display, by src/commerce/live-stock.ts (never in the catalog):
+   * "checking" while the live stock is being read, "paused" when the owner paused
+   * it on the website, "unknown" when the live stock couldn't be read. Any of
+   * these means no stock is claimed and it can't be bought.
+   */
+  status?: "checking" | "paused" | "unknown";
 }
 
 export interface ProductVariant {

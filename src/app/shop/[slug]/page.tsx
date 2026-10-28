@@ -18,6 +18,8 @@ import { ShareButton } from "@/components/shop/ShareButton";
 import { ProductFacts } from "@/components/shop/ProductFacts";
 import { DropAlertForm } from "@/components/drops/DropAlertForm";
 import { dropAlertsAvailable } from "@/app/actions/drop-alerts";
+import { LiveStock } from "@/components/shop/LiveStock";
+import type { Product } from "@/commerce/types";
 
 export async function generateStaticParams() {
   const products = await listProducts();
@@ -73,12 +75,6 @@ function ProductSkeleton() {
 async function ProductContent({ slug }: { slug: string }) {
   const product = await getProduct(slug);
   if (!product) notFound();
-
-  const preview = product.publication === "preview";
-  const category = getCategory(product.category);
-  const theme = category ? themeClasses[category.theme] : themeClasses.berry;
-  const availability = getAvailability(product);
-  const productTextures = (product.textures ?? []).flatMap((id) => getTexture(id) ?? []);
   const alertsOn = await dropAlertsAvailable();
 
   // Recommended: same collection first, then fill from other collections.
@@ -87,6 +83,21 @@ async function ProductContent({ slug }: { slug: string }) {
     ...others.filter((p) => p.category === product.category),
     ...others.filter((p) => p.category !== product.category).sort((a, b) => a.featuredRank - b.featuredRank),
   ].slice(0, 3);
+
+  // Stock labels, buy buttons and search-engine data all come from the live shared stock (see LiveStock).
+  return (
+    <LiveStock products={[product, ...related]}>
+      {([shown, ...shownRelated]) => <ProductView product={shown} related={shownRelated} alertsOn={alertsOn} />}
+    </LiveStock>
+  );
+}
+
+function ProductView({ product, related, alertsOn }: { product: Product; related: Product[]; alertsOn: boolean }) {
+  const preview = product.publication === "preview";
+  const category = getCategory(product.category);
+  const theme = category ? themeClasses[category.theme] : themeClasses.berry;
+  const availability = getAvailability(product);
+  const productTextures = (product.textures ?? []).flatMap((id) => getTexture(id) ?? []);
   const jsonLd = productJsonLd(product);
 
   return (
@@ -140,7 +151,7 @@ async function ProductContent({ slug }: { slug: string }) {
             }
             footer={
               <>
-                {!["in-stock", "low-stock"].includes(availability) && (
+                {!["in-stock", "low-stock", "checking"].includes(availability) && (
                   <DropAlertForm enabled={alertsOn} productName={product.name} className="mt-6" />
                 )}
                 <ProductFacts product={product} className="mt-6" />

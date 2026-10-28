@@ -10,7 +10,7 @@ import { listOrders, orderAttention, refundedSoFar } from "@/commerce/orders/adm
 import { formatMoney } from "@/commerce/availability";
 import { Container } from "@/components/ui/Primitives";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
-import { ArrowLeftIcon } from "@/components/icons/Icons";
+import { OwnerNav } from "@/components/owner/OwnerNav";
 import { cn } from "@/lib/cn";
 import { reconcileAction } from "./actions";
 
@@ -52,9 +52,7 @@ async function Orders({ searchParams }: { searchParams: PageProps<"/partners/rev
 
   return (
     <div className="space-y-6">
-      <Link href="/partners/review" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 font-display font-semibold text-ink ring-1 ring-inset ring-sky-200">
-        <ArrowLeftIcon className="size-4" /> Partner applications
-      </Link>
+      <OwnerNav current="/partners/review/orders" />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-bold text-ink sm:text-4xl">Orders</h1>

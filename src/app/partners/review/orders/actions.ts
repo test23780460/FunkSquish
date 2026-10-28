@@ -53,15 +53,22 @@ export async function markShippedAction(fd: FormData) {
   const sessionId = sessionFrom(fd);
   if (!sessionId) redirect(BASE);
   const groupId = String(fd.get("group") ?? "");
-  const r = await markShipped(deps.store, sessionId, groupId, {
-    carrier: String(fd.get("carrier") ?? ""),
-    trackingNumber: String(fd.get("tracking") ?? ""),
-    trackingUrl: String(fd.get("trackingUrl") ?? ""),
-  });
+  const r = await markShipped(
+    deps.store,
+    sessionId,
+    groupId,
+    {
+      carrier: String(fd.get("carrier") ?? ""),
+      trackingNumber: String(fd.get("tracking") ?? ""),
+      trackingUrl: String(fd.get("trackingUrl") ?? ""),
+    },
+    new Date(),
+    deps.onHand, // the package's units come off the stock count (once)
+  );
   if (!r.ok) redirect(detail(sessionId, `error=${msg(r.error)}`));
   await notifyShipped(deps.store, r.order, groupId, notify);
   console.info(`[orders] ${r.order.id} package ${groupId} marked shipped`);
-  redirect(detail(sessionId, "saved=shipped"));
+  redirect(detail(sessionId, r.warning ? `saved=shipped&error=${msg(r.warning)}` : "saved=shipped"));
 }
 
 export async function refundAction(fd: FormData) {
