@@ -5,10 +5,12 @@ import { siteConfig } from "@/lib/site";
 import { POLICIES } from "@/content/policies";
 
 export const metadata = pageMetadata({
-  title: "Returns & Refunds Policy",
+  title: "Returns & Refunds Policy (draft)",
   description:
-    "FunkSquish returns and refunds: 30-day returns of unopened items, free replacement or full refund for damaged or wrong items, refunds within 5 business days.",
+    "Draft FunkSquish returns and refunds policy, pending legal review: 30-day returns of unopened items, free replacement or full refund for damaged or wrong items, refunds within 5 business days.",
   path: "/returns",
+  // Draft for legal review: keep in step with POLICIES.returns.status (tests/legal/rendered-policies.test.ts).
+  noindex: true,
 });
 
 const mail = `mailto:${siteConfig.email}`;
@@ -16,13 +18,14 @@ const mail = `mailto:${siteConfig.email}`;
 /**
  * Returns policy — terms approved by the owner on Oct 24, 2026
  * (docs/OWNER-DECISIONS.md R1–R9). The 30-day window matches the standard
- * TikTok Shop U.S. window so both channels feel the same. The Oct 27, 2026
- * clarifications need the owner's renewed approval before merge
- * (docs/POLICY-COMPARISON.md).
+ * TikTok Shop U.S. window so both channels feel the same. Owner direction
+ * (Phase 2): no automatic disposal of returns that don't qualify. The revised
+ * wording stays DRAFT until legal review (POLICIES.returns.status), see
+ * docs/LEGAL-OPEN-QUESTIONS.md Q-RET-2.
  */
 export default function ReturnsPage() {
   return (
-    <LegalPage title="Returns & Refunds Policy" lastUpdated={POLICIES.returns.lastUpdated} draft={false}>
+    <LegalPage title="Returns & Refunds Policy" lastUpdated={POLICIES.returns.lastUpdated} draft={POLICIES.returns.status === "draft"}>
       <p>
         FunkSquish hasn&apos;t opened yet. This policy applies to orders placed on funksquish.com once the shop opens. We want every
         squishy to arrive happy — and if something goes wrong, we&apos;ll make it right.
@@ -33,7 +36,7 @@ export default function ReturnsPage() {
         If your order arrives damaged, leaking, defective, or isn&apos;t what you ordered (including an item that&apos;s materially
         different from its listing), please email us at <a href={mail}>{siteConfig.email}</a> — ideally within{" "}
         <strong>7 days of delivery</strong> — with your order number and, if you can, a photo of the item and packaging. We&apos;ll
-        offer a <strong>free replacement or a full refund</strong> including the original shipping cost — your choice. If a
+        offer a <strong>free replacement or a full refund</strong> including the shipping you paid for it and any tax — your choice. If a
         replacement isn&apos;t available, we&apos;ll refund you in full. We may not need the item back; if we do, we&apos;ll pay for return
         shipping.
       </p>
@@ -61,9 +64,15 @@ export default function ReturnsPage() {
           when the product page says &ldquo;Final sale once opened&rdquo; before you buy. Unopened ones can be returned like any other item.
         </li>
         <li>
-          If a change-of-mind return arrives opened, used, damaged after delivery, or isn&apos;t the item we sent, we&apos;ll tell you
-          and either send it back to you (you pay postage) or, if you prefer, dispose of it safely. We won&apos;t refund it as a
-          change-of-mind return. If we don&apos;t hear back within 30 days of our message, we may dispose of it safely.
+          <strong>If a return doesn&apos;t qualify</strong> (for example, it arrives opened, used, damaged after delivery, or isn&apos;t
+          the item we sent), we&apos;ll email you to explain why and offer to send it back to you at your expense. We&apos;ll keep it safe
+          while we wait for your answer. We won&apos;t throw it away just because time has passed: if it&apos;s never claimed, we&apos;ll
+          handle it as the law requires. If it turns out the item was faulty or wasn&apos;t what we sent you, the damaged, defective or
+          wrong-item rules above apply instead.
+        </li>
+        <li>
+          If a return is connected to an open card dispute, chargeback or legal claim, we keep the item and the records about it until
+          that&apos;s resolved.
         </li>
       </ul>
       <p>
@@ -88,9 +97,9 @@ export default function ReturnsPage() {
           <strong>5 business days</strong> after we receive the return.
         </li>
         <li>
-          <strong>Damaged, defective or wrong items:</strong> we review claims promptly (usually within 2 business days) and refund
-          within <strong>5 business days</strong> after we approve the claim. We don&apos;t wait for the item to come back unless we&apos;ve
-          asked for it.
+          <strong>Damaged, defective or wrong items:</strong> we aim to review claims within 2 business days (some take longer — for
+          example, when we need to ask the carrier) and refund within <strong>5 business days</strong> after we approve the claim. We
+          don&apos;t wait for the item to come back unless we&apos;ve asked for it.
         </li>
         <li>
           <strong>Canceled or unshipped orders:</strong> refunded promptly, and within 7 business days at the latest. We never require
@@ -111,8 +120,9 @@ export default function ReturnsPage() {
       <h2>Canceling an order</h2>
       <p>
         Email us as soon as possible. If your order hasn&apos;t shipped yet, we&apos;ll cancel it and issue a full refund, including shipping
-        and tax. An item has &ldquo;shipped&rdquo; once it&apos;s been handed to the carrier (or, for a supplier-shipped item, once the
-        supplier has sent it). After that, the return rules above apply.
+        and tax. If your order ships in more than one package and some have already shipped, we can cancel the packages that haven&apos;t
+        — refunding their items, their shipping charges and any tax. An item has &ldquo;shipped&rdquo; once it&apos;s been handed to the
+        carrier (or, for a supplier-shipped item, once the supplier has sent it). After that, the return rules above apply.
       </p>
 
       <h2>Orders placed on TikTok Shop</h2>

@@ -27,8 +27,9 @@ export interface PolicyVersion {
 export const POLICIES: Record<PolicyId, PolicyVersion> = {
   privacy: { title: "Privacy Policy", path: "/privacy", version: "2026-10-27", lastUpdated: "October 27, 2026", status: "draft" },
   terms: { title: "Terms of Service", path: "/terms", version: "2026-10-27", lastUpdated: "October 27, 2026", status: "draft" },
-  // Shipping and Returns were owner-approved on 2026-10-24. The 2026-10-27 wording in this
-  // draft PR needs the owner's renewed approval before merge (docs/POLICY-COMPARISON.md).
+  // Shipping: owner-approved directions (2026-10-24, and Phase 2 on 2026-10-27: mixed-origin orders,
+  // per-package shipping); the exact wording needs the owner's sign-off before merge.
   shipping: { title: "Shipping Policy", path: "/shipping", version: "2026-10-27", lastUpdated: "October 27, 2026", status: "owner-approved" },
-  returns: { title: "Returns & Refunds Policy", path: "/returns", version: "2026-10-27", lastUpdated: "October 27, 2026", status: "owner-approved" },
+  // Returns: owner direction 2026-10-27 (no automatic disposal); kept DRAFT until legal review (owner instruction).
+  returns: { title: "Returns & Refunds Policy", path: "/returns", version: "2026-10-27", lastUpdated: "October 27, 2026", status: "draft" },
 };

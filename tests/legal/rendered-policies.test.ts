@@ -44,8 +44,8 @@ for (const [k, P] of Object.entries(POLICY_PAGES)) {
 }
 
 describe("drafts stay drafts; approved policies show their version date", () => {
-  it("Privacy and Terms render the Draft banner, are noindex and are recorded as drafts", () => {
-    for (const [k, meta] of [["privacy", privacyMeta], ["terms", termsMeta]] as const) {
+  it("Privacy, Terms and (pending legal review) Returns render the Draft banner, are noindex and are recorded as drafts", () => {
+    for (const [k, meta] of [["privacy", privacyMeta], ["terms", termsMeta], ["returns", returnsMeta]] as const) {
       expect(text[k]).toContain("Draft — not yet in effect");
       expect(text[k]).toContain(`Working draft, last edited ${POLICIES[k].lastUpdated}`);
       expect(meta.robots).toMatchObject({ index: false });
@@ -54,8 +54,8 @@ describe("drafts stay drafts; approved policies show their version date", () => 
     }
   });
 
-  it("Shipping and Returns render without the Draft banner, are indexable and show the recorded date", () => {
-    for (const [k, meta] of [["shipping", shippingMeta], ["returns", returnsMeta]] as const) {
+  it("Shipping renders without the Draft banner, is indexable and shows the recorded date", () => {
+    for (const [k, meta] of [["shipping", shippingMeta]] as const) {
       expect(text[k]).not.toContain("Draft — not yet in effect");
       expect(text[k]).toContain(`Last updated ${POLICIES[k].lastUpdated}`);
       expect(meta.robots).toBeUndefined();
@@ -146,7 +146,7 @@ describe("no contradictory commitments", () => {
   });
 
   it("delay handling follows the FTC Mail Order Rule structure", () => {
-    expect(text.shipping).toMatch(/before the ship-by date/);
+    expect(text.shipping).toMatch(/before its ship-by date/);
     expect(text.shipping).toMatch(/no more than 30 days after the original ship-by date and you don't reply/);
     expect(text.shipping).toMatch(/ship only within 30 days after the original ship-by date unless you tell us/);
     expect(text.shipping).toMatch(/If we miss a new date we gave you, we'll ask you again/);

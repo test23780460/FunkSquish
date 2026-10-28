@@ -64,7 +64,7 @@ export const faqGroups: FaqGroup[] = [
       },
       {
         q: "Where do you ship, and how much does shipping cost?",
-        a: "Once the shop opens, we'll ship to all 50 U.S. states, Washington, D.C., and military APO/FPO/DPO addresses (not U.S. territories yet). Shipping is paid by the buyer and always shown at checkout before you pay. Items from our own stock ship within 2 business days (any item that takes longer shows its own time on the product page), and every order has tracking. Full details are in our Shipping Policy.",
+        a: "Once the shop opens, we'll ship to all 50 U.S. states, Washington, D.C., and military APO/FPO/DPO addresses (not U.S. territories yet). Shipping is paid by the buyer and calculated for your cart before you pay: items from the same place ship together with one charge, and items from different places (our stock or a supplier partner) ship separately, each with its own charge and tracking. Your cart and checkout show the shipping and total before you pay, and we never add shipping later. Items from our own stock ship within 2 business days (any item that takes longer shows its own time on the product page). Full details are in our Shipping Policy.",
       },
       {
         q: "What is your return policy?",

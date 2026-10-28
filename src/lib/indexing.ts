@@ -30,13 +30,13 @@ export const INDEXABLE_PATHS = [
   "/order-help",
   "/product-care",
   "/shipping",
-  "/returns",
 ] as const;
 
 /** Deliberately excluded, with the reason. Product pages are handled per product (preview samples are noindex). */
 export const NOINDEX_PATHS: Record<string, string> = {
   "/privacy": "Draft policy awaiting legal review",
   "/terms": "Draft policy awaiting legal review",
+  "/returns": "Revised returns policy kept in draft for legal review (owner instruction, 2026-10-27)",
   "/wishlist": "Personal list stored in the visitor's browser",
   "/newsletter/confirmed": "Confirmation page after an email link",
   "/drops/confirmed": "Confirmation page after an email link",

@@ -40,7 +40,8 @@ const topics: { title: string; body: ReactNode }[] = [
     body: (
       <>
         Email us as soon as possible with your order number. If it hasn&apos;t shipped yet, we&apos;ll cancel it and refund
-        you in full, including shipping and tax. See our <Link href="/returns">returns policy</Link>.
+        you in full, including shipping and tax. If part of it has shipped, we can cancel the packages that haven&apos;t. See our{" "}
+        <Link href="/returns">returns policy</Link>.
       </>
     ),
   },
@@ -49,7 +50,8 @@ const topics: { title: string; body: ReactNode }[] = [
     body: (
       <>
         Destinations, costs, processing times and what happens if an order is delayed are on our{" "}
-        <Link href="/shipping">shipping page</Link>. Shipping costs are always shown at checkout before you pay.
+        <Link href="/shipping">shipping page</Link>. Shipping is calculated for your cart and always shown, with your total,
+        before you pay.
       </>
     ),
   },

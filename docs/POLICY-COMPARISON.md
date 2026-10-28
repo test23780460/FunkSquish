@@ -13,7 +13,7 @@ renewed approval before merge** (they're live pages once merged).
 | --- | --- | --- | --- | --- | --- |
 | Destinations | "all 50 states, including Alaska and Hawaii, and military APO/FPO/DPO … We don't ship to U.S. territories yet" | Adds **Washington, D.C.**; names territories and the Marshall Islands, Micronesia, Palau as not shipped | Checkout code (PR #5/#12) already allows D.C. and blocks the freely associated states, which aren't "territories" | Policy/code mismatch; D.C. buyers unsure | **O** (S2 clarification) |
 | Territory orders | "we'll cancel that order and refund it in full" | "…and promptly refund it in full" | Ties to the refund deadline below | Stalled refunds | — |
-| Shipping cost | "shown at checkout … total before you pay" | Adds: one charge covers the whole order; **never extra shipping later**, even in several packages | Matches the single Stripe shipping rate; prevents mixed-order disputes | Surprise charges | **O** |
+| Shipping cost | "shown at checkout … total before you pay" | ~~One charge covers the whole order~~ → **Phase 2 (2026-10-27): cart-dependent** — one package and charge per place items ship from; mixed orders can cost more; every charge and the total shown before payment; **never extra shipping later**; items without confirmed rates aren't sold | Owner decision: mixed orders at launch (PR #16 implements it) | Surprise charges; guessing supplier costs | **O** (direction approved; wording to sign off) **A** (Q-SHIP-2) |
 | Processing time | "within 2 business days of receiving the order (Monday–Friday, excluding U.S. federal holidays)" | Same promise, defined: by the **end of the second business day after the day we receive your paid order**, Eastern Time, with an example | "Within 2 business days" was ambiguous (does the order day count? which time zone?) | Disputes over late shipment; FTC reasonable-basis | **O** |
 | Supplier/longer items | "must be disclosed before purchase on the product page and at checkout" (no field existed) | "its own processing time is shown on the product page before you buy, and that time applies instead" — now backed by `processing_business_days` | Promise had no implementation | Misleading ship-time claims (FTC 16 CFR 435) | — (implements the approved promise) |
 | Delays | "we'll contact you promptly and no later than that date. When required by law, we'll seek your consent … We will not treat silence as permission to delay when the law requires express consent." | Spells out the FTC structure: notice **before the ship-by date**, free cancel; silence = consent only for a first delay ≤ 30 days; longer/unknown/renewed delays need a yes, otherwise cancel and refund; refunds within **7 business days at the latest** | Original was legally safe but not actionable or customer-readable | Mail Order Rule violations; chargebacks | **O · A** (Q-FTC-1) |
@@ -34,7 +34,7 @@ renewed approval before merge** (they're live pages once merged).
 | Leaking items | "stop using any squishy that is torn…" | Adds: keep filling away from children/pets; don't mail back leaking items unless instructed | Safety | Injury, carrier hazmat | — |
 | Change of mind | "for a refund of the item price" | "…**and any sales tax charged on it**"; defines "unopened" | Tax on returned goods | Over-collection of tax | **O · A** (Q-TAX-2) |
 | Final sale | "opened mystery and blind-bag items aren't eligible … where clearly disclosed before purchase" | "applies only when the product page says 'Final sale once opened' before you buy" — backed by the new catalog flag and buy-box notice | Disclosure had no implementation | Unenforceable exclusion | — |
-| Non-conforming returns | (not addressed) | Opened/used/substituted returns: we tell you, send back (you pay postage) or dispose; no change-of-mind refund; disposed if no reply in 30 days | Gap exploited by return fraud | Fraud; storage | **O** |
+| Non-conforming returns | (not addressed) | ~~dispose after 30 days~~ → **Phase 2 (2026-10-27):** we explain why it doesn't qualify and offer to send it back at the buyer's expense; kept safe; never disposed of because time passed; unclaimed items handled as the law requires; items tied to disputes/chargebacks/legal claims kept; faulty/wrong items fall under the defect rules | Owner decision (D-RET-1) | Conversion claims; destroying evidence | **O** ✅ direction · **A** (Q-RET-2) — Returns kept **Draft** |
 | Refund timing — cancellations | "refunded promptly within applicable legal deadlines" | "refunded promptly, and within **7 business days** at the latest" | Matches FTC "prompt refund" for card payments | Vague deadline | — (legal maximum) |
 | Failed refunds | (not addressed) | Card closed → we contact you and refund another way | Gap | Lost refunds | — |
 | How to start | "Email … with your order number" | "…from the address you ordered with" | Identity check | Spoofed requests | — |
@@ -100,3 +100,24 @@ renewed approval before merge** (they're live pages once merged).
 | Product page | "Shipping options, costs, and our returns policy will be confirmed before the shop opens. Shipping and tax will be calculated at checkout." | Ships-within-N line; shipping/tax shown at checkout; return summary; warnings/final-sale/processing time **above the buy button** | Stale + 16 CFR 1500.20 | **A** (Q-SAFE-2) |
 | Drop alert form | "including if {product} becomes available"; "One email when…" | General alert, "not a reservation"; "An email when…" | Unsupported per-product promise | — |
 | Checkout emails (checkout branch) | "email us within 7 days"; supplier items "follow the time shown on their product page" | "ideally within 7 days"; supplier time "shown … when you ordered"; promise of a delay email with refund option | Contradictions with PR #11 | **O** |
+
+## Phase 2 additions (2026-10-27, PR #19)
+
+| Policy | Change | Owner direction | Approval |
+| --- | --- | --- | --- |
+| Shipping | Per-package ship-by dates, tracking emails, delays (cancel one package: items + its shipping + tax), lost package → free replacement or full package refund, undeliverable refunds minus that package's shipping, APO/FPO/DPO supplier limits disclosed | Parts 2 and 5 | **O** wording sign-off |
+| Returns | Damage review "aim" for 2 business days; cancel unshipped packages of a partly shipped order; status → **Draft** + noindex | Parts 4 and 5 | **A** before publishing |
+| Terms | Cards and card wallets at launch (Decision tag removed); per-package shipping; pricing errors need express agreement, decline → cancel and refund, deadlines kept; limits stated (10 per item, 20 items) and excess units refunded incl. shipping | Parts 7 and 8 | **A** (still Draft) |
+| Privacy | Supplier items sold only after a written agreement limiting address use to fulfilling the order; two-step sign-in before customer orders; card-only plan; Link sentence kept accurate either way | Parts 6 and 8 | **A** (still Draft) |
+| FAQ, Order help | Per-package shipping and cancellation wording | Part 2 | — |
+
+### Follow-up proposals (2026-10-27, second round) — **proposed, need your OK**
+
+Only the Privacy Policy (still **Draft**) changes; Shipping, Returns and Terms are untouched. Each edit keeps the draft
+accurate to code added in this round.
+
+| Section | Before | Proposed | Why |
+| --- | --- | --- | --- |
+| Privacy → When you buy from us | (nothing about abuse limits) | "To protect checkout from abuse (for example, someone repeatedly holding stock without buying), we count how often the cart and checkout are used from each network. For that we make a scrambled code (a keyed hash) from your IP address — never storing the address itself — and the codes are deleted automatically after 2 days." | New checkout rate limits (#16) store keyed IP hashes for 2 days |
+| Privacy → How long we keep information | "Spam-prevention codes: 2 days." | "Spam- and abuse-prevention codes (partner form and checkout): 2 days." | Same |
+| Privacy → Security | "…before we take customer orders, two-step sign-in…" | "…before we take customer orders or open partner applications, two-step sign-in…" | Owner decision: MFA before partner applications too (#18) |
