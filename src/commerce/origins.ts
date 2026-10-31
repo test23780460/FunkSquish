@@ -1,3 +1,4 @@
+import originsData from "./data/shipping-origins.json";
 import type { FulfillmentSource, ProductVariant } from "./types";
 
 /**
@@ -56,27 +57,35 @@ export interface ShippingOrigin {
 export const FUNKSQUISH_ORIGIN_ID = "funksquish";
 
 /**
- * REAL origins. The rule is null until the owner enters verified rates
- * (packed weights + carrier costs for our own stock; each supplier's written
- * rate card). Until then, real products can't be checked out — by design.
+ * Every field an origin entry may have (anything else in the data file is refused,
+ * so a supplier name or cost can't slip into this public table by accident).
  */
-export const SHIPPING_ORIGINS: ShippingOrigin[] = [
-  {
-    id: FUNKSQUISH_ORIGIN_ID,
-    source: "in_house",
-    publicLabel: "FunkSquish",
-    rule: null, // OWNER: fill in from real packed weights and USPS costs (docs/MIXED-ORDER-SHIPPING.md §3)
-    verified: null,
-    reviewEveryDays: 90,
-    processingBusinessDays: 2,
-    agreementOnFile: true, // not applicable to our own stock
-    militaryAddresses: true,
-  },
-  // Suppliers are added here only after a signed agreement and a written rate card exist, e.g.:
-  // { id: "supplier-a", source: "supplier", publicLabel: "a FunkSquish supplier partner", rule: { kind: "per-item", ... },
-  //   verified: { on: "YYYY-MM-DD", by: "owner", evidence: "private/suppliers/supplier-a-rates.pdf" }, reviewEveryDays: 90,
-  //   processingBusinessDays: 3, agreementOnFile: true, militaryAddresses: false },
-];
+const ORIGIN_KEYS = new Set(["id", "source", "publicLabel", "rule", "verified", "reviewEveryDays", "processingBusinessDays", "agreementOnFile", "militaryAddresses", "zeroCostConfirmed"]);
+
+/** Structural check of the data file. Throws (failing the build) on anything malformed. */
+export function validateOrigins(input: unknown): ShippingOrigin[] {
+  if (!Array.isArray(input)) throw new Error("shipping-origins.json must be a list of origins.");
+  const ids = new Set<string>();
+  return input.map((o, i) => {
+    const at = `shipping-origins.json[${i}]`;
+    if (!o || typeof o !== "object") throw new Error(`${at}: must be an object`);
+    const x = o as Record<string, unknown>;
+    for (const k of Object.keys(x)) if (!ORIGIN_KEYS.has(k)) throw new Error(`${at}.${k}: not an allowed field (keep private details out of this public table)`);
+    if (typeof x.id !== "string" || !ORIGIN_ID.test(x.id) || ids.has(x.id)) throw new Error(`${at}.id: unique lowercase id`);
+    ids.add(x.id);
+    if (x.source !== "in_house" && x.source !== "supplier") throw new Error(`${at}.source: in_house or supplier`);
+    if (typeof x.publicLabel !== "string" || !x.publicLabel.trim()) throw new Error(`${at}.publicLabel: required`);
+    if (!Number.isInteger(x.reviewEveryDays) || (x.reviewEveryDays as number) < 1 || (x.reviewEveryDays as number) > 366) throw new Error(`${at}.reviewEveryDays: 1–366`);
+    if (x.processingBusinessDays !== null && !Number.isInteger(x.processingBusinessDays)) throw new Error(`${at}.processingBusinessDays: whole number or null`);
+    if (typeof x.agreementOnFile !== "boolean" || typeof x.militaryAddresses !== "boolean") throw new Error(`${at}: agreementOnFile and militaryAddresses are true/false`);
+    if (x.rule !== null && ruleProblem(x as unknown as ShippingOrigin) === "invalid-rule") throw new Error(`${at}.rule: incomplete or inconsistent`);
+    if (x.verified !== null) {
+      const v = x.verified as Record<string, unknown>;
+      if (!v || typeof v.on !== "string" || typeof v.by !== "string" || typeof v.evidence !== "string") throw new Error(`${at}.verified: { on, by, evidence } or null`);
+    }
+    return x as unknown as ShippingOrigin;
+  });
+}
 
 export const ORIGIN_ID = /^[a-z][a-z0-9-]{1,30}$/;
 /** Ids that would collide with fulfillment groups recorded before origins existed. */
@@ -170,3 +179,15 @@ export function variantShippingReady(variant: Pick<ProductVariant, "fulfillmentS
   const source = variant.fulfillmentSource ?? "in_house";
   return staticOriginProblem(findOrigin(registry, originIdFor(variant)), source) === null;
 }
+
+/**
+ * REAL origins, from src/commerce/data/shipping-origins.json (owner-managed:
+ * prepare changes on the dashboard's Shipping page, which exports this file).
+ * The rule is null until the owner enters verified rates (packed weights +
+ * carrier costs for our own stock; each supplier's written rate card). Until
+ * then, real products can't be checked out — by design. Any change gives a
+ * new approval code, and live checkout stays closed until the owner approves
+ * it (shipping-approval.ts).
+ */
+// (Last in the file: validation uses the helpers above.)
+export const SHIPPING_ORIGINS: ShippingOrigin[] = validateOrigins(originsData);

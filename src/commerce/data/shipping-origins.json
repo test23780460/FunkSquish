@@ -1,0 +1,13 @@
+[
+  {
+    "id": "funksquish",
+    "source": "in_house",
+    "publicLabel": "FunkSquish",
+    "rule": null,
+    "verified": null,
+    "reviewEveryDays": 90,
+    "processingBusinessDays": 2,
+    "agreementOnFile": true,
+    "militaryAddresses": true
+  }
+]

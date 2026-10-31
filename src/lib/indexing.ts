@@ -45,6 +45,7 @@ export const NOINDEX_PATHS: Record<string, string> = {
   "/partners/review/requests": "Private owner area (sign-in required)",
   "/partners/review/orders": "Private owner area: orders (sign-in required)",
   "/partners/review/orders/[session]": "Private owner area: one order (sign-in required)",
+  "/partners/review/orders/emails": "Private owner area: customer email previews (sign-in required)",
   "/partners/review/today": "Private owner area: dashboard overview (sign-in required)",
   "/partners/review/settings": "Private owner area: settings and backups (sign-in required)",
   "/partners/review/products": "Private owner area: products (sign-in required)",
