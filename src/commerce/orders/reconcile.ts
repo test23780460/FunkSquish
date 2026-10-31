@@ -153,6 +153,7 @@ export async function applyTikTok(store: KvStore, plan: PlanRow[], now = new Dat
       const backId = stableId("tiktok-put-back", row.orderId, row.item.sku);
       let claimed = false;
       await updateWithRetry<TikTokRecord>(store, key, (cur) => {
+        claimed = false; // only the attempt that actually writes counts
         if (!cur || cur.state !== "sold") return undefined;
         claimed = true;
         return { ...cur, state: "put-back", putBackAdjustmentId: backId, updatedAt: now.toISOString() };
