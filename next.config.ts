@@ -48,6 +48,8 @@ const nextConfig: NextConfig = {
       { source: "/tiktok-live/calendar/:id", headers: [{ key: "X-Robots-Tag", value: "noindex" }] },
     ];
   },
+  // Owner uploads (product photos, backups) go through server actions; Netlify functions accept about 6 MB.
+  experimental: { serverActions: { bodySizeLimit: "5mb" } },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

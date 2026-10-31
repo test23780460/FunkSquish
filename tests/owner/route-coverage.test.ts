@@ -38,7 +38,7 @@ describe("owner area coverage", () => {
   const actionFiles = files(ROOT, (f) => f === "actions.ts");
 
   it("finds the owner action files", () => {
-    expect(actionFiles.map((f) => rel(f)).sort()).toEqual(["actions.ts", "inventory/actions.ts", "orders/actions.ts", "security/actions.ts"]);
+    expect(actionFiles.map((f) => rel(f)).sort()).toEqual(["actions.ts", "inventory/actions.ts", "orders/actions.ts", "security/actions.ts", "settings/actions.ts"]);
   });
 
   it("every exported server action checks the owner session first", () => {
@@ -61,7 +61,7 @@ describe("owner area coverage", () => {
 
   it("every owner download (route handler) checks the session, runs per request and only reads", () => {
     const routes = files(ROOT, (f) => f === "route.ts");
-    expect(routes.map((f) => rel(f)).sort()).toEqual(["inventory/export/route.ts"]);
+    expect(routes.map((f) => rel(f)).sort()).toEqual(["inventory/export/route.ts", "settings/backup/route.ts"]);
     for (const r of routes) {
       const src = fs.readFileSync(r, "utf8");
       const rel = path.relative(ROOT, r);
@@ -70,7 +70,7 @@ describe("owner area coverage", () => {
       const body = src.slice(src.indexOf("export async function GET("));
       const connectionAt = body.indexOf("await connection()");
       const authAt = body.indexOf("requireReviewer()");
-      const dataAt = body.search(/inventoryContext\(|loadHistory\(|\.store\b/);
+      const dataAt = body.search(/inventoryContext\(|loadHistory\(|\.store\b|ownerDataStore\(|ownerMediaStore\(/);
       expect(connectionAt, `${rel}: never prerendered`).toBeGreaterThan(-1);
       expect(authAt, `${rel}: checks the owner session`).toBeGreaterThan(connectionAt);
       expect(authAt, `${rel}: session check before any data`).toBeLessThan(dataAt);
@@ -80,7 +80,7 @@ describe("owner area coverage", () => {
 
   it("every owner page checks the session before showing data", () => {
     const pages = files(ROOT, (f) => f === "page.tsx");
-    expect(pages.length).toBeGreaterThanOrEqual(11);
+    expect(pages.length).toBeGreaterThanOrEqual(15);
     for (const p of pages) {
       const src = fs.readFileSync(p, "utf8");
       expect(/requireReviewer\(\)|ownerAuth\(\)/.test(src), path.relative(ROOT, p)).toBe(true);
