@@ -68,3 +68,13 @@ describe("pages switch on the catalog flag, not hard-coded copy", () => {
       expect(read(f), f).toContain("isPreviewCatalog");
   });
 });
+
+describe("Squish Box quick taps", () => {
+  it("adding reads the saved box, not a render's snapshot, so two taps before a re-render both count", () => {
+    const src = readFileSync("src/components/box/SquishBoxBuilder.tsx", "utf8");
+    const add = src.slice(src.indexOf("const add = (e: Entry) => {"), src.indexOf("const share = async"));
+    expect(add).toContain("const current = boxStore.get();");
+    expect(add).toContain("update(addItem(current, e.variant.id));");
+    expect(add).not.toMatch(/addItem\(mine,/);
+  });
+});

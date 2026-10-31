@@ -79,11 +79,14 @@ export function SquishBoxBuilder({ products, shared = null }: { products: Produc
   const update = (next: BoxDraft) => boxStore.set(next);
 
   const add = (e: Entry) => {
-    if (mine.items.length >= slots) return setAnnounce("Your box is full. Remove one or pick a bigger box.");
-    update(addItem(mine, e.variant.id));
-    setLastAdded(mine.items.length);
-    setAnnounce(`Added ${e.product.name}, ${e.variant.name}. ${mine.items.length + 1} of ${slots} slots filled.`);
-    if (mine.items.length === 0) trackEvent("box-start");
+    // Read the saved box, not this render's copy, so quick taps before a re-render all count.
+    const current = boxStore.get();
+    const room = slotsFor(current.size);
+    if (current.items.length >= room) return setAnnounce("Your box is full. Remove one or pick a bigger box.");
+    update(addItem(current, e.variant.id));
+    setLastAdded(current.items.length);
+    setAnnounce(`Added ${e.product.name}, ${e.variant.name}. ${current.items.length + 1} of ${room} slots filled.`);
+    if (current.items.length === 0) trackEvent("box-start");
   };
 
   const share = async () => {
