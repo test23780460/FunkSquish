@@ -48,6 +48,7 @@ export const exploreNav: NavItem[] = [
   { label: "My wishlist", href: "/wishlist" },
   { label: "FAQ", href: "/faq" },
   { label: "Become a partner", href: "/partners" },
+  { label: "Contact & help", href: "/contact" },
 ];
 
 export const footerNav: { title: string; items: NavItem[] }[] = [
@@ -55,10 +56,10 @@ export const footerNav: { title: string; items: NavItem[] }[] = [
     title: "Explore",
     items: [
       { label: "Home", href: "/" },
-      { label: "Shop preview", href: "/shop" },
+      { label: "Shop", href: "/shop" },
       { label: "Squish Lab", href: "/squish-lab" },
       { label: "Personality quiz", href: "/quiz" },
-      { label: "Squish Box builder", href: "/squish-box" },
+      { label: "Squish Box", href: "/squish-box" },
       { label: "Wishlist", href: "/wishlist" },
       { label: "New drops", href: "/drops" },
       { label: "TikTok LIVE", href: "/tiktok-live" },

@@ -20,8 +20,8 @@ const topics: { title: string; body: ReactNode }[] = [
     body: (
       <>
         Once our shop is open, you&apos;ll get an order confirmation email from us (Stripe, our payment provider, may also send a
-        payment receipt), and we&apos;ll email your tracking number when the order ships (TikTok Shop orders show this in the TikTok
-        app). Items from our own stock ship within 2 business days. If something looks wrong, email us with your order number.
+        payment receipt), and we&apos;ll email your tracking number when the order ships (if we sell on TikTok Shop, orders placed there
+        show tracking in the TikTok app). Items from our own stock ship within 2 business days. If something looks wrong, email us with your order number.
       </>
     ),
   },

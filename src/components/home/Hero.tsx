@@ -1,4 +1,6 @@
 import { siteConfig } from "@/lib/site";
+import { purchasingEnabled } from "@/lib/features";
+import { isPreviewCatalog } from "@/commerce/catalog";
 import { Container } from "@/components/ui/Primitives";
 import { ButtonAnchor, ButtonLink } from "@/components/ui/Button";
 import { ArrowRightIcon, SparklesIcon, TikTokIcon } from "@/components/icons/Icons";
@@ -56,7 +58,11 @@ export function Hero() {
           </div>
 
           <p className="mt-5 animate-rise text-[0.95rem] text-ink-soft [animation-delay:300ms]">
-            Nothing is for sale yet — follow along while we build our first collection.
+            {purchasingEnabled
+              ? "Prices, shipping and any warnings are always shown before you buy."
+              : isPreviewCatalog
+                ? "Nothing is for sale yet — follow along while we build our first collection."
+                : "Ordering isn't open yet — follow along for launch day."}
           </p>
         </div>
 

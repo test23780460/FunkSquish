@@ -8,7 +8,7 @@ import { LiveSchedule } from "@/components/tiktok/LiveSchedule";
 import { ClipCard, LiveStatusPanel } from "@/components/tiktok/LiveRoom";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { LiveStock } from "@/components/shop/LiveStock";
-import { listProducts } from "@/commerce/catalog";
+import { isPreviewCatalog, listProducts } from "@/commerce/catalog";
 import { approvedLiveLinks, liveClips, liveSchedule } from "@/content/live-schedule";
 import { isTikTokVideoId } from "@/lib/live";
 import { HeartIcon, PlayIcon, SparklesIcon, StoreIcon, TikTokIcon, SmileIcon } from "@/components/icons/Icons";
@@ -18,7 +18,7 @@ import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
   title: "TikTok LIVE",
-  description: `Follow ${siteConfig.tiktok.handle} on TikTok. FunkSquish LIVEs and livestream shopping are coming soon.`,
+  description: `Follow ${siteConfig.tiktok.handle} on TikTok. FunkSquish LIVEs are coming soon: squish tests, unboxings and first looks.`,
   path: "/tiktok-live",
 });
 
@@ -109,7 +109,7 @@ export default async function TikTokLivePage() {
 
       <section aria-label="LIVE status" className="bg-white pt-6">
         <Container>
-          <LiveStatusPanel sessions={liveSchedule} featured={featured} />
+          <LiveStatusPanel sessions={liveSchedule} featured={featured} previewOnly={isPreviewCatalog} />
         </Container>
       </section>
 
@@ -161,7 +161,7 @@ export default async function TikTokLivePage() {
                 <StoreIcon className="size-6" />
               </span>
               <h2 id="shopping-title" className="font-display text-2xl font-bold text-ink sm:text-3xl">
-                LIVE shopping is coming soon
+                Can I shop during a LIVE?
               </h2>
             </div>
             <p className="mt-4 text-lg leading-relaxed text-ink-soft">

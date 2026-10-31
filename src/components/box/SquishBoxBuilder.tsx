@@ -79,11 +79,14 @@ export function SquishBoxBuilder({ products, shared = null }: { products: Produc
   const update = (next: BoxDraft) => boxStore.set(next);
 
   const add = (e: Entry) => {
-    if (mine.items.length >= slots) return setAnnounce("Your box is full. Remove one or pick a bigger box.");
-    update(addItem(mine, e.variant.id));
-    setLastAdded(mine.items.length);
-    setAnnounce(`Added ${e.product.name}, ${e.variant.name}. ${mine.items.length + 1} of ${slots} slots filled.`);
-    if (mine.items.length === 0) trackEvent("box-start");
+    // Read the saved box, not this render's copy, so quick taps before a re-render all count.
+    const current = boxStore.get();
+    const room = slotsFor(current.size);
+    if (current.items.length >= room) return setAnnounce("Your box is full. Remove one or pick a bigger box.");
+    update(addItem(current, e.variant.id));
+    setLastAdded(current.items.length);
+    setAnnounce(`Added ${e.product.name}, ${e.variant.name}. ${current.items.length + 1} of ${room} slots filled.`);
+    if (current.items.length === 0) trackEvent("box-start");
   };
 
   const share = async () => {
@@ -327,7 +330,9 @@ export function SquishBoxBuilder({ products, shared = null }: { products: Produc
           <h2 id="picker-title" className="font-display text-lg font-bold text-ink">
             4. Fill it up
           </h2>
-          <p className="text-sm text-ink-soft">Tap a color to drop it in. All of these are sample designs for now.</p>
+          <p className="text-sm text-ink-soft">
+            Tap a color to drop it in.{products.every((p) => p.preview) ? " All of these are sample designs for now." : ""}
+          </p>
           <div role="group" aria-label="Filter by collection" className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-5 sm:px-5 [&::-webkit-scrollbar]:hidden">
             {[{ slug: "all" as const, name: "All" }, ...categories].map((c) => (
               <button
@@ -389,7 +394,7 @@ export function SquishBoxBuilder({ products, shared = null }: { products: Produc
       {!viewingShared && box.items.length > 0 && (
         <a
           href="#your-box"
-          className="fixed bottom-4 left-1/2 z-40 inline-flex -translate-x-1/2 items-center gap-2 rounded-full bg-ink px-5 py-3 font-display font-semibold text-white shadow-[var(--shadow-float)] lg:hidden"
+          className="above-host-badge fixed bottom-4 left-1/2 z-40 inline-flex -translate-x-1/2 items-center gap-2 rounded-full bg-ink px-5 py-3 font-display font-semibold text-white shadow-[var(--shadow-float)] lg:hidden"
         >
           View box · {box.items.length}/{slots}
         </a>

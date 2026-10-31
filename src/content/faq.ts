@@ -111,7 +111,7 @@ export const faqGroups: FaqGroup[] = [
       },
       {
         q: "I'm a supplier or creator. Who do I talk to?",
-        a: "We'd love to hear from you! Suppliers, makers and future resellers can use our Become a partner page. Creators can email travis@funksquish.com with a little about yourself — if we ever gift products or pay for a post, we'll ask you to say so clearly in it.",
+        a: "We'd love to hear from you! Suppliers, makers and future resellers: our Become a partner page explains what we look for and how to get in touch. Creators can email travis@funksquish.com with a little about yourself — if we ever gift products or pay for a post, we'll ask you to say so clearly in it.",
       },
     ],
   },

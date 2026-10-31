@@ -294,7 +294,7 @@ function Field({ def, error }: { def: FieldDef; error?: string }) {
 export function PartnerFormClosed({ email }: { email: string }) {
   return (
     <div className="rounded-[2.25rem] bg-white p-6 shadow-[var(--shadow-card)] ring-1 ring-inset ring-sky-200 sm:p-8">
-      <p className="inline-flex rounded-full bg-lemon-soft px-3 py-1 font-display text-sm font-semibold text-ink ring-1 ring-inset ring-lemon">Online applications open soon</p>
+      <p className="inline-flex rounded-full bg-lemon-soft px-3 py-1 font-display text-sm font-semibold text-ink ring-1 ring-inset ring-lemon">Online applications aren&apos;t open yet</p>
       <h3 className="mt-4 font-display text-2xl font-bold text-ink sm:text-3xl">For now, email us directly</h3>
       <p className="mt-3 text-lg leading-relaxed text-ink-soft">
         Our online application isn&apos;t switched on yet. You&apos;re welcome to email us — please include your business name, website or

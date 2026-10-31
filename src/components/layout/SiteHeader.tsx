@@ -23,13 +23,27 @@ export function SiteHeader() {
   const panelRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  // Escape to close, lock page scroll and move focus into the menu while open.
+  // Escape to close, lock page scroll, move focus into the menu and keep Tab
+  // inside the menu and its toggle button while open (the page behind is covered).
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setOpen(false);
         buttonRef.current?.focus();
+        return;
+      }
+      if (e.key !== "Tab" || !panelRef.current || !buttonRef.current) return;
+      const items = [buttonRef.current, ...panelRef.current.querySelectorAll<HTMLElement>("a[href], button")];
+      const first = items[0];
+      const last = items[items.length - 1];
+      const at = items.indexOf(document.activeElement as HTMLElement);
+      if (e.shiftKey && (at <= 0)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (at === -1 || at === items.length - 1)) {
+        e.preventDefault();
+        first.focus();
       }
     };
     document.addEventListener("keydown", onKey);
