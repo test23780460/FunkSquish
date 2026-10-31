@@ -1,3 +1,5 @@
+> **Historical document (kept for the record).** Current guidance: `docs/OWNER-GUIDE.md` and `docs/LAUNCH-CHECKLIST.md` — see `docs/README.md`.
+
 # FunkSquish — master legal, compliance and technical audit
 
 _Audit date: **2026-10-27**. Prepared by Claude Code acting as a review team (consumer-protection, privacy,

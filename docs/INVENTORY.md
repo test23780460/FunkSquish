@@ -1,5 +1,7 @@
 # Inventory — one shared stock for the website and TikTok Shop (managed by hand)
 
+> **New:** Inventory → *TikTok, counts & restocks* uploads the TikTok Shop order export (each line counted once), shelf counts, deliveries with costs, and supplier stock. See `docs/OWNER-GUIDE.md` → Inventory.
+
 **Status (2026-10-27): built and tested in a draft branch (`claude/upbeat-hawking-aonyc6-inventory`, stacked on the
 mixed-shipping branch). Nothing is switched on; website purchasing stays disabled.**
 

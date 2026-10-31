@@ -1,3 +1,5 @@
+> **Historical document (kept for the record).** Current guidance: `docs/OWNER-GUIDE.md` and `docs/LAUNCH-CHECKLIST.md` — see `docs/README.md`.
+
 # Launch readiness audit — 2026-10-26
 
 Seen as a first-time customer, supplier and future distributor. Supplier pricing and contacts are in the private

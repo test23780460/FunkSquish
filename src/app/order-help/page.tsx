@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { PageHero } from "@/components/layout/PageHero";
 import { Container, Notice } from "@/components/ui/Primitives";
+import { launchCopy } from "@/content/launch";
 import { ButtonAnchor } from "@/components/ui/Button";
 import { MailIcon, StoreIcon, SparklesIcon } from "@/components/icons/Icons";
 import { pageMetadata } from "@/lib/seo";
@@ -76,10 +77,11 @@ export default function OrderHelpPage() {
 
       <section className="bg-white pb-28 pt-6 sm:pb-36">
         <Container className="max-w-3xl">
-          <Notice title="The shop isn't open yet" icon={<SparklesIcon className="size-6" />} className="mb-8">
-            No orders have been placed with FunkSquish yet. If anyone claims to sell FunkSquish products before our launch
-            announcement on TikTok, it isn&apos;t us.
-          </Notice>
+          {launchCopy.orderHelpNotice && (
+            <Notice title={launchCopy.orderHelpNotice.title} icon={<SparklesIcon className="size-6" />} className="mb-8">
+              {launchCopy.orderHelpNotice.body}
+            </Notice>
+          )}
 
           <div className="rounded-[2rem] bg-ice-50 p-6 ring-1 ring-inset ring-sky-200">
             <h2 className="font-display text-2xl font-bold text-ink">When you email us, include:</h2>

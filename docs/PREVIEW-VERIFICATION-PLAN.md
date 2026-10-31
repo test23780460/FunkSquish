@@ -1,3 +1,5 @@
+> **Historical document (kept for the record).** Current guidance: `docs/OWNER-GUIDE.md` and `docs/LAUNCH-CHECKLIST.md` — see `docs/README.md`.
+
 # Deploy-preview verification plan — refunds, delays and disputes (sandbox only)
 
 **Status (2026-10-27): NOT RUN on a preview.** A combined preview now exists (PR #15, DO NOT MERGE) and CI passed on it;

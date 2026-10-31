@@ -1,3 +1,5 @@
+> **Historical document (kept for the record).** Current guidance: `docs/OWNER-GUIDE.md` and `docs/LAUNCH-CHECKLIST.md` — see `docs/README.md`.
+
 # Policy comparison — PR #11 baseline vs. this audit branch
 
 _2026-10-27 · "Original" = text at PR #11's head (`95a8f22`, `legal/policy-accuracy`). Where PR #11 itself had changed the

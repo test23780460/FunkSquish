@@ -1,8 +1,9 @@
+import { launchCopy } from "@/content/launch";
 import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-export const alt = "FunkSquish — Get Your Squish On! Squishies coming soon.";
+export const alt = `FunkSquish — Get Your Squish On! ${launchCopy.titleSuffix}.`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -42,7 +43,7 @@ export default function OpengraphImage() {
               letterSpacing: 4,
             }}
           >
-            COMING SOON
+            {launchCopy.shareBadge}
           </div>
           <div style={{ display: "flex", fontSize: 64, fontWeight: 800, marginTop: 30 }}>FunkSquish</div>
           <div style={{ display: "flex", fontSize: 84, fontWeight: 800, color: "#1f5fd6", lineHeight: 1 }}>

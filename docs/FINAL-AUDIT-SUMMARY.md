@@ -1,3 +1,5 @@
+> **Historical document (kept for the record).** Current guidance: `docs/OWNER-GUIDE.md` and `docs/LAUNCH-CHECKLIST.md` — see `docs/README.md`.
+
 # Final audit summary — FunkSquish legal & compliance audit (2026-10-27)
 
 > **Phase 2 update (2026-10-27):** the owner decided the open items (mixed-order shipping at launch, no automatic

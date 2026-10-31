@@ -1,3 +1,5 @@
+> **Historical document (kept for the record).** Current guidance: `docs/OWNER-GUIDE.md` and `docs/LAUNCH-CHECKLIST.md` — see `docs/README.md`.
+
 # Deploy-preview verification — results (2026-10-27)
 
 **Bottom line: the combined code built on Netlify and passed CI on GitHub, but the sandbox checks on the preview itself

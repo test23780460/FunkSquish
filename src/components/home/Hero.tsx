@@ -1,6 +1,7 @@
 import { siteConfig } from "@/lib/site";
 import { purchasingEnabled } from "@/lib/features";
 import { catalogIsPreview } from "@/commerce/catalog";
+import { launchCopy } from "@/content/launch";
 import { Container } from "@/components/ui/Primitives";
 import { ButtonAnchor, ButtonLink } from "@/components/ui/Button";
 import { ArrowRightIcon, SparklesIcon, TikTokIcon } from "@/components/icons/Icons";
@@ -28,7 +29,7 @@ export async function Hero() {
         <div className="relative z-10 text-center lg:text-left">
           <p className="inline-flex animate-rise items-center gap-2 rounded-full bg-white px-4 py-1.5 font-display text-sm font-semibold uppercase tracking-[0.14em] text-royal shadow-[0_4px_0_var(--color-sky-200)] ring-1 ring-inset ring-sky-200">
             <SparklesIcon className="size-4" />
-            Coming soon
+            {launchCopy.heroBadge}
           </p>
 
           <h1
@@ -90,12 +91,12 @@ export async function Hero() {
             <CrunchyArt palette={p.peach} className="w-full animate-float [animation-delay:-4s]" />
           </div>
 
-          {/* Coming soon sticker */}
+          {/* Launch sticker (follows the purchasing switch) */}
           <div className="absolute bottom-[30%] right-[-2%] z-10 sm:right-[-4%]">
             <div className="grid size-20 rotate-12 animate-wobble place-items-center rounded-full bg-lemon text-center font-display text-[0.8rem] font-bold uppercase leading-[1.05] tracking-wide text-ink shadow-[0_5px_0_#e0a722,0_12px_20px_-8px_rgba(19,53,122,0.5)] ring-4 ring-white sm:size-24 sm:text-sm">
-              Coming
+              {launchCopy.heroSticker[0]}
               <br />
-              soon!
+              {launchCopy.heroSticker[1]}
             </div>
           </div>
 
@@ -112,7 +113,7 @@ export async function Hero() {
   );
 }
 
-const MARQUEE_ITEMS = ["Fruity Slushies", "Jelly Squishies", "Crunchy Squishies", "Cute Collectibles", "TikTok LIVE", "Coming soon"];
+const MARQUEE_ITEMS = ["Fruity Slushies", "Jelly Squishies", "Crunchy Squishies", "Cute Collectibles", "TikTok LIVE", launchCopy.marquee];
 
 function Marquee() {
   const row = (hidden: boolean) => (

@@ -1,3 +1,5 @@
+> **Historical document (kept for the record).** Current guidance: `docs/OWNER-GUIDE.md` and `docs/LAUNCH-CHECKLIST.md` — see `docs/README.md`.
+
 # Ecommerce roadmap & platform decision
 
 _Updated for approved B4 test-mode decision: October 24, 2026. Last pricing review: October 23, 2026. Prices change — re-check each vendor's pricing page before you sign up. Nothing has been purchased or subscribed to._

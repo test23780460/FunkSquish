@@ -1,3 +1,5 @@
+> **Historical document (kept for the record).** Current guidance: `docs/OWNER-GUIDE.md` and `docs/LAUNCH-CHECKLIST.md` — see `docs/README.md`.
+
 # Adversarial scenarios — FunkSquish legal & compliance audit (2026-10-27)
 
 **Not legal advice.** These are analytical perspectives (consumer-protection, privacy, children's-product, fraud, supplier,

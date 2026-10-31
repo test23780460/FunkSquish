@@ -65,9 +65,10 @@ npm run build
 | Edit FAQ answers | `src/content/faq.ts` (remove `pending: true` once decided) |
 | Announce a TikTok LIVE | `src/content/live-schedule.ts` |
 | Edit collection names/descriptions | `src/commerce/categories.ts` |
-| Add real products | Spreadsheet → `npm run catalog:import` — see `docs/CATALOG.md` |
+| Run the shop day to day (products, photos, stock, orders, suppliers, shipping, email, reports) | The private dashboard at `/partners/review` — see **`docs/OWNER-GUIDE.md`** |
+| Add real products | Dashboard → Products (or the spreadsheet: `npm run catalog:import`, `docs/CATALOG.md`) |
 | Edit preview sample products | `src/commerce/providers/preview.ts` |
-| Shipping packages & weights | `src/commerce/shipping.ts` (all decisions `null` until made) |
+| Shipping rates | Dashboard → Shipping (draft, preview, then the exported `src/commerce/data/shipping-origins.json` in a PR) |
 | Turn on selling / email / analytics | `docs/LAUNCH-RUNBOOK.md` → `src/lib/features.ts` + Netlify env vars |
 | Brand colors, fonts, animations | `src/app/globals.css` (`@theme` block) |
 
@@ -128,6 +129,5 @@ docs/
 
 ## Before launch
 
-Follow `docs/LAUNCH-RUNBOOK.md`. The legal & compliance audit (2026-10-27) lists what must be true before each feature is
-switched on: start with `docs/FINAL-AUDIT-SUMMARY.md`, then `docs/COMPLIANCE-LAUNCH-GATES.md` and
+Follow **`docs/LAUNCH-CHECKLIST.md`** (technical readiness vs. what only you, suppliers, an accountant or an attorney can do), then `docs/LAUNCH-RUNBOOK.md` for switching features on. `docs/README.md` lists which docs are current and which are historical. Compliance gates: `docs/COMPLIANCE-LAUNCH-GATES.md` and
 `docs/OWNER-REVIEW-FLAGS.md`. The detailed internal checklist is in `private/LAUNCH-CHECKLIST.md` (local only, not in git).

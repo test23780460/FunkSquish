@@ -1,5 +1,7 @@
 # Catalog: adding real products
 
+> **Now also in the dashboard:** Products → Import / export takes this same spreadsheet, and products published there replace the build-time catalog (no deploy needed). See `docs/OWNER-GUIDE.md` → Products. The scripts below still work.
+
 Real products are managed in a spreadsheet and imported into the site. The repo is **public**, so private business data never goes in git.
 
 ```
