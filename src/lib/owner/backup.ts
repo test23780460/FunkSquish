@@ -14,7 +14,7 @@ import type { KvStore } from "@/lib/storage/kv";
 export const BACKUP_FORMAT = "funksquish-owner-backup";
 export const BACKUP_VERSION = 1;
 /** Key prefixes included. Rate-limit counters and partner applications are not dashboard data. */
-export const BACKUP_PREFIXES = ["product/", "supplier/", "supplier-doc/", "supplier-order/", "shipping/", "release/", "settings/", "audit/", "marketing/", "reconcile/"] as const;
+export const BACKUP_PREFIXES = ["product/", "supplier/", "supplier-doc/", "shipping/", "release/", "settings/", "audit/", "marketing/", "restock/"] as const;
 const LAST_BACKUP_KEY = "settings/last-backup";
 
 export interface OwnerBackup {
