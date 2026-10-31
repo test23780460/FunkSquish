@@ -66,6 +66,11 @@ export async function markShipped(
     if (group.status === "canceled") return ((error = "This package was canceled."), undefined);
     if (group.status === "lost" || group.status === "returned") return ((error = "This package was lost or came back. Send a replacement (or refund it) first."), undefined);
     Object.assign(group, { status: "shipped", carrier, trackingNumber, trackingUrl, shippedAt: group.shippedAt ?? now.toISOString() });
+    // A supplier package: their order is done once its tracking is in.
+    if (group.supplierOrder && group.supplierOrder.status !== "canceled" && group.supplierOrder.status !== "shipped") {
+      group.supplierOrder.status = "shipped";
+      group.supplierOrder.updates.push({ at: now.toISOString(), status: "shipped", note: null });
+    }
     recomputeStatus(current);
     current.updatedAt = now.toISOString();
     current.history.push({ source: "owner", type: `shipped:${groupId}`, at: now.toISOString() });

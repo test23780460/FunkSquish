@@ -4,6 +4,11 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { reviewConfig } from "@/lib/partners/config";
 import { requireReviewer } from "@/lib/partners/review-auth";
+import { ownerDataStore } from "@/lib/owner/data";
+import { listSuppliers } from "@/commerce/suppliers/supplier";
+import { packageSupplierId } from "@/commerce/suppliers/export";
+import { listRecords } from "@/commerce/catalog-admin/store";
+import { EXCEPTION_KINDS } from "@/commerce/orders/supplier-orders";
 import { inventoryContext } from "@/commerce/orders/inventory-context";
 import { listOrders } from "@/commerce/orders/admin";
 import { shipByState } from "@/commerce/orders/ship-by";
@@ -34,9 +39,12 @@ const day = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US"
 
 async function Fulfillment({ searchParams }: { searchParams: PageProps<"/partners/review/fulfillment">["searchParams"] }) {
   await connection();
-  if (!(await requireReviewer())) return <ReviewLogin />;
+  const reviewer = await requireReviewer();
+  if (!reviewer) return <ReviewLogin />;
   const sp = await searchParams;
   const ctx = await inventoryContext();
+  const data = await ownerDataStore(reviewer.cfg);
+  const [suppliers, records] = await Promise.all([listSuppliers(data), listRecords(data)]);
   const now = new Date();
   const orders = await listOrders(ctx.store);
   const queue = fulfillmentQueue(orders, now);
@@ -97,6 +105,24 @@ async function Fulfillment({ searchParams }: { searchParams: PageProps<"/partner
                     </li>
                   ))}
                 </ul>
+                {g.source === "supplier" && (
+                  <p className="mt-1 text-sm text-ink">
+                    Supplier: <strong>{suppliers.find((s) => s.id === packageSupplierId(g, records, suppliers))?.name ?? "not linked"}</strong>
+                    {g.supplierOrder && g.supplierOrder.status !== "canceled" && (
+                      <>
+                        {" "}· their order <span className="font-mono">{g.supplierOrder.reference}</span> · {g.supplierOrder.status}
+                        {g.supplierOrder.expectedShipBy ? ` · they said by ${g.supplierOrder.expectedShipBy}` : ""}
+                      </>
+                    )}
+                    {g.supplierOrder?.exceptions
+                      .filter((x) => !x.resolvedAt)
+                      .map((x) => (
+                        <span key={x.id} className="ml-1">
+                          <Pill tone="alert">{EXCEPTION_KINDS[x.kind]}</Pill>
+                        </span>
+                      ))}
+                  </p>
+                )}
                 {(g.trackingNumber || g.carrier) && (
                   <p className="mt-1 text-sm text-ink-soft">
                     {g.carrier ?? "Carrier?"} · <span className="font-mono">{g.trackingNumber ?? "no tracking"}</span>

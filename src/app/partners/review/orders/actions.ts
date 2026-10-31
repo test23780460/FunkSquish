@@ -21,6 +21,10 @@ import {
 } from "@/commerce/orders/admin";
 import type { ReturnCause } from "@/commerce/orders/types";
 import { notifyPaidOrder, notifyShipped } from "@/commerce/orders/notify";
+import { addSupplierException, claimTracking, EXCEPTION_KINDS, placeWithSupplier, resolveSupplierException, supplierCanceled, supplierUpdate } from "@/commerce/orders/supplier-orders";
+import type { SupplierExceptionKind, SupplierOrderStatus } from "@/commerce/orders/types";
+import { ownerTools } from "@/lib/owner/data";
+import { getSupplier } from "@/commerce/suppliers/supplier";
 
 /*
  * Owner-only order actions. Like every server action these are public
@@ -38,7 +42,7 @@ async function context() {
   if (!mode) redirect(`${BASE}?error=closed`);
   const deps = await orderDeps(mode);
   if (!deps) redirect(`${BASE}?error=closed`);
-  return { mode, deps, notify: notifyConfigFor(mode, siteOrigin()) };
+  return { mode, deps, notify: notifyConfigFor(mode, siteOrigin()), tools: await ownerTools(ctx) };
 }
 
 const sessionFrom = (fd: FormData) => {
@@ -53,6 +57,13 @@ export async function markShippedAction(fd: FormData) {
   const sessionId = sessionFrom(fd);
   if (!sessionId) redirect(BASE);
   const groupId = String(fd.get("group") ?? "");
+  // One tracking number belongs to one package: refuse a number already recorded on another order.
+  const tracking = String(fd.get("tracking") ?? "").trim().replace(/s+/g, "");
+  const existing = await getOrder(deps.store, sessionId);
+  if (existing && /^[A-Za-z0-9-]{6,60}$/.test(tracking)) {
+    const claim = await claimTracking(deps.store, tracking, sessionId, groupId, existing.id);
+    if (!claim.ok) redirect(detail(sessionId, `error=${msg(claim.error)}`));
+  }
   const r = await markShipped(
     deps.store,
     sessionId,
@@ -229,4 +240,63 @@ export async function reshipAction(fd: FormData) {
   const r = await reshipPackage(deps.store, sessionId, groupFrom(fd));
   if (r.ok) console.info(`[orders] ${r.order.id} replacement started`);
   redirect(detail(sessionId, r.ok ? "saved=reship" : `error=${msg(r.error)}`));
+}
+
+/* ------------------------------ supplier packages (manual workflow) ------------------------------ */
+
+const supplierGroupFrom = (fd: FormData) => {
+  const g = groupFrom(fd);
+  return /^[w~:-]{1,40}$/.test(g) ? g : null;
+};
+
+export async function placeWithSupplierAction(fd: FormData) {
+  const { deps, tools } = await context();
+  const sessionId = sessionFrom(fd);
+  const groupId = supplierGroupFrom(fd);
+  if (!sessionId || !groupId) redirect(BASE);
+  if (!(await tools.allow("supplier-orders", 200, 60 * 60))) redirect(detail(sessionId, `error=${msg("Too many changes in an hour.")}`));
+  if (fd.get("placed") !== "on") redirect(detail(sessionId, `error=${msg("Tick the box to confirm you placed the order with the supplier yourself.")}`));
+  const supplier = await getSupplier(tools.data, String(fd.get("supplierId") ?? ""));
+  if (!supplier) redirect(detail(sessionId, `error=${msg("Pick the supplier you ordered from.")}`));
+  const r = await placeWithSupplier(deps.store, sessionId, groupId, { supplierId: supplier.id, reference: String(fd.get("reference") ?? ""), expectedShipBy: String(fd.get("expectedShipBy") ?? "") || null });
+  if (!r.ok) redirect(detail(sessionId, `error=${msg(r.error)}`));
+  await tools.audit("fulfillment", "supplier-placed", r.order.id, `Package ${groupId} placed with ${supplier.name}`);
+  redirect(detail(sessionId, "saved=supplier"));
+}
+
+export async function supplierUpdateAction(fd: FormData) {
+  const { deps, tools } = await context();
+  const sessionId = sessionFrom(fd);
+  const groupId = supplierGroupFrom(fd);
+  if (!sessionId || !groupId) redirect(BASE);
+  const r = await supplierUpdate(deps.store, sessionId, groupId, String(fd.get("status") ?? "") as SupplierOrderStatus, String(fd.get("note") ?? "").trim() || null, String(fd.get("expectedShipBy") ?? "") || null);
+  if (!r.ok) redirect(detail(sessionId, `error=${msg(r.error)}`));
+  await tools.audit("fulfillment", "supplier-update", r.order.id, `Package ${groupId}: supplier status ${String(fd.get("status"))}`);
+  redirect(detail(sessionId, "saved=supplier"));
+}
+
+export async function supplierExceptionAction(fd: FormData) {
+  const { deps, tools } = await context();
+  const sessionId = sessionFrom(fd);
+  const groupId = supplierGroupFrom(fd);
+  if (!sessionId || !groupId) redirect(BASE);
+  const exceptionId = String(fd.get("exception") ?? "");
+  const r = exceptionId
+    ? await resolveSupplierException(deps.store, sessionId, groupId, exceptionId)
+    : await addSupplierException(deps.store, sessionId, groupId, String(fd.get("kind") ?? "") as SupplierExceptionKind, String(fd.get("note") ?? ""));
+  if (!r.ok) redirect(detail(sessionId, `error=${msg(r.error)}`));
+  await tools.audit("fulfillment", exceptionId ? "supplier-problem-resolved" : "supplier-problem", r.order.id, `Package ${groupId}: ${exceptionId ? "problem resolved" : EXCEPTION_KINDS[String(fd.get("kind")) as SupplierExceptionKind] ?? "problem"}`);
+  redirect(detail(sessionId, "saved=supplier"));
+}
+
+export async function supplierCanceledAction(fd: FormData) {
+  const { deps, tools } = await context();
+  const sessionId = sessionFrom(fd);
+  const groupId = supplierGroupFrom(fd);
+  if (!sessionId || !groupId) redirect(BASE);
+  if (fd.get("confirm") !== "on") redirect(detail(sessionId, `error=${msg("Tick the box to confirm the supplier order was canceled.")}`));
+  const r = await supplierCanceled(deps.store, sessionId, groupId);
+  if (!r.ok) redirect(detail(sessionId, `error=${msg(r.error)}`));
+  await tools.audit("fulfillment", "supplier-canceled", r.order.id, `Package ${groupId}: supplier order canceled; back to "place with supplier"`);
+  redirect(detail(sessionId, "saved=supplier"));
 }

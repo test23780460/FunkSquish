@@ -109,6 +109,24 @@ export interface FulfillmentGroup {
   resolution?: "reshipped" | "refunded" | null;
   /** Earlier shipments of this package (a replacement was sent after a loss or return). */
   previousShipments?: PreviousShipment[];
+  /** Supplier-shipped: the order the owner placed with the supplier (manually), its updates and problems. */
+  supplierOrder?: SupplierOrderRecord | null;
+}
+
+export type SupplierOrderStatus = "placed" | "confirmed" | "processing" | "problem" | "shipped" | "canceled";
+export type SupplierExceptionKind = "delay" | "out-of-stock" | "wrong-item" | "damaged" | "address" | "no-tracking" | "other";
+
+export interface SupplierOrderRecord {
+  /** Dashboard supplier id (private). */
+  supplierId: string;
+  /** The supplier's own order number / reference. */
+  reference: string;
+  placedAt: string;
+  status: SupplierOrderStatus;
+  /** When the supplier said they'd ship (YYYY-MM-DD), if they did. Separate from the customer's ship-by date. */
+  expectedShipBy: string | null;
+  exceptions: { id: string; at: string; kind: SupplierExceptionKind; note: string; resolvedAt: string | null }[];
+  updates: { at: string; status: SupplierOrderStatus; note: string | null }[];
 }
 
 /** Why a package came back undeliverable. "address" = the address given at checkout was wrong. */

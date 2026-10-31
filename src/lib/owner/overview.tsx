@@ -7,6 +7,7 @@ import { currentRelease, listRecords, liveDiffers } from "@/commerce/catalog-adm
 import { productReadiness } from "@/commerce/catalog-admin/readiness";
 import { lastBackup } from "./backup";
 import { readinessContextFor } from "./products";
+import { supplierAttention } from "@/commerce/orders/supplier-orders";
 
 /**
  * Extra Overview content from the dashboard's own records (products,
@@ -19,7 +20,7 @@ export interface OverviewExtras {
   warnings: { text: string; href?: string }[];
 }
 
-export async function overviewExtras({ data, now }: { cfg: Pick<PartnerConfig, "storage" | "storeSuffix">; data: KvStore; orders: Order[]; now: Date }): Promise<OverviewExtras> {
+export async function overviewExtras({ data, orders, now }: { cfg: Pick<PartnerConfig, "storage" | "storeSuffix">; data: KvStore; orders: Order[]; now: Date }): Promise<OverviewExtras> {
   const warnings: OverviewExtras["warnings"] = [];
   const tiles: OverviewExtras["tiles"] = [];
   const [records, live, backup] = await Promise.all([listRecords(data), currentRelease(data), lastBackup(data)]);
@@ -36,7 +37,25 @@ export async function overviewExtras({ data, now }: { cfg: Pick<PartnerConfig, "
     { label: "Unpublished edits", value: changed.length, note: "Published products with newer edits", href: "/partners/review/products?f=changed", tone: changed.length ? "warn" : "plain" },
   );
 
+  const supplierWork = supplierAttention(orders, now);
+  tiles.push({ label: "Supplier orders to act on", value: supplierWork.length, note: "Place, chase or fix with a supplier", href: "/partners/review/fulfillment?q=supplier", tone: supplierWork.length ? "warn" : "plain" });
+  const followUps = await dueFollowUps(data, now);
+  if (followUps) warnings.push({ text: `${followUps} supplier follow-up${followUps === 1 ? " is" : "s are"} due.`, href: "/partners/review/suppliers" });
+
   if ((records.length || suppliers) && (!backup || now.getTime() - Date.parse(backup) > 30 * 86_400_000))
     warnings.push({ text: backup ? `Last dashboard backup was ${backup.slice(0, 10)}. Download a fresh one.` : "You haven't downloaded a dashboard backup yet.", href: "/partners/review/settings#backup" });
   return { tiles, sections: null, warnings };
+}
+
+/** Supplier contact-log follow-ups due today or earlier and not done. */
+async function dueFollowUps(data: KvStore, now: Date): Promise<number> {
+  const today = now.toISOString().slice(0, 10);
+  let n = 0;
+  for (const k of await data.list("supplier/")) {
+    if (k.slice(9).includes("/")) continue;
+    const s = await data.get<{ log?: { followUpOn: string | null; done: boolean }[]; archived?: boolean }>(k);
+    if (!s || s.value.archived) continue;
+    n += (s.value.log ?? []).filter((e) => e.followUpOn && !e.done && e.followUpOn <= today).length;
+  }
+  return n;
 }
