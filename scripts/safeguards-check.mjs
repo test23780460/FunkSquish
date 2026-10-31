@@ -66,6 +66,16 @@ if (read("src/lib/owner/mfa-gate.ts")) {
   if (!/const mfa = await ownerMfaReady\(\);\s*if \(!mfa\.ready\)/.test(partners)) problems.push("partner applications no longer wait for owner two-step sign-in (actions/partners.ts)");
   checked.push("two-step sign-in gates");
 }
+// 2c. Live checkout waits for Stripe to confirm the key's permissions (Disputes: Read), once that code exists.
+const perms = read("src/commerce/checkout/key-permissions.ts");
+if (perms) {
+  const service = read("src/commerce/checkout/service.ts") ?? "";
+  if (!/\{ label: "Disputes: Read", probe: \(stripe\) => stripe\.disputes\.list\(\{ limit: 1 \}\) \}/.test(perms))
+    problems.push("live checkout no longer requires the Disputes: Read permission (key-permissions.ts)");
+  if (!/const keys = await keyPermissionsReady\(config\.secretKey, createStripeLiveClient\(config\)\);[\s\S]{0,200}return keys\.ready;/.test(service))
+    problems.push("live checkout no longer waits for the Stripe key permission check (service.ts)");
+  checked.push("live key permissions");
+}
 const stripe = read("src/commerce/checkout/stripe.ts");
 if (stripe) {
   if (!/PAYMENT_METHOD_TYPES[^=]*=\s*\["card"\]/.test(stripe)) problems.push('Checkout must stay cards-only (PAYMENT_METHOD_TYPES = ["card"])');

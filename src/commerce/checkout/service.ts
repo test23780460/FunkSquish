@@ -2,7 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import type Stripe from "stripe";
 import { stripeTestConfig, type StripeLiveConfig, type StripeTestConfig } from "./environment";
-import { stripeLiveConfig } from "./live";
+import { liveKeyForPermissionCheck, stripeLiveConfig } from "./live";
 import { TEST_FIXTURE_PRODUCTS, TEST_SHIPPING_ORIGINS, isTestFixtureVariant } from "./test-fixtures";
 import { normalizeCartLines, validateCartAgainstCatalog, type CheckedLine } from "./validate-cart";
 import { quoteShipping, type BlockedLine, type QuoteResult } from "./shipping-quote";
@@ -14,6 +14,7 @@ import { snapshotFromStripeSession } from "../orders/session-snapshot";
 import { brevoMailer, notifyPaidOrder, type NotifyConfig } from "../orders/notify";
 import { checkCheckoutRateLimit } from "./rate-limit";
 import { MFA_GATE_TEXT, ownerMfaReady } from "@/lib/owner/mfa-gate";
+import { checkKeyPermissions, keyPermissionsReady, keyPermissionsText, rememberKeyPermissions, type KeyPermissions } from "./key-permissions";
 import type { OrderDeps } from "../orders/fulfill";
 import { canPurchase, listProducts } from "../catalog";
 import type { Product, ProductVariant } from "../types";
@@ -84,6 +85,25 @@ export function activeMode(): StripeMode | null {
   if (stripeLiveConfig()) return "live";
   if (stripeTestConfig()) return "test";
   return null;
+}
+
+/**
+ * Owner's "check key permissions" button: asks Stripe now about the key this
+ * site would use — the sandbox key on previews, the live key on production
+ * (even before live checkout is switched on, so it can be fixed first). A live
+ * answer also refreshes the checkout gate. Null when there's no key to check.
+ */
+export async function checkStripeKeyPermissions(): Promise<{ mode: StripeMode; result: KeyPermissions } | null> {
+  const mode = activeMode();
+  if (mode === "test") {
+    const config = stripeTestConfig();
+    return config ? { mode, result: await checkKeyPermissions(createStripeTestClient(config)) } : null;
+  }
+  const secretKey = stripeLiveConfig()?.secretKey ?? liveKeyForPermissionCheck();
+  if (!secretKey) return null;
+  const result = await checkKeyPermissions(createStripeLiveClient({ secretKey }));
+  rememberKeyPermissions(secretKey, result);
+  return { mode: "live", result };
 }
 
 export function notifyConfigFor(mode: StripeMode, origin: string): NotifyConfig {
@@ -212,12 +232,23 @@ async function quoteCartIn(rt: ModeRuntime, rawLines: unknown): Promise<CartQuot
  * `client` is the request's headers (null outside a web request). Requests are
  * counted only while a checkout mode is open, so the closed shop stores nothing.
  */
-/** Real orders only once the owner has two-step sign-in (owner decision); test mode isn't affected. */
+/**
+ * Real orders only once the owner has two-step sign-in (owner decision) AND
+ * Stripe confirms the live key has every permission order handling needs
+ * (key-permissions.ts — Disputes: Read). Test mode isn't affected.
+ */
 async function ownerReadyFor(mode: StripeMode): Promise<boolean> {
   if (mode !== "live") return true;
   const gate = await ownerMfaReady();
-  if (!gate.ready) console.warn(`[stripe-live] checkout closed: ${MFA_GATE_TEXT[gate.reason]}`);
-  return gate.ready;
+  if (!gate.ready) {
+    console.warn(`[stripe-live] checkout closed: ${MFA_GATE_TEXT[gate.reason]}`);
+    return false;
+  }
+  const config = stripeLiveConfig();
+  if (!config) return false;
+  const keys = await keyPermissionsReady(config.secretKey, createStripeLiveClient(config));
+  if (!keys.ready) console.warn(`[stripe-live] checkout closed: ${keyPermissionsText(keys)}`);
+  return keys.ready;
 }
 
 export async function quoteCart(rawLines: unknown, client: Pick<Headers, "get"> | null = null): Promise<CartQuote> {

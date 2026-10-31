@@ -16,7 +16,8 @@ vi.mock("@/commerce/checkout/live", () => ({
 const stripe = { create: vi.fn() };
 vi.mock("@/commerce/checkout/stripe", async (orig) => ({
   ...(await orig<object>()),
-  createStripeLiveClient: () => ({ checkout: { sessions: { create: stripe.create, expire: vi.fn(), retrieve: vi.fn() } } }),
+  // The live key's permission check (Disputes: Read) passes here, so only the two-step gate decides.
+  createStripeLiveClient: () => ({ checkout: { sessions: { create: stripe.create, expire: vi.fn(), retrieve: vi.fn() } }, disputes: { list: async () => ({ data: [] }) } }),
 }));
 const { MemoryKvStore } = await import("@/lib/storage/kv-core");
 const liveOrders = new MemoryKvStore();
