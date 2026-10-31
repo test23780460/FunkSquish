@@ -111,6 +111,24 @@ describe("card disputes are recorded on the order", () => {
     expect(o.disputes![0].status).toBe("won");
     expect(o.flags).not.toContain("disputed");
   });
+
+  it("keeps a dispute that arrives before its order (seen on the preview: 1 s earlier)", async () => {
+    const f = fakeDeps();
+    f.deps.now = () => new Date("2026-10-24T12:00:00Z");
+    const dispute = { id: "dp_early", payment_intent: "pi_test_123", amount: 2250, reason: "fraudulent", status: "needs_response", evidence_details: { due_by: 1762300800 } };
+    expect(await handleStripeEvent(ev("evt_early", "charge.dispute.created", dispute), f.deps)).toEqual({ status: "processed" });
+    await fulfillCheckoutSession(SESSION_ID, f.deps, "evt_1", "checkout.session.completed");
+    let o = await reload(f);
+    expect(o.flags).toContain("disputed");
+    expect(o.disputes).toEqual([expect.objectContaining({ stripeDisputeId: "dp_early", status: "needs_response", reason: "fraudulent" })]);
+    // Applied once: fulfilling again (landing page + webhook) adds nothing, and later events update it.
+    await fulfillCheckoutSession(SESSION_ID, f.deps, "landing-page", "landing-page");
+    await handleStripeEvent(ev("evt_late", "charge.dispute.closed", { ...dispute, status: "lost" }), f.deps);
+    o = await reload(f);
+    expect(o.disputes).toHaveLength(1);
+    expect(o.disputes![0].status).toBe("lost");
+    expect(o.flags).not.toContain("disputed");
+  });
 });
 
 describe("checkout records which policies applied, and says so before payment", () => {
