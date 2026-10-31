@@ -18,6 +18,9 @@ import { OwnerShell, secondary } from "@/components/owner/OwnerUi";
 
 export const metadata: Metadata = { title: "Product preview", robots: { index: false, follow: false } };
 
+// Private, per-request page: no shared instant-navigation shell needed.
+export const instant = false;
+
 /**
  * PRIVATE: how this product's page will look once published — with the real
  * product page components, so labels, warnings and the buy box are exactly

@@ -34,6 +34,9 @@ import {
 
 export const metadata: Metadata = { title: "Edit product", robots: { index: false, follow: false } };
 
+// Private, per-request page: no shared instant-navigation shell needed.
+export const instant = false;
+
 /** PRIVATE: one product — every field, its photos, its private costs, and its launch checklist. */
 export default function ProductEditorPage({ params, searchParams }: PageProps<"/partners/review/products/[id]">) {
   if (!reviewConfig()) notFound();
