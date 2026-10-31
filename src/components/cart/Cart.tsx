@@ -6,6 +6,14 @@ import { formatMoney } from "@/commerce/availability";
 import { quoteCheckout, startCheckout } from "@/app/actions/checkout";
 import type { CartQuote } from "@/commerce/checkout/service";
 import { CloseIcon, LockIcon } from "@/components/icons/Icons";
+import {
+  CART_STORAGE_KEY,
+  checkoutStartProblem,
+  clearPaidCheckout,
+  isStaleDeployError,
+  rememberPendingCheckout,
+  type CheckoutProblem,
+} from "./cart-checkout";
 
 /**
  * Cart — PREPARED, NOT RENDERED during pre-launch.
@@ -24,7 +32,7 @@ export interface CartLine {
   quantity: number;
 }
 
-const DEFAULT_KEY = "funksquish-cart-v1";
+const DEFAULT_KEY = CART_STORAGE_KEY;
 let storageKey = DEFAULT_KEY;
 let lines: CartLine[] = [];
 let loaded = false;
@@ -69,10 +77,37 @@ function save(next: CartLine[]) {
   }
   listeners.forEach((l) => l());
 }
-const subscribe = (l: () => void) => {
-  listeners.add(l);
-  return () => listeners.delete(l);
+// Another tab changed the cart (e.g. its order was just paid): pick that up so this tab can't save the old cart back.
+const onStorage = (e: StorageEvent) => {
+  if (e.key !== storageKey) return;
+  load();
+  listeners.forEach((l) => l());
 };
+const subscribe = (l: () => void) => {
+  if (listeners.size === 0) window.addEventListener("storage", onStorage);
+  listeners.add(l);
+  return () => {
+    listeners.delete(l);
+    if (listeners.size === 0) window.removeEventListener("storage", onStorage);
+  };
+};
+
+/**
+ * Removes what was paid for from this browser's cart. Call ONLY after the server
+ * verified the checkout as paid. No-op unless this browser started that checkout.
+ */
+export function clearCartAfterPaidCheckout(key: string, checkoutId: string): void {
+  try {
+    const stored = key === storageKey && loaded ? lines : sanitize(JSON.parse(localStorage.getItem(key) ?? "[]"));
+    const next = clearPaidCheckout(localStorage, key, checkoutId, stored);
+    if (next && key === storageKey && loaded) {
+      lines = next;
+      listeners.forEach((l) => l());
+    }
+  } catch {
+    /* storage unavailable: nothing to clear */
+  }
+}
 const EMPTY: CartLine[] = [];
 
 interface CartApi {
@@ -145,7 +180,9 @@ function CartDrawer() {
   const cart = useCart()!;
   const dialog = useRef<HTMLDialogElement>(null);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<CheckoutProblem | null>(null);
+  // Blocks a second start (double click) before React re-renders the disabled button.
+  const starting = useRef(false);
   const [quote, setQuote] = useState<CartQuote | null>(null);
   const cartKey = cart.lines.map((l) => `${l.variantId}:${l.quantity}`).join("|");
 
@@ -158,8 +195,11 @@ function CartDrawer() {
       try {
         const q = await quoteCheckout(cart.lines.map((l) => ({ variantId: l.variantId, quantity: l.quantity })));
         if (!stale) setQuote(q);
-      } catch {
-        if (!stale) setQuote(null);
+      } catch (err) {
+        if (stale) return;
+        setQuote(null);
+        // The shop was redeployed while this page was open: say so now, before the shopper presses checkout.
+        if (isStaleDeployError(err)) setError(checkoutStartProblem(err));
       }
     }, 250);
     return () => {
@@ -181,15 +221,38 @@ function CartDrawer() {
     ? { amount: cart.lines.reduce((s, l) => s + (l.price?.amount ?? 0) * l.quantity, 0), currency: "USD" as const }
     : null;
 
+  // Coming back from Stripe with the browser's Back button restores this page from cache,
+  // still showing "Opening secure checkout…": make the button usable again.
+  useEffect(() => {
+    const onShow = (e: PageTransitionEvent) => {
+      if (!e.persisted) return;
+      starting.current = false;
+      setPending(false);
+    };
+    window.addEventListener("pageshow", onShow);
+    return () => window.removeEventListener("pageshow", onShow);
+  }, []);
+
   async function checkout() {
+    if (starting.current) return;
+    starting.current = true;
     setPending(true);
     setError(null);
-    const result = await startCheckout(cart.lines.map((l) => ({ variantId: l.variantId, quantity: l.quantity })));
-    if (result.ok) window.location.assign(result.url);
-    else {
-      setError(result.error);
-      setPending(false);
+    const sent = cart.lines.map((l) => ({ variantId: l.variantId, quantity: l.quantity }));
+    try {
+      const result = await startCheckout(sent);
+      if (result.ok) {
+        rememberPendingCheckout(localStorage, storageKey, result.checkoutId, sent);
+        window.location.assign(result.url);
+        return; // stays "Opening secure checkout…" while the browser leaves
+      }
+      setError({ message: result.error, reload: false });
+    } catch (err) {
+      // Thrown, not returned: the page is from an older deploy, or the network dropped. Never leave the button stuck.
+      setError(checkoutStartProblem(err));
     }
+    starting.current = false;
+    setPending(false);
   }
 
   return (
@@ -278,14 +341,19 @@ function CartDrawer() {
             <p className="mt-1 text-sm text-ink-soft">{quote && !quote.ok && quote.blocked.length === 0 ? quote.error : "Shipping is calculated for your cart before you pay; tax is shown on the secure checkout page."}</p>
           )}
           {error && (
-            <p role="alert" className="mt-3 rounded-xl bg-berry-soft px-3 py-2 text-sm text-ink">
-              {error}
-            </p>
+            <div role="alert" className="mt-3 rounded-xl bg-berry-soft px-3 py-2 text-sm text-ink">
+              <p>{error.message}</p>
+              {error.reload && (
+                <button type="button" onClick={() => window.location.reload()} className="mt-2 font-semibold text-royal underline">
+                  Reload page
+                </button>
+              )}
+            </div>
           )}
           <button
             type="button"
             onClick={checkout}
-            disabled={pending || cart.lines.length === 0 || blocked.size > 0}
+            disabled={pending || cart.lines.length === 0 || blocked.size > 0 || !!error?.reload}
             className="mt-4 inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-royal font-display text-lg font-semibold text-white shadow-[0_6px_0_var(--color-navy)] disabled:opacity-60"
           >
             <LockIcon className="size-5" />

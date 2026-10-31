@@ -6,7 +6,7 @@ import { liveCheckoutEnabled } from "@/commerce/checkout/live";
 import { quoteCart, startLiveCheckout, startTestCheckout, type CartQuote } from "@/commerce/checkout/service";
 import { CheckoutDisabledError, getCheckoutProvider } from "@/commerce/provider";
 
-export type CheckoutResult = { ok: true; url: string } | { ok: false; error: string };
+export type CheckoutResult = { ok: true; url: string; checkoutId: string } | { ok: false; error: string };
 
 /**
  * Start a hosted Stripe Checkout. The browser sends only variant ids and
