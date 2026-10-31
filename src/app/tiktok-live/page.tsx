@@ -8,7 +8,7 @@ import { LiveSchedule } from "@/components/tiktok/LiveSchedule";
 import { ClipCard, LiveStatusPanel } from "@/components/tiktok/LiveRoom";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { LiveStock } from "@/components/shop/LiveStock";
-import { isPreviewCatalog, listProducts } from "@/commerce/catalog";
+import { catalogIsPreview, listProducts } from "@/commerce/catalog";
 import { approvedLiveLinks, liveClips, liveSchedule } from "@/content/live-schedule";
 import { isTikTokVideoId } from "@/lib/live";
 import { HeartIcon, PlayIcon, SparklesIcon, StoreIcon, TikTokIcon, SmileIcon } from "@/components/icons/Icons";
@@ -56,7 +56,7 @@ const safety = [
 ];
 
 export default async function TikTokLivePage() {
-  const products = await listProducts();
+  const [products, isPreviewCatalog] = await Promise.all([listProducts(), catalogIsPreview()]);
   // Featured products per scheduled LIVE, rendered on the server and handed to the status panel.
   const featured = Object.fromEntries(
     liveSchedule.map((s) => {

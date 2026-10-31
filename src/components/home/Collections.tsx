@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { categories } from "@/commerce/categories";
-import { isPreviewCatalog } from "@/commerce/catalog";
+import { catalogIsPreview } from "@/commerce/catalog";
 import { purchasingEnabled } from "@/lib/features";
 import { Container, SectionHeading, Badge } from "@/components/ui/Primitives";
 import { ProductArt } from "@/components/illustrations/ProductArt";
@@ -8,7 +8,8 @@ import { ArrowRightIcon } from "@/components/icons/Icons";
 import { themeClasses, themePalette } from "@/components/theme";
 import { cn } from "@/lib/cn";
 
-export function Collections() {
+export async function Collections() {
+  const isPreviewCatalog = await catalogIsPreview();
   return (
     <section id="collections" aria-labelledby="collections-title" className="relative bg-white py-16 sm:py-24">
       <Container>

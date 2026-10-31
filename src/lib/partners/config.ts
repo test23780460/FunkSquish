@@ -39,6 +39,11 @@ function storage(env: NodeJS.ProcessEnv): Pick<PartnerConfig, "storage" | "store
   return null;
 }
 
+/** Which private storage this deploy uses (no secrets needed): production, preview, local memory or none. */
+export function deployStorage(env: NodeJS.ProcessEnv = runtimeEnv()): Pick<PartnerConfig, "storage" | "storeSuffix"> | null {
+  return storage(env);
+}
+
 /** What the review area needs (it stays reachable even if new applications are paused). */
 export function reviewConfig(env: NodeJS.ProcessEnv = runtimeEnv()): Pick<PartnerConfig, "secret" | "passphraseHash" | "storage" | "storeSuffix"> | null {
   const s = storage(env);

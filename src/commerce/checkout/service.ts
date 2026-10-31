@@ -15,7 +15,7 @@ import { brevoMailer, notifyPaidOrder, type NotifyConfig } from "../orders/notif
 import { checkCheckoutRateLimit } from "./rate-limit";
 import { MFA_GATE_TEXT, ownerMfaReady } from "@/lib/owner/mfa-gate";
 import type { OrderDeps } from "../orders/fulfill";
-import { canPurchase, listProducts } from "../catalog";
+import { canPurchase, listProductsForCheckout } from "../catalog";
 import type { Product, ProductVariant } from "../types";
 import { siteConfig } from "@/lib/site";
 
@@ -73,7 +73,7 @@ async function runtimeFor(mode: StripeMode): Promise<ModeRuntime | null> {
     config,
     stripe: createStripeLiveClient(config),
     store: await getLiveOrderStore(),
-    products: await listProducts(),
+    products: await listProductsForCheckout(),
     origins: SHIPPING_ORIGINS,
     isSellable: canPurchase,
   };
