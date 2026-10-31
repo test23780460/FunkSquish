@@ -17,8 +17,8 @@ export const OWNER_SECTIONS = [
   { id: "suppliers", href: "/partners/review/suppliers", label: "Suppliers", ready: true },
   { id: "fulfillment", href: "/partners/review/fulfillment", label: "Fulfillment", ready: true },
   { id: "shipping", href: "/partners/review/shipping", label: "Shipping", ready: true },
-  { id: "marketing", href: "/partners/review/marketing", label: "Email & marketing", ready: false },
-  { id: "analytics", href: "/partners/review/analytics", label: "Analytics", ready: false },
+  { id: "marketing", href: "/partners/review/marketing", label: "Email & marketing", ready: true },
+  { id: "analytics", href: "/partners/review/analytics", label: "Analytics", ready: true },
   { id: "settings", href: "/partners/review/settings", label: "Settings", ready: true },
 ] as const;
 

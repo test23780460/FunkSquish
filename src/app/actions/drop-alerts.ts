@@ -1,5 +1,7 @@
 "use server";
 
+import { headers } from "next/headers";
+import { takeSignup } from "@/lib/newsletter/limits";
 import { subscribeToDropAlerts } from "@/lib/newsletter/brevo";
 import { dropAlertsActive } from "@/lib/integrations/status";
 
@@ -25,6 +27,9 @@ export async function subscribeToDropAlertsAction(_prev: DropAlertState, formDat
   if (email.length > 254 || !EMAIL.test(email)) return { status: "error", message: "Please enter a valid email address." };
   if (formData.get("consent") !== "yes")
     return { status: "error", message: "Please tick the box to agree to receive drop and restock emails." };
+
+  // Each sign-up makes Brevo send a confirmation email: limit how many one network can start.
+  if (!(await takeSignup("drop-alerts", await headers()))) return { status: "error", message: "Too many sign-ups from your connection. Please try again later." };
 
   const outcome = await subscribeToDropAlerts(email);
   if (outcome === "failed") return { status: "error", message: "Something went wrong. Please try again in a bit." };
