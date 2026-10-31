@@ -40,7 +40,8 @@ async function Analytics({ searchParams }: { searchParams: PageProps<"/partners/
   const ctx = await requireReviewer();
   if (!ctx) return <ReviewLogin />;
   const sp = await searchParams;
-  const days = (one(sp.days) ?? "30") in RANGES ? (one(sp.days) as keyof typeof RANGES) : "30";
+  const asked = one(sp.days) ?? "30";
+  const days: keyof typeof RANGES = asked in RANGES ? (asked as keyof typeof RANGES) : "30";
   const to = new Date();
   const from = new Date(to.getTime() - Number(days) * 86_400_000);
   const inv = await inventoryContext();
