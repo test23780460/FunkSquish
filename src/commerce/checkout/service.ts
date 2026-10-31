@@ -26,7 +26,8 @@ import { siteConfig } from "@/lib/site";
  * path stays shut until the code switch, the env switch and live keys exist.
  */
 
-export type StartCheckoutResult = { ok: true; url: string } | { ok: false; error: string };
+/** `checkoutId` lets the browser match the cart to this checkout, so only a verified paid result clears it. */
+export type StartCheckoutResult = { ok: true; url: string; checkoutId: string } | { ok: false; error: string };
 
 interface ModeRuntime {
   mode: StripeMode;
@@ -273,7 +274,7 @@ async function startCheckoutIn(rt: ModeRuntime, rawLines: unknown): Promise<Star
     );
     const url = assertSession(session, rt.mode);
     await rt.store.create(checkoutKey(checkoutId), { sessionId: session.id });
-    return { ok: true, url };
+    return { ok: true, url, checkoutId };
   } catch (err) {
     await releaseStock(rt.store, checkoutId);
     // Log the error class/code only — Stripe messages can echo request data.
