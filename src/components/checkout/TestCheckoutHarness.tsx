@@ -5,6 +5,7 @@ import type { Product } from "@/commerce/types";
 import { formatMoney } from "@/commerce/availability";
 import { startCheckout } from "@/app/actions/checkout";
 import { CartProvider, useCart } from "@/components/cart/Cart";
+import { TEST_CART_STORAGE_KEY } from "@/components/cart/cart-checkout";
 
 /**
  * Stripe TEST-mode harness (deploy previews / local dev only — the page that
@@ -88,7 +89,7 @@ function Attacks({ attacks }: { attacks: Attack[] }) {
 
 export function TestCheckoutHarness({ products, attacks }: { products: Product[]; attacks: Attack[] }) {
   return (
-    <CartProvider storageKey="funksquish-stripe-test-cart-v1">
+    <CartProvider storageKey={TEST_CART_STORAGE_KEY}>
       <div className="space-y-10">
         <section>
           <h2 className="font-display text-2xl font-bold text-ink">1. Happy path</h2>

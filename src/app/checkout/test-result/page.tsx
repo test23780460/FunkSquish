@@ -10,6 +10,7 @@ import { stripeTestConfig, testCheckoutEnabled } from "@/commerce/checkout/envir
 import { cancelTestCheckout, orderDepsFor } from "@/commerce/checkout/service";
 import { fulfillCheckoutSession, type FulfillOutcome } from "@/commerce/orders/fulfill";
 import type { Order } from "@/commerce/orders/types";
+import { ClearPaidCart } from "@/components/cart/ClearPaidCart";
 
 export const metadata = pageMetadata({
   title: "Checkout result (test mode)",
@@ -131,6 +132,8 @@ async function Result({ searchParams }: { searchParams: PageProps<"/checkout/tes
           body="Stripe confirmed this test payment. In a real order you'd get a confirmation email now, and tracking once it ships."
         >
           <OrderSummary order={outcome.order} />
+          {/* Verified paid by Stripe above: only now does the cart lose the paid items. */}
+          <ClearPaidCart checkoutId={outcome.order.checkoutId} mode="test" />
           {outcome.order.paymentStatus !== "paid" && (
             <p role="status" className="mt-4 rounded-xl bg-ice-50 px-4 py-3 text-ink ring-1 ring-inset ring-sky-200">
               {outcome.order.paymentStatus === "refunded" ? "This order was refunded in full." : "Part of this order was refunded."}

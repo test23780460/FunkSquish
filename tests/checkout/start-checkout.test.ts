@@ -51,8 +51,10 @@ async function left(variantId: string, onHand: number) {
 describe("startCheckout (Stripe test mode)", () => {
   it("returns Stripe's hosted URL, holds stock, and sends server prices with an idempotency key", async () => {
     const r = await startCheckout([{ variantId: "test-var-jelly-blue", quantity: 2 }]);
-    expect(r).toEqual({ ok: true, url: "https://checkout.stripe.com/c/pay/cs_test_abcdefghij123" });
     const [params, options] = state.create.mock.calls[0] as unknown as [Record<string, unknown>, { idempotencyKey: string }];
+    // The checkout id lets the cart be cleared later, but only for a verified paid result of this same checkout.
+    expect(r).toEqual({ ok: true, url: "https://checkout.stripe.com/c/pay/cs_test_abcdefghij123", checkoutId: params.client_reference_id });
+    expect(options.idempotencyKey).toBe(`funksquish-checkout-${params.client_reference_id}`);
     expect(params).toMatchObject({ mode: "payment", line_items: [expect.objectContaining({ quantity: 2, price_data: expect.objectContaining({ unit_amount: 500 }) })] });
     expect(options.idempotencyKey).toMatch(/^funksquish-checkout-[0-9a-f-]{36}$/);
     expect(await left("test-var-jelly-blue", 5)).toBe(3);
