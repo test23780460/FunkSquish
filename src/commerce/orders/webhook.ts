@@ -17,6 +17,8 @@ export interface VerifiedEvent {
   id: string;
   type: string;
   livemode: boolean;
+  /** When Stripe created the event (Unix seconds). */
+  created?: number;
   data: { object: Record<string, unknown> };
 }
 
@@ -72,7 +74,14 @@ export async function handleStripeEvent(event: VerifiedEvent, deps: OrderDeps): 
       if (pi && id && status && typeof object.amount === "number")
         await recordDispute(
           pi,
-          { id, amount: object.amount, reason: str(object.reason), status, evidenceDueBy: typeof due === "number" ? new Date(due * 1000).toISOString() : null },
+          {
+            id,
+            amount: object.amount,
+            reason: str(object.reason),
+            status,
+            evidenceDueBy: typeof due === "number" ? new Date(due * 1000).toISOString() : null,
+            eventAt: typeof event.created === "number" ? new Date(event.created * 1000).toISOString() : null,
+          },
           deps,
           event.id,
           event.type,

@@ -272,9 +272,30 @@ export async function getOrderBySession(store: KvStore, sessionId: string): Prom
 const OPEN_DISPUTE = new Set(["warning_needs_response", "warning_under_review", "needs_response", "under_review"]);
 export const isOpenDispute = (status: string) => OPEN_DISPUTE.has(status);
 
-type DisputeInput = { id: string; amount: number; reason: string | null; status: string; evidenceDueBy: string | null };
+type DisputeInput = {
+  id: string;
+  amount: number;
+  reason: string | null;
+  status: string;
+  evidenceDueBy: string | null;
+  /** When Stripe created the event (ISO), if known. */
+  eventAt?: string | null;
+};
 type ParkedDisputes = Record<string, { dispute: DisputeInput; source: string; type: string }>;
 const parkedDisputeKey = (paymentIntentId: string) => `dispute/parked/${paymentIntentId}`;
+
+// Stripe doesn't deliver events in order and retries failed deliveries for days, so an older
+// dispute event can arrive after a newer one. Disputes only move forward (inquiry → chargeback →
+// under review → closed), so an event never moves a dispute back a stage; within a stage the newer
+// Stripe event wins. Anything not open (won, lost, warning_closed, …) is the final stage.
+const DISPUTE_STAGE: Record<string, number> = { warning_needs_response: 0, warning_under_review: 1, needs_response: 2, under_review: 3 };
+const disputeStage = (status: string) => DISPUTE_STAGE[status] ?? 4;
+function isStaleDispute(incoming: Pick<DisputeInput, "status" | "eventAt">, known: Pick<DisputeInput, "status" | "eventAt">): boolean {
+  const a = disputeStage(incoming.status);
+  const b = disputeStage(known.status);
+  if (a !== b) return a < b;
+  return !!(incoming.eventAt && known.eventAt && incoming.eventAt < known.eventAt);
+}
 
 /**
  * Record a card dispute reported by Stripe (charge.dispute.created / updated /
@@ -294,10 +315,11 @@ export async function recordDispute(
   // Stripe can send charge.dispute.* before checkout.session.completed (seen in the sandbox:
   // the dispute arrived a second before the order existed). Park it so it isn't lost; the order
   // picks it up when it's created. Re-check afterwards in case the order appeared meanwhile.
-  await updateWithRetry<ParkedDisputes>(deps.store, parkedDisputeKey(paymentIntentId), (current) => ({
-    ...(current ?? {}),
-    [dispute.id]: { dispute, source, type },
-  }));
+  await updateWithRetry<ParkedDisputes>(deps.store, parkedDisputeKey(paymentIntentId), (current) => {
+    const parked = current?.[dispute.id];
+    if (parked && isStaleDispute(dispute, parked.dispute)) return undefined; // a newer event is already parked
+    return { ...(current ?? {}), [dispute.id]: { dispute, source, type } };
+  });
   return applyParkedDisputes(paymentIntentId, deps);
 }
 
@@ -324,9 +346,17 @@ async function applyDispute(sessionId: string, dispute: DisputeInput, deps: Orde
     if (!current) return undefined;
     const disputes = (current.disputes ??= []);
     const existing = disputes.find((d) => d.stripeDisputeId === dispute.id);
-    if (existing && existing.status === dispute.status && existing.evidenceDueBy === dispute.evidenceDueBy) return undefined;
-    if (existing) Object.assign(existing, { status: dispute.status, evidenceDueBy: dispute.evidenceDueBy, amount: dispute.amount, updatedAt: now });
-    else disputes.push({ stripeDisputeId: dispute.id, amount: dispute.amount, reason: dispute.reason, status: dispute.status, evidenceDueBy: dispute.evidenceDueBy, createdAt: now, updatedAt: now });
+    const eventAt = dispute.eventAt ?? null;
+    if (existing) {
+      // Checked here, inside the compare-and-set, so a stale event loses even when it races a newer one.
+      if (isStaleDispute(dispute, existing)) return undefined;
+      const newer = !!eventAt && eventAt > (existing.eventAt ?? "");
+      const changed = existing.status !== dispute.status || existing.evidenceDueBy !== dispute.evidenceDueBy || existing.amount !== dispute.amount;
+      if (!changed && !newer) return undefined; // duplicate
+      Object.assign(existing, { status: dispute.status, evidenceDueBy: dispute.evidenceDueBy, amount: dispute.amount, updatedAt: now });
+      if (newer) existing.eventAt = eventAt;
+    } else
+      disputes.push({ stripeDisputeId: dispute.id, amount: dispute.amount, reason: dispute.reason, status: dispute.status, evidenceDueBy: dispute.evidenceDueBy, eventAt, createdAt: now, updatedAt: now });
     const open = disputes.some((d) => isOpenDispute(d.status));
     current.flags = current.flags.filter((f) => f !== "disputed");
     if (open) current.flags.push("disputed");
