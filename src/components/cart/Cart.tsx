@@ -12,6 +12,7 @@ import {
   clearPaidCheckout,
   isStaleDeployError,
   rememberPendingCheckout,
+  trackCartChange,
   type CheckoutProblem,
 } from "./cart-checkout";
 
@@ -72,6 +73,8 @@ function save(next: CartLine[]) {
   lines = next;
   try {
     localStorage.setItem(storageKey, JSON.stringify(next));
+    // Pending checkouts never claim units that left the cart (so they can't remove units added later).
+    trackCartChange(localStorage, storageKey, next);
   } catch {
     /* storage unavailable: cart still works for this visit */
   }
@@ -98,7 +101,8 @@ const subscribe = (l: () => void) => {
  */
 export function clearCartAfterPaidCheckout(key: string, checkoutId: string): void {
   try {
-    const stored = key === storageKey && loaded ? lines : sanitize(JSON.parse(localStorage.getItem(key) ?? "[]"));
+    // The stored cart is the truth (another tab may have changed it); this tab's copy follows.
+    const stored = sanitize(JSON.parse(localStorage.getItem(key) ?? "[]"));
     const next = clearPaidCheckout(localStorage, key, checkoutId, stored);
     if (next && key === storageKey && loaded) {
       lines = next;
