@@ -31,7 +31,7 @@ const supplierOrder = (over: Partial<Order> = {}) => order({ id: "FS-T-SUP-1", .
 describe("supplier records", () => {
   it("validates the form on the server", () => {
     const s = newSupplier("Mock");
-    expect(applySupplierForm(s, { name: "", website: "javascript:alert(1)", moq: "lots", c0email: "nope" })).toMatch(/Name is required.*Website.*moq.*email/s);
+    expect(applySupplierForm(s, { name: "", website: "javascript:alert(1)", moq: "lots", c0email: "nope" })).toMatch(/Name is required[\s\S]*Website[\s\S]*moq[\s\S]*email/);
     expect(applySupplierForm(s, { name: "Mock", agreementStatus: "signed" })).toMatch(/signing date/);
   });
 

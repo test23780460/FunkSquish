@@ -23,6 +23,9 @@ import { addLogAction, addQuoteAction, archiveSupplierAction, deleteDocAction, l
 
 export const metadata: Metadata = { title: "Supplier", robots: { index: false, follow: false } };
 
+// Private, per-request page: no shared instant-navigation shell needed.
+export const instant = false;
+
 /** PRIVATE: one supplier — terms, agreement, documents, quotes, contact history, linked SKUs, open packages. */
 export default function SupplierPage({ params, searchParams }: PageProps<"/partners/review/suppliers/[id]">) {
   if (!reviewConfig()) notFound();
