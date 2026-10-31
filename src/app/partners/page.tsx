@@ -1,6 +1,6 @@
 import { PageTransition } from "@/components/layout/PageTransition";
 import { PageHero } from "@/components/layout/PageHero";
-import { Container, SectionHeading } from "@/components/ui/Primitives";
+import { Container, Notice, SectionHeading } from "@/components/ui/Primitives";
 import { PartnerForm, PartnerFormClosed } from "@/components/partners/PartnerForm";
 import { CheckIcon, HomeHeartIcon, LockIcon, MailIcon } from "@/components/icons/Icons";
 import { Mascot } from "@/components/illustrations/Mascot";
@@ -14,7 +14,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   title: "Become a partner",
   description:
-    "Manufacturers, wholesale suppliers, dropshipping partners, brands, designers and future resellers: apply to work with FunkSquish.",
+    "Manufacturers, wholesale suppliers, dropshipping partners, brands, designers and future resellers: how to work with FunkSquish, what we look for and how we review partners.",
   path: "/partners",
 });
 
@@ -32,11 +32,19 @@ const values = [
   { title: "Small & personal", body: "We're a new, independent shop based in Kentucky. You'll talk to the person who runs it." },
 ];
 
-const faqs = [
+const faqs: { q: string; a: string; whenOpen?: string }[] = [
   { q: "Do you charge an application fee?", a: "No. We never charge fees to apply or to be considered, and we'll never ask for payment by DM." },
   { q: "Should I send samples?", a: "Please don't send anything until we ask. We'll request samples, with an address, if we'd like to move forward." },
-  { q: "Can I attach a catalog or price list?", a: "The form doesn't take files on purpose. Type a few SKU prices into the form and share a link to your catalog; we'll ask for a full price list privately if it's a fit." },
-  { q: "Are you taking reseller accounts?", a: "No — we don't have a wholesale program yet. Shops and distributors can register future interest, and we'll email if one opens. Registering isn't an account, an order or a price quote." },
+  {
+    q: "Can I attach a catalog or price list?",
+    a: "Please don't send files yet. Share a link to your catalog and a few example prices instead; we'll ask for a full price list privately if it's a fit.",
+    whenOpen: "The form doesn't take files on purpose. Type a few SKU prices into the form and share a link to your catalog; we'll ask for a full price list privately if it's a fit.",
+  },
+  {
+    q: "Are you taking reseller accounts?",
+    a: "No — we don't have a wholesale program yet. Shops and distributors are welcome to email us to say they're interested, and we'll reply if one opens. That isn't an account, an order or a price quote.",
+    whenOpen: "No — we don't have a wholesale program yet. Shops and distributors can register future interest, and we'll email if one opens. Registering isn't an account, an order or a price quote.",
+  },
   { q: "Where would you sell my products?", a: "Only where you allow it. The form asks which channels you'd authorize — our website, TikTok Shop, TikTok LIVE and others — and nothing is agreed until we both sign." },
 ];
 
@@ -67,6 +75,15 @@ export default async function PartnersPage() {
             Partner FAQ
           </a>
         </div>
+        {!open && (
+          <Notice title="Online applications aren't open yet" icon={<MailIcon className="size-5" />} className="mt-6 max-w-xl">
+            You can still reach us: email{" "}
+            <a href={`mailto:${siteConfig.email}?subject=${encodeURIComponent("Partner inquiry")}`} className="font-semibold text-royal underline underline-offset-4">
+              {siteConfig.email}
+            </a>{" "}
+            with your business name, a catalog link and the kind of partnership you have in mind.
+          </Notice>
+        )}
       </PageHero>
 
       <section aria-labelledby="who-title" className="bg-white py-14 sm:py-20">
@@ -128,7 +145,11 @@ export default async function PartnersPage() {
           <SectionHeading
             eyebrow="Apply"
             title={<span id="apply-title">Tell us about your business</span>}
-            lead="Most questions are optional — share what you can. Submitting an application doesn't mean it's approved."
+            lead={
+              open
+                ? "Most questions are optional — share what you can. Submitting an application doesn't mean it's approved."
+                : "Our online application isn't open yet, so for now the best way to reach us is email. Nothing you send is an application or an agreement."
+            }
           />
           <div className="mt-10">{open ? <PartnerForm email={siteConfig.email} /> : <PartnerFormClosed email={siteConfig.email} />}</div>
 
@@ -170,7 +191,7 @@ export default async function PartnersPage() {
                   {f.q}
                   <span aria-hidden="true" className="text-royal transition-transform group-open:rotate-45">+</span>
                 </summary>
-                <p className="px-5 pb-5 leading-relaxed text-ink-soft">{f.a}</p>
+                <p className="px-5 pb-5 leading-relaxed text-ink-soft">{open && f.whenOpen ? f.whenOpen : f.a}</p>
               </details>
             ))}
           </div>

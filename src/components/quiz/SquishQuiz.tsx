@@ -277,7 +277,9 @@ function Result({
               Picked for a {persona.title}
             </h2>
             <p className="mt-1 text-ink-soft">
-              From our sample designs — previews of what we&apos;re planning, not products for sale yet.
+              {picks.length === 0 || picks.some((p) => p.preview)
+                ? "From our sample designs — previews of what we're planning, not products for sale yet."
+                : "Squishies that match your squish personality."}
             </p>
           </div>
           {picks.length > 0 && (
@@ -304,8 +306,8 @@ function Result({
           </ul>
         ) : (
           <p className="mt-5 rounded-[2rem] bg-ice-50 p-6 text-ink-soft ring-1 ring-inset ring-sky-200">
-            We don&apos;t have sample designs for this combo yet. Peek at the{" "}
-            <Link href="/shop" className="font-semibold text-royal underline underline-offset-4">shop preview</Link> in the meantime.
+            We don&apos;t have a match for this combo yet. Peek at the{" "}
+            <Link href="/shop" className="font-semibold text-royal underline underline-offset-4">shop</Link> in the meantime.
           </p>
         )}
       </section>

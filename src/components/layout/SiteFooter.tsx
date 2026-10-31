@@ -17,7 +17,7 @@ export function SiteFooter() {
       <Wave fill="#13357a" className="pointer-events-none relative -mb-px -mt-10 sm:-mt-16 lg:-mt-20" />
       <div className="relative overflow-hidden bg-navy">
         <Sparkle className="left-[8%] top-10 size-4" />
-        <Sparkle className="right-[12%] top-24 size-3" delay={1.4} color="#b4deff" />
+        <Sparkle className="right-[4%] top-10 size-3" delay={1.4} color="#b4deff" />
 
         <Container className="relative grid gap-12 pb-10 pt-6 sm:pt-10 lg:grid-cols-[1.3fr_2fr]">
           <div>
@@ -73,7 +73,7 @@ export function SiteFooter() {
         </Container>
 
         <Container className="relative">
-          <div className="flex flex-col items-center justify-between gap-4 border-t border-white/15 py-6 text-sm text-sky-200 sm:flex-row">
+          <div className="clear-host-badge flex flex-col items-center justify-between gap-4 border-t border-white/15 py-6 text-sm text-sky-200 sm:flex-row">
             <p>
               © <CopyrightYear /> {siteConfig.name}. All rights reserved.
             </p>

@@ -49,7 +49,7 @@ export function NewsletterForm({ enabled, className }: { enabled: boolean; class
               required
               autoComplete="email"
               inputMode="email"
-              placeholder={enabled ? "you@example.com" : "Email sign-ups open soon"}
+              placeholder={enabled ? "you@example.com" : "Email sign-ups aren't open yet"}
               disabled={!enabled || pending}
               className={cn(
                 inputClass,

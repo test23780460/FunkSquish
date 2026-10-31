@@ -37,6 +37,9 @@ export function ShopCatalog({ products, category = "all" }: { products: Product[
   const [sort, setSort] = useState<SortKey>("featured");
 
   const hasPrices = products.some((p) => startingPrice(p) !== null);
+  // Wording follows the catalog: "samples" only while everything is an illustrated sample.
+  const allPreview = products.length > 0 && products.every((p) => p.publication === "preview");
+  const noun = (n: number) => (allPreview ? (n === 1 ? "sample" : "samples") : n === 1 ? "squishy" : "squishies");
   const sorts = SORTS.filter((s) => !s.needsPrice || hasPrices);
 
   const setCategory = (next: Filter) => {
@@ -85,7 +88,7 @@ export function ShopCatalog({ products, category = "all" }: { products: Product[
         <div className="flex flex-col gap-3 md:flex-row">
           <div className="relative flex-1">
             <label htmlFor="shop-search" className="sr-only">
-              Search the preview catalog
+              {allPreview ? "Search the preview catalog" : "Search the shop"}
             </label>
             <SearchIcon className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-ink-soft" />
             <input
@@ -156,8 +159,9 @@ export function ShopCatalog({ products, category = "all" }: { products: Product[
         </div>
       </div>
 
+      <h2 className="sr-only">{allPreview ? "Sample designs" : "Squishies"}</h2>
       <p className="mt-6 px-1 font-display font-semibold text-ink-soft" aria-live="polite">
-        {visible.length} {visible.length === 1 ? "sample" : "samples"} shown
+        {visible.length} {noun(visible.length)} shown
       </p>
 
       {visible.length > 0 ? (
@@ -181,7 +185,7 @@ export function ShopCatalog({ products, category = "all" }: { products: Product[
             }}
             className="mt-5 rounded-full bg-royal px-5 py-2.5 font-display font-semibold text-white shadow-[0_4px_0_var(--color-navy)]"
           >
-            Show all samples
+            Show all {noun(2)}
           </button>
         </div>
       )}

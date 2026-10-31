@@ -12,13 +12,22 @@ import { SquishPad } from "./SquishPad";
 import { TextureMeters } from "./TextureMeters";
 
 /** Reads ?texture= so a texture can be linked to directly. Rendered inside <Suspense>. */
-export function SquishLabFromUrl(props: { matches: Record<TextureId, ReactNode> }) {
+export function SquishLabFromUrl(props: { matches: Record<TextureId, ReactNode>; previewOnly?: boolean }) {
   const params = useSearchParams();
   const initial = getTexture(params.get("texture"))?.id ?? "soft";
   return <SquishLab key={initial} initial={initial} {...props} />;
 }
 
-export function SquishLab({ initial = "soft", matches }: { initial?: TextureId; matches: Record<TextureId, ReactNode> }) {
+export function SquishLab({
+  initial = "soft",
+  matches,
+  previewOnly = true,
+}: {
+  initial?: TextureId;
+  matches: Record<TextureId, ReactNode>;
+  /** True while the catalog only holds illustrated samples (wording only). */
+  previewOnly?: boolean;
+}) {
   const [current, setCurrent] = useState<TextureId>(initial);
   const [soundOn, setSoundOn] = useState(false);
   const [squishes, setSquishes] = useState(0);
@@ -140,7 +149,7 @@ export function SquishLab({ initial = "soft", matches }: { initial?: TextureId; 
 
       <section aria-labelledby="matches-title" className="mt-12">
         <h2 id="matches-title" className="font-display text-2xl font-bold text-ink sm:text-3xl">
-          {texture.name} sample designs
+          {texture.name} {previewOnly ? "sample designs" : "squishies"}
         </h2>
         <div className="mt-5">{matches[current]}</div>
       </section>

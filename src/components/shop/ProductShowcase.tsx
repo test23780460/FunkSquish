@@ -262,7 +262,7 @@ export function ProductShowcase({
       <div
         inert={buyBoxVisible}
         className={cn(
-          "fixed inset-x-0 bottom-0 z-40 border-t border-sky-200 bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_-12px_rgba(19,53,122,0.35)] backdrop-blur transition-transform duration-300 lg:hidden",
+          "clear-host-badge fixed inset-x-0 bottom-0 z-40 border-t border-sky-200 bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_-12px_rgba(19,53,122,0.35)] backdrop-blur transition-transform duration-300 lg:hidden",
           buyBoxVisible ? "pointer-events-none translate-y-full" : "translate-y-0",
         )}
       >

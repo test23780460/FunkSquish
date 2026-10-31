@@ -151,7 +151,7 @@ export function WishlistView({ products, shared = [] }: { products: ProductSumma
             <p className="mt-4 font-display text-2xl font-bold text-ink">Your wishlist is empty</p>
             <p className="mt-1 max-w-sm text-ink-soft">Tap the heart on any squishy to save it here.</p>
             <div className="mt-6 flex flex-col gap-3 min-[440px]:flex-row">
-              <Link href="/shop" className={buttonClasses({})}>Browse the shop preview</Link>
+              <Link href="/shop" className={buttonClasses({})}>Browse the shop</Link>
               <Link href="/squish-lab" className={buttonClasses({ variant: "secondary" })}>Visit the Squish Lab</Link>
             </div>
           </div>

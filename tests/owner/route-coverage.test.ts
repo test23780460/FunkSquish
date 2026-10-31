@@ -8,6 +8,8 @@ import { describe, expect, it } from "vitest";
  * that forgets fails this test.
  */
 const ROOT = path.resolve(__dirname, "../../src/app/partners/review");
+/** Forward-slash relative path, so the expectations hold on Windows too. */
+const rel = (f: string) => path.relative(ROOT, f).split(path.sep).join("/");
 
 function files(dir: string, name: (f: string) => boolean): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
@@ -36,7 +38,7 @@ describe("owner area coverage", () => {
   const actionFiles = files(ROOT, (f) => f === "actions.ts");
 
   it("finds the owner action files", () => {
-    expect(actionFiles.map((f) => path.relative(ROOT, f)).sort()).toEqual(["actions.ts", "inventory/actions.ts", "orders/actions.ts", "security/actions.ts"]);
+    expect(actionFiles.map((f) => rel(f)).sort()).toEqual(["actions.ts", "inventory/actions.ts", "orders/actions.ts", "security/actions.ts"]);
   });
 
   it("every exported server action checks the owner session first", () => {
@@ -59,7 +61,7 @@ describe("owner area coverage", () => {
 
   it("every owner download (route handler) checks the session, runs per request and only reads", () => {
     const routes = files(ROOT, (f) => f === "route.ts");
-    expect(routes.map((f) => path.relative(ROOT, f)).sort()).toEqual(["inventory/export/route.ts"]);
+    expect(routes.map((f) => rel(f)).sort()).toEqual(["inventory/export/route.ts"]);
     for (const r of routes) {
       const src = fs.readFileSync(r, "utf8");
       const rel = path.relative(ROOT, r);

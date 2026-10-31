@@ -48,7 +48,9 @@ export function DropAlertForm({ enabled, productName, className }: { enabled: bo
               <input type="text" name="company" tabIndex={-1} autoComplete="off" />
             </label>
           </div>
-          <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+          {/* Side by side only when the card itself is wide enough (it also sits in narrow sidebars). */}
+          <div className="@container mt-3">
+          <div className="flex flex-col gap-3 @sm:flex-row">
             <input
               id={`${id}-email`}
               type="email"
@@ -56,7 +58,7 @@ export function DropAlertForm({ enabled, productName, className }: { enabled: bo
               required
               autoComplete="email"
               inputMode="email"
-              placeholder={enabled ? "you@example.com" : "Alerts open soon"}
+              placeholder={enabled ? "you@example.com" : "Alerts aren't open yet"}
               disabled={!enabled || pending}
               className={cn(
                 "min-h-12 flex-1 rounded-full px-5 text-base text-ink placeholder:text-ink-soft disabled:cursor-not-allowed",
@@ -67,7 +69,7 @@ export function DropAlertForm({ enabled, productName, className }: { enabled: bo
               type="submit"
               disabled={!enabled || pending}
               className={cn(
-                "inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 font-display font-semibold",
+                "inline-flex min-h-12 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full px-6 font-display font-semibold",
                 enabled ? "bg-royal text-white shadow-[0_4px_0_var(--color-navy)] disabled:opacity-70" : "cursor-not-allowed bg-ice text-ink-soft",
               )}
             >
@@ -80,6 +82,7 @@ export function DropAlertForm({ enabled, productName, className }: { enabled: bo
                 </>
               )}
             </button>
+          </div>
           </div>
           {enabled && (
             <label className="mt-3 flex items-start gap-2.5 text-[0.95rem] leading-snug text-ink-soft">
