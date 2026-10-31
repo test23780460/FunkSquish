@@ -282,7 +282,7 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
           <p className="mt-1 text-sm text-ink-soft">Respond in the Stripe Dashboard before the deadline with the order, delivery tracking and your messages with the customer (see docs/COMPLIANCE-LAUNCH-GATES.md, chargeback evidence).</p>
           <ul className="mt-2 space-y-1 text-ink">
             {order.disputes!.map((d) => (
-              <li key={d.stripeDisputeId}>{d.stripeDisputeId}: {usd(d.amount)} · {d.reason ?? "no reason"} · <strong>{d.status.replaceAll("_", " ")}</strong>{d.evidenceDueBy ? ` · evidence due ${fmt(d.evidenceDueBy)}` : ""}</li>
+              <li key={d.stripeDisputeId}>{d.stripeDisputeId}: {usd(d.amount)} · {d.reason ?? "no reason"} · <strong>{d.status.replaceAll("_", " ")}</strong>{d.evidenceDueBy ? ` · evidence due ${fmt(d.evidenceDueBy)}` : ""}{d.needsCheck ? " · Stripe sent conflicting updates: check this dispute in Stripe" : ""}</li>
             ))}
           </ul>
         </section>

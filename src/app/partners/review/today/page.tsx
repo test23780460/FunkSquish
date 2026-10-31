@@ -7,7 +7,7 @@ import { reviewConfig } from "@/lib/partners/config";
 import { requireReviewer } from "@/lib/partners/review-auth";
 import { inventoryContext } from "@/commerce/orders/inventory-context";
 import { listOrders, orderAttention, refundedSoFar } from "@/commerce/orders/admin";
-import { isOpenDispute } from "@/commerce/orders/fulfill";
+import { disputeAttentionLabel, disputeNeedsOwner } from "@/commerce/orders/dispute-status";
 import { shipByState } from "@/commerce/orders/ship-by";
 import { packageLabel } from "@/commerce/orders/notify";
 import { ACTION_WARNINGS, canceledCheckouts, currentLive, loadStockRows } from "@/commerce/orders/stock-admin";
@@ -68,7 +68,7 @@ async function Today() {
     .flatMap((o) => o.fulfillments.filter((g) => UNSHIPPED.has(g.status)).map((g) => ({ o, g })))
     .sort((x, y) => (x.g.shipBy ?? "9999").localeCompare(y.g.shipBy ?? "9999"));
   const emails = orders.map((o) => ({ o, failed: failedEmails(o) })).filter((x) => x.failed.length);
-  const disputes = orders.flatMap((o) => (o.disputes ?? []).filter((d) => isOpenDispute(d.status)).map((d) => ({ o, d })));
+  const disputes = orders.flatMap((o) => (o.disputes ?? []).filter(disputeNeedsOwner).map((d) => ({ o, d })));
   const monthAgo = now.getTime() - 30 * 86_400_000;
   const refunds = orders.flatMap((o) => o.refunds.filter((r) => Date.parse(r.createdAt) >= monthAgo).map((r) => ({ o, r })));
   const stock = rows.filter((r) => r.warnings.some((w) => ACTION_WARNINGS.has(w.code)));
@@ -182,7 +182,7 @@ async function Today() {
           <ul className="mt-2 space-y-1 text-sm">
             {disputes.map(({ o, d }) => (
               <li key={d.stripeDisputeId} className="font-semibold text-[#b8215a]">
-                <Link href={orderHref(o)} className="underline">{o.id}</Link>: dispute {usd(d.amount)} ({d.reason ?? "no reason"}) — answer in Stripe{d.evidenceDueBy ? ` by ${d.evidenceDueBy.slice(0, 10)}` : ""}
+                <Link href={orderHref(o)} className="underline">{o.id}</Link>: {usd(d.amount)} — {disputeAttentionLabel(d)}
               </li>
             ))}
           </ul>

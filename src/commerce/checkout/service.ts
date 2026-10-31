@@ -113,7 +113,17 @@ function depsFrom(rt: ModeRuntime): OrderDeps {
     onHand: onHandIn(rt.products),
     now: () => new Date(),
     afterPaid: (order) => notifyPaidOrder(rt.store, order, notify),
+    retrieveDispute: (id) => retrieveDisputeFacts(rt, id),
   };
+}
+
+/** A dispute as Stripe has it now. Same mode only (a test key can't read live data, and vice versa). */
+async function retrieveDisputeFacts(rt: ModeRuntime, disputeId: string) {
+  if (!/^(du|dp)_[A-Za-z0-9]{6,100}$/.test(disputeId)) throw new Error("Not a Stripe dispute id.");
+  const d = await rt.stripe.disputes.retrieve(disputeId);
+  if (d.livemode !== (rt.mode === "live")) throw new Error("Dispute belongs to the other Stripe mode.");
+  const due = d.evidence_details?.due_by;
+  return { status: d.status, amount: d.amount, evidenceDueBy: typeof due === "number" ? new Date(due * 1000).toISOString() : null };
 }
 
 /** Order-processing dependencies for a mode, or null if that mode isn't open here. */

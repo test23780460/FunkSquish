@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { commitStock, getReservation, releaseStock, unsellStock } from "./inventory";
-import { updateWithRetry, type KvStore } from "./store";
+import { ConflictError, updateWithRetry, type KvStore } from "./store";
+import { disputeNeedsOwner, resolveDispute, sameDisputeFacts, type DisputeFacts } from "./dispute-status";
 import type { SessionSnapshot } from "./session-snapshot";
 import { isAllowedDestination, isMilitaryAddress } from "./shipping-restrictions";
 import { shipByFor } from "./ship-by";
@@ -26,6 +27,11 @@ export interface OrderDeps {
   mode?: "test" | "live";
   /** Sends order emails once an order is paid (see ./notify). Optional so pure tests can skip it. */
   afterPaid?(order: Order): Promise<void>;
+  /**
+   * Reads a dispute's current state from Stripe (same mode only). Used only when an event
+   * disagrees with what's stored. Optional: without it (or if it fails) the event is used.
+   */
+  retrieveDispute?(disputeId: string): Promise<DisputeFacts>;
 }
 
 export const orderKey = (sessionId: string) => `order/session/${sessionId}`;
@@ -269,33 +275,17 @@ export async function getOrderBySession(store: KvStore, sessionId: string): Prom
   return (await store.get<Order>(orderKey(sessionId)))?.value ?? null;
 }
 
-const OPEN_DISPUTE = new Set(["warning_needs_response", "warning_under_review", "needs_response", "under_review"]);
-export const isOpenDispute = (status: string) => OPEN_DISPUTE.has(status);
+export { isOpenDispute } from "./dispute-status";
 
-type DisputeInput = {
+type DisputeInput = DisputeFacts & {
   id: string;
-  amount: number;
   reason: string | null;
-  status: string;
-  evidenceDueBy: string | null;
-  /** When Stripe created the event (ISO), if known. */
+  /** When Stripe created the event (ISO, whole seconds), if known. */
   eventAt?: string | null;
 };
+/** Parked events, one entry per Stripe event (keyed `<dispute id>:<event id>`), so none is lost or merged. */
 type ParkedDisputes = Record<string, { dispute: DisputeInput; source: string; type: string }>;
 const parkedDisputeKey = (paymentIntentId: string) => `dispute/parked/${paymentIntentId}`;
-
-// Stripe doesn't deliver events in order and retries failed deliveries for days, so an older
-// dispute event can arrive after a newer one. Disputes only move forward (inquiry → chargeback →
-// under review → closed), so an event never moves a dispute back a stage; within a stage the newer
-// Stripe event wins. Anything not open (won, lost, warning_closed, …) is the final stage.
-const DISPUTE_STAGE: Record<string, number> = { warning_needs_response: 0, warning_under_review: 1, needs_response: 2, under_review: 3 };
-const disputeStage = (status: string) => DISPUTE_STAGE[status] ?? 4;
-function isStaleDispute(incoming: Pick<DisputeInput, "status" | "eventAt">, known: Pick<DisputeInput, "status" | "eventAt">): boolean {
-  const a = disputeStage(incoming.status);
-  const b = disputeStage(known.status);
-  if (a !== b) return a < b;
-  return !!(incoming.eventAt && known.eventAt && incoming.eventAt < known.eventAt);
-}
 
 /**
  * Record a card dispute reported by Stripe (charge.dispute.created / updated /
@@ -316,9 +306,9 @@ export async function recordDispute(
   // the dispute arrived a second before the order existed). Park it so it isn't lost; the order
   // picks it up when it's created. Re-check afterwards in case the order appeared meanwhile.
   await updateWithRetry<ParkedDisputes>(deps.store, parkedDisputeKey(paymentIntentId), (current) => {
-    const parked = current?.[dispute.id];
-    if (parked && isStaleDispute(dispute, parked.dispute)) return undefined; // a newer event is already parked
-    return { ...(current ?? {}), [dispute.id]: { dispute, source, type } };
+    const key = `${dispute.id}:${source}`;
+    if (current?.[key]) return undefined; // the same event again
+    return { ...(current ?? {}), [key]: { dispute, source, type } };
   });
   return applyParkedDisputes(paymentIntentId, deps);
 }
@@ -332,6 +322,8 @@ async function applyParkedDisputes(paymentIntentId: string, deps: OrderDeps): Pr
     const parked = await deps.store.get<ParkedDisputes>(parkedDisputeKey(paymentIntentId));
     const entries = parked ? Object.values(parked.value) : [];
     if (!parked || entries.length === 0) return applied;
+    // Oldest Stripe event first; applying is order-independent anyway (see ./dispute-status).
+    entries.sort((a, b) => (a.dispute.eventAt ?? "").localeCompare(b.dispute.eventAt ?? "") || a.source.localeCompare(b.source));
     for (const { dispute, source, type } of entries) await applyDispute(link.value.sessionId, dispute, deps, source, type);
     applied = true;
     // Clear only what was applied: if another event was parked meanwhile, go round again.
@@ -340,29 +332,44 @@ async function applyParkedDisputes(paymentIntentId: string, deps: OrderDeps): Pr
   return applied;
 }
 
+/** The dispute as Stripe has it now, or null if there's no reader or Stripe failed (never throws). */
+async function readDisputeFromStripe(disputeId: string, deps: OrderDeps): Promise<{ facts: DisputeFacts; at: string } | null> {
+  if (!deps.retrieveDispute) return null;
+  const at = deps.now().toISOString(); // when the read started: a later read can't be overwritten by this one
+  try {
+    return { facts: await deps.retrieveDispute(disputeId), at };
+  } catch (err) {
+    // Fall back to the event (nothing actionable is hidden; conflicts are marked for the owner).
+    const code = (err as { code?: string; type?: string })?.code ?? (err as { type?: string })?.type ?? "unknown";
+    console.error("[orders] couldn't read dispute from Stripe:", code);
+    return null;
+  }
+}
+
 async function applyDispute(sessionId: string, dispute: DisputeInput, deps: OrderDeps, source: string, type: string): Promise<boolean> {
-  const now = deps.now().toISOString();
-  await updateWithRetry<Order>(deps.store, orderKey(sessionId), (current) => {
-    if (!current) return undefined;
-    const disputes = (current.disputes ??= []);
+  const key = orderKey(sessionId);
+  // undefined = not asked yet. Stripe is asked only when this event disagrees with what's stored.
+  let stripe: { facts: DisputeFacts; at: string } | null | undefined;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const current = await deps.store.get<Order>(key);
+    if (!current) return false;
+    const order = structuredClone(current.value);
+    const disputes = (order.disputes ??= []);
     const existing = disputes.find((d) => d.stripeDisputeId === dispute.id);
-    const eventAt = dispute.eventAt ?? null;
-    if (existing) {
-      // Checked here, inside the compare-and-set, so a stale event loses even when it races a newer one.
-      if (isStaleDispute(dispute, existing)) return undefined;
-      const newer = !!eventAt && eventAt > (existing.eventAt ?? "");
-      const changed = existing.status !== dispute.status || existing.evidenceDueBy !== dispute.evidenceDueBy || existing.amount !== dispute.amount;
-      if (!changed && !newer) return undefined; // duplicate
-      Object.assign(existing, { status: dispute.status, evidenceDueBy: dispute.evidenceDueBy, amount: dispute.amount, updatedAt: now });
-      if (newer) existing.eventAt = eventAt;
-    } else
-      disputes.push({ stripeDisputeId: dispute.id, amount: dispute.amount, reason: dispute.reason, status: dispute.status, evidenceDueBy: dispute.evidenceDueBy, eventAt, createdAt: now, updatedAt: now });
-    const open = disputes.some((d) => isOpenDispute(d.status));
-    current.flags = current.flags.filter((f) => f !== "disputed");
-    if (open) current.flags.push("disputed");
-    current.updatedAt = now;
-    addHistory(current, { source, type: `${type}:${dispute.status}`, at: now });
-    return current;
-  });
-  return true;
+    if (existing && stripe === undefined && !sameDisputeFacts(existing, dispute)) {
+      stripe = await readDisputeFromStripe(dispute.id, deps);
+      continue; // re-read the order: it may have changed while Stripe answered
+    }
+    const next = resolveDispute(existing, dispute, stripe ?? null);
+    if (!next) return true; // nothing new (duplicate, or older than what's stored)
+    const now = deps.now().toISOString();
+    if (existing) Object.assign(existing, next, { updatedAt: now });
+    else disputes.push({ stripeDisputeId: dispute.id, reason: dispute.reason, ...next, createdAt: now, updatedAt: now });
+    order.flags = order.flags.filter((f) => f !== "disputed");
+    if (disputes.some(disputeNeedsOwner)) order.flags.push("disputed");
+    order.updatedAt = now;
+    addHistory(order, { source, type: `${type}:${next.status}${next.needsCheck ? ":unconfirmed" : ""}`, at: now });
+    if (await deps.store.replace(key, order, current.etag)) return true;
+  }
+  throw new ConflictError(key);
 }

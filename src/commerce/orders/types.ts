@@ -142,8 +142,12 @@ export interface DisputeRecord {
   status: string;
   /** When evidence is due (ISO), if Stripe gave one. */
   evidenceDueBy: string | null;
-  /** Stripe's time (ISO) for the event that last changed this record; older events are ignored. */
+  /** Latest Stripe event time (ISO, whole seconds) seen for this dispute. */
   eventAt?: string | null;
+  /** When these facts were last read from Stripe's Dispute object (ISO); null if only from events. */
+  verifiedAt?: string | null;
+  /** Conflicting updates Stripe couldn't be asked about: the owner should check the dispute in Stripe. */
+  needsCheck?: boolean;
   createdAt: string;
   updatedAt: string;
 }
