@@ -12,7 +12,8 @@ import type Stripe from "stripe";
 import { fakeDeps, snapshot, SESSION_ID } from "../orders/helpers";
 
 const reload = async (f: ReturnType<typeof fakeDeps>) => (await f.store.get<Order>(orderKey(SESSION_ID)))!.value;
-const ev = (id: string, type: string, object: Record<string, unknown>): VerifiedEvent => ({ id, type, livemode: false, data: { object } });
+/** `created`: Stripe's event time in seconds (real events always have one). */
+const ev = (id: string, type: string, object: Record<string, unknown>, created?: number): VerifiedEvent => ({ id, type, created, livemode: false, data: { object } });
 
 function mailer(fail = false) {
   const sent: { to: string; subject: string; html: string }[] = [];
@@ -99,16 +100,34 @@ describe("card disputes are recorded on the order", () => {
   it("flags the order while open and clears the flag when closed", async () => {
     const f = await paid();
     const dispute = { id: "dp_1", payment_intent: "pi_test_123", amount: 2250, reason: "product_not_received", status: "needs_response", evidence_details: { due_by: 1762300800 } };
-    await handleStripeEvent(ev("evt_d1", "charge.dispute.created", dispute), f.deps);
+    await handleStripeEvent(ev("evt_d1", "charge.dispute.created", dispute, 1761300000), f.deps);
     let o = await reload(f);
     expect(o.flags).toContain("disputed");
     expect(o.disputes![0]).toMatchObject({ stripeDisputeId: "dp_1", status: "needs_response", reason: "product_not_received", evidenceDueBy: new Date(1762300800 * 1000).toISOString() });
     expect(orderAttention(o)[0].code).toBe("dispute");
-    await handleStripeEvent(ev("evt_d1", "charge.dispute.created", dispute), f.deps); // duplicate
-    await handleStripeEvent(ev("evt_d2", "charge.dispute.closed", { ...dispute, status: "won" }), f.deps);
+    await handleStripeEvent(ev("evt_d1", "charge.dispute.created", dispute, 1761300000), f.deps); // duplicate
+    await handleStripeEvent(ev("evt_d2", "charge.dispute.closed", { ...dispute, status: "won" }, 1761300060), f.deps);
     o = await reload(f);
     expect(o.disputes).toHaveLength(1);
     expect(o.disputes![0].status).toBe("won");
+    expect(o.flags).not.toContain("disputed");
+  });
+
+  it("keeps a dispute that arrives before its order (seen on the preview: 1 s earlier)", async () => {
+    const f = fakeDeps();
+    f.deps.now = () => new Date("2026-10-24T12:00:00Z");
+    const dispute = { id: "dp_early", payment_intent: "pi_test_123", amount: 2250, reason: "fraudulent", status: "needs_response", evidence_details: { due_by: 1762300800 } };
+    expect(await handleStripeEvent(ev("evt_early", "charge.dispute.created", dispute, 1761300000), f.deps)).toEqual({ status: "processed" });
+    await fulfillCheckoutSession(SESSION_ID, f.deps, "evt_1", "checkout.session.completed");
+    let o = await reload(f);
+    expect(o.flags).toContain("disputed");
+    expect(o.disputes).toEqual([expect.objectContaining({ stripeDisputeId: "dp_early", status: "needs_response", reason: "fraudulent" })]);
+    // Applied once: fulfilling again (landing page + webhook) adds nothing, and later events update it.
+    await fulfillCheckoutSession(SESSION_ID, f.deps, "landing-page", "landing-page");
+    await handleStripeEvent(ev("evt_late", "charge.dispute.closed", { ...dispute, status: "lost" }, 1761300060), f.deps);
+    o = await reload(f);
+    expect(o.disputes).toHaveLength(1);
+    expect(o.disputes![0].status).toBe("lost");
     expect(o.flags).not.toContain("disputed");
   });
 });

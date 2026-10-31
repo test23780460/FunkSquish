@@ -4,7 +4,7 @@ import { unsellStock } from "./inventory";
 import { updateWithRetry, type KvStore } from "./store";
 import type { DelayNoticeRecord, FulfillmentGroup, Order, ReturnCause } from "./types";
 import { addBusinessDays, addCalendarDays, easternDate, isValidDay, shipByFor, shipByState } from "./ship-by";
-import { isOpenDispute } from "./fulfill";
+import { disputeAttentionLabel } from "./dispute-status";
 import { delayNoticeEmail, shippingSlotId, type NotifyConfig } from "./notify";
 import { deductWebsiteShipment } from "./stock-admin";
 
@@ -384,9 +384,11 @@ const unshipped = (status: string) => !["shipped", "delivered", "canceled", "los
 export function orderAttention(order: Order, now = new Date()): Attention[] {
   const out: Attention[] = [];
   const live = order.status !== "canceled" && (order.paymentStatus === "paid" || order.paymentStatus === "partially_refunded");
-  for (const d of order.disputes ?? [])
-    if (isOpenDispute(d.status))
-      out.push({ code: "dispute", label: `Card dispute (${d.reason ?? "no reason given"}) — respond in Stripe${d.evidenceDueBy ? ` by ${d.evidenceDueBy.slice(0, 10)}` : ""}` });
+  // Open disputes (including appeals), statuses we don't recognize, and unconfirmed conflicts.
+  for (const d of order.disputes ?? []) {
+    const label = disputeAttentionLabel(d);
+    if (label) out.push({ code: "dispute", label });
+  }
   if (order.flags.includes("restricted_destination")) out.push({ code: "restricted_destination", label: "Territory address — cancel and refund in full" });
   if (order.flags.includes("oversold")) out.push({ code: "oversold", label: "Oversold — contact the customer and refund" });
   if (order.flags.includes("military_unsupported"))

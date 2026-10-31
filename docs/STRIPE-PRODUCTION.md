@@ -97,7 +97,7 @@ tested: sessions request cards only and never a payment-method configuration, sa
 | Variable | Value |
 | --- | --- |
 | `STRIPE_LIVE_CHECKOUT_ENABLED` | `true` — only on launch day |
-| `STRIPE_LIVE_SECRET_KEY` | A **restricted** live key (`rk_live_…`) with **Checkout Sessions: Write**, **Refunds: Write**, and **Products: Read** + **Prices: Read** (order line items are read with their product details — the sandbox key that passed on Oct 24 had these reads; corrected 2026-10-27). Everything else None. |
+| `STRIPE_LIVE_SECRET_KEY` | A **restricted** live key (`rk_live_…`) with **Checkout Sessions: Write**, **Refunds: Write**, and **Products: Read** + **Prices: Read** (order line items are read with their product details — the sandbox key that passed on Oct 24 had these reads; corrected 2026-10-27), and **Disputes: Read** (when Stripe sends conflicting dispute updates, the current Dispute is read to settle them; without it the order falls back to event times and marks unclear disputes "check in Stripe"). Everything else None. |
 | `STRIPE_LIVE_WEBHOOK_SECRET` | From the live webhook endpoint `https://funksquish.com/api/stripe/webhook`, listening to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.updated`, `charge.dispute.closed` |
 | `STRIPE_LIVE_SHIPPING_TABLE` | **Your approval of the exact shipping rates** (replaces `STRIPE_LIVE_SHIPPING_RATE_IDS`, proposal in its own PR, decision D-SHIP-3): the `ship_v1_…` code shown on the owner Orders page under "Shipping rates for live checkout", after you've checked the rates. Not a secret. If the rates later change in code, live checkout closes until you set the new code. The live lock also needs at least one origin with verified, current rates (`docs/MIXED-ORDER-SHIPPING.md` §4). `STRIPE_LIVE_SHIPPING_RATE_IDS` is no longer read — delete it if set. |
 | `STRIPE_LIVE_AUTOMATIC_TAX` | `true` once Stripe Tax has your Kentucky registration |
@@ -106,6 +106,8 @@ tested: sessions request cards only and never a payment-method configuration, sa
 
 The **sandbox** key is restricted to Checkout Sessions only, so the owner page's **Refund** button gets
 `more_permissions_required` in test mode. That's expected; refunds were tested through the Stripe CLI instead.
+It also lacks **Disputes: Read** (checked 2026-10-31: `more_permissions_required`), so on previews conflicting
+dispute events are settled from event times only; add Disputes: Read to the sandbox key to test the Stripe re-read.
 
 ## Failure recovery
 
