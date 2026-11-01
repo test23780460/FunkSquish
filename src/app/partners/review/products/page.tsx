@@ -124,7 +124,7 @@ async function Products({ searchParams }: { searchParams: PageProps<"/partners/r
         </div>
 
         <aside className="space-y-5 lg:sticky lg:top-28">
-          <form id="new" action={createProductAction} className={cn(card, "grid scroll-mt-28 gap-4")}>
+          <form id="new" action={createProductAction} className={cn(card, "grid scroll-mt-2 gap-4")}>
             <div>
               <h2 className="font-display text-lg font-bold text-ink">New product</h2>
               <p className={hint}>Starts as a private draft. You fill in the rest on the next page.</p>

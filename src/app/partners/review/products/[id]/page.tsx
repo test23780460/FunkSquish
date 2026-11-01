@@ -65,6 +65,7 @@ async function Editor({ params, searchParams }: { params: PageProps<"/partners/r
   const p = r.product;
 
   const done = readiness.items.filter((i) => i.ok).length;
+  const blockers = readiness.items.filter((i) => !i.ok).map((i) => i.label);
 
   return (
     <div>
@@ -129,35 +130,54 @@ async function Editor({ params, searchParams }: { params: PageProps<"/partners/r
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_21rem]">
         <aside className="space-y-4 lg:sticky lg:top-28 lg:order-last">
-          <section id="publish" aria-labelledby="ready" className={cn(card, "scroll-mt-28", readiness.ready ? "ring-2 ring-[#9fe3cf]" : "")}>
-            <h2 id="ready" className="font-display text-lg font-bold text-ink">
-              Launch checklist
-            </h2>
-            <div className="mt-3">
-              <Progress done={done} total={readiness.items.length} label={readiness.ready ? "Ready to publish" : "Items done"} />
+          <section id="publish" aria-labelledby="ready" className={cn(card, "scroll-mt-2", readiness.ready ? "ring-2 ring-[#9fe3cf]" : "")}>
+            {/* Phones: a compact summary that opens on demand, so the forms below are one short scroll away. */}
+            <details className="group lg:hidden">
+              <summary className="-m-2 flex cursor-pointer list-none flex-col gap-2 rounded-2xl p-2 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-royal [&::-webkit-details-marker]:hidden">
+                <span className="flex items-center justify-between gap-3">
+                  <h2 id="ready" className="font-display text-lg font-bold text-ink">
+                    Launch checklist
+                  </h2>
+                  <span className="shrink-0 text-sm font-semibold tabular-nums text-ink-soft">
+                    {done}/{readiness.items.length}
+                    <span className="sr-only"> done</span>
+                  </span>
+                </span>
+                <span aria-hidden="true" className="block h-1.5 overflow-hidden rounded-full bg-ice">
+                  <span className={cn("block h-full rounded-full", readiness.ready ? "bg-[#1d9e7e]" : "bg-royal")} style={{ width: `${readiness.items.length ? Math.round((done / readiness.items.length) * 100) : 0}%` }} />
+                </span>
+                <span className="text-sm leading-snug text-ink">
+                  {readiness.ready ? (
+                    "Every item passes — ready to publish."
+                  ) : (
+                    <>
+                      <span className="font-semibold">Still needed:</span> {blockers.slice(0, 2).join(", ")}
+                      {blockers.length > 2 ? ` and ${blockers.length - 2} more` : ""}.
+                    </>
+                  )}
+                </span>
+                <span className="inline-flex min-h-10 items-center gap-1.5 self-start rounded-full bg-ice-50 px-3.5 text-sm font-semibold text-royal ring-1 ring-inset ring-sky-200">
+                  <span className="group-open:hidden">Show checklist</span>
+                  <span className="hidden group-open:inline">Hide checklist</span>
+                  <span aria-hidden="true" className="transition-transform group-open:rotate-180 motion-reduce:transition-none">
+                    ▾
+                  </span>
+                </span>
+              </summary>
+              <div className="mt-4">
+                <ChecklistItems items={readiness.items} />
+              </div>
+            </details>
+            {/* Desktop: the full checklist, always visible beside the form. */}
+            <div className="hidden lg:block">
+              <h2 className="font-display text-lg font-bold text-ink">Launch checklist</h2>
+              <div className="mt-3">
+                <Progress done={done} total={readiness.items.length} label={readiness.ready ? "Ready to publish" : "Items done"} />
+              </div>
+              <div className="mt-4">
+                <ChecklistItems items={readiness.items} />
+              </div>
             </div>
-            <ul className="mt-4 space-y-2.5">
-              {readiness.items.map((i) => (
-                <li key={i.id} className="flex items-start gap-2.5 text-sm">
-                  <span aria-hidden="true" className={cn("mt-0.5 grid size-5 shrink-0 place-items-center rounded-full text-[0.65rem] font-black", i.ok ? "bg-[#1d9e7e] text-white" : "bg-berry-soft text-[#a3174f] ring-1 ring-inset ring-[#f2b9cd]")}>
-                    {i.ok ? "✓" : "!"}
-                  </span>
-                  <span className="min-w-0">
-                    <span className={cn("font-semibold", i.ok ? "text-ink" : "text-[#a3174f]")}>
-                      {i.label}
-                      <span className="sr-only">{i.ok ? " — done" : " — not done"}</span>
-                    </span>
-                    {!i.ok && (
-                      <ul className="mt-0.5 space-y-0.5 text-xs text-ink-soft">
-                        {i.missing.slice(0, 6).map((m) => (
-                          <li key={m}>· {m}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
             <PublishControls r={r} ready={readiness.ready} changed={changed} />
           </section>
         </aside>
@@ -244,7 +264,7 @@ function PublishControls({ r, ready, changed }: { r: ProductRecord; ready: boole
 
 function Section({ id, title, lead, children }: { id: string; title: string; lead?: string; children: React.ReactNode }) {
   return (
-    <section id={id} aria-labelledby={`${id}-t`} className={cn(card, "scroll-mt-28")}>
+    <section id={id} aria-labelledby={`${id}-t`} className={cn(card, "scroll-mt-2")}>
       <h2 id={`${id}-t`} className="font-display text-lg font-bold text-ink sm:text-xl">
         {title}
       </h2>
@@ -536,5 +556,33 @@ function Safety({ r }: { r: ProductRecord }) {
         </SaveBar>
       </form>
     </Section>
+  );
+}
+
+/** The launch checklist rows (shown on phones inside the collapsible panel, on desktop beside the form). */
+function ChecklistItems({ items }: { items: { id: string; label: string; ok: boolean; missing: string[] }[] }) {
+  return (
+    <ul className="space-y-2.5">
+      {items.map((i) => (
+        <li key={i.id} className="flex items-start gap-2.5 text-sm">
+          <span aria-hidden="true" className={cn("mt-0.5 grid size-5 shrink-0 place-items-center rounded-full text-[0.65rem] font-black", i.ok ? "bg-[#1d9e7e] text-white" : "bg-berry-soft text-[#a3174f] ring-1 ring-inset ring-[#f2b9cd]")}>
+            {i.ok ? "✓" : "!"}
+          </span>
+          <span className="min-w-0">
+            <span className={cn("font-semibold", i.ok ? "text-ink" : "text-[#a3174f]")}>
+              {i.label}
+              <span className="sr-only">{i.ok ? " — done" : " — not done"}</span>
+            </span>
+            {!i.ok && (
+              <ul className="mt-0.5 space-y-0.5 text-xs text-ink-soft">
+                {i.missing.slice(0, 6).map((m) => (
+                  <li key={m}>· {m}</li>
+                ))}
+              </ul>
+            )}
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }

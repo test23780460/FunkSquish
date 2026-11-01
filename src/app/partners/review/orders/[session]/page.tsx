@@ -152,7 +152,7 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
             const items = order.lineItems.filter((l) => f.variantIds.includes(l.variantId));
             const open = order.status !== "canceled";
             return (
-            <div key={f.id} id={`pkg-${f.id}`} className={cn(panel, "scroll-mt-28")}>
+            <div key={f.id} id={`pkg-${f.id}`} className={cn(panel, "scroll-mt-2")}>
               <p className="flex flex-wrap items-center gap-2 font-display font-semibold text-ink">
                 {packageLabel(order, f.id)}
                 <Pill tone={PKG_TONE[f.status] ?? "plain"}>{words(f.status)}</Pill>

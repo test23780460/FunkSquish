@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { adjustAction, pauseAction, releaseCanceledAction, resumeAction, tiktokListedAction, undoAction } from "@/app/partners/review/inventory/actions";
-import { ACTION_WARNINGS, KIND_LABEL, type StockRow } from "@/commerce/orders/stock-admin";
+import { ACTION_WARNINGS, KIND_LABEL, LOW_STOCK_WARNING_UNITS, type StockRow } from "@/commerce/orders/stock-admin";
 import { cn } from "./cn";
 import { Pill, card, danger as dangerBtn, input, primary, secondary } from "./OwnerUi";
 
@@ -48,7 +48,7 @@ export function StockCard({ row, back, now, conflict }: { row: StockRow; back: s
   const urgent = row.warnings.filter((w) => ACTION_WARNINGS.has(w.code));
   const reminders = row.warnings.filter((w) => !ACTION_WARNINGS.has(w.code));
   return (
-    <li id={`v-${row.variantId}`} className={cn(card, "scroll-mt-28 p-4 sm:p-5", urgent.some((w) => w.code === "oversold" || w.code === "both-channels-low") && "ring-2 ring-[#d62f6d]")}>
+    <li id={`v-${row.variantId}`} className={cn(card, "scroll-mt-2 p-4 sm:p-5", urgent.some((w) => w.code === "oversold" || w.code === "both-channels-low") && "ring-2 ring-[#d62f6d]")}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="font-display text-lg font-bold leading-tight text-ink">{row.productName}</p>
@@ -75,7 +75,7 @@ export function StockCard({ row, back, now, conflict }: { row: StockRow; back: s
           <dd className="font-display text-2xl font-bold tabular-nums text-ink">{row.sold}</dd>
           <dd className="text-xs text-ink-soft">to ship{row.held ? ` · ${row.held} in checkout` : ""}</dd>
         </div>
-        <div className={cn("rounded-2xl p-2.5 ring-1 ring-inset", row.free === 0 ? "bg-berry-soft ring-[#f2b9cd]" : row.free <= 3 ? "bg-lemon-soft ring-[#f3dd8a]" : "bg-mint-soft ring-[#9fe3cf]")}>
+        <div className={cn("rounded-2xl p-2.5 ring-1 ring-inset", row.free === 0 ? "bg-berry-soft ring-[#f2b9cd]" : row.free <= LOW_STOCK_WARNING_UNITS ? "bg-lemon-soft ring-[#f3dd8a]" : "bg-mint-soft ring-[#9fe3cf]")}>
           <dt className="text-xs font-semibold text-ink">Free to sell</dt>
           <dd className="font-display text-2xl font-bold tabular-nums text-ink">{row.free}</dd>
         </div>

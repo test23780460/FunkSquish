@@ -5,7 +5,7 @@ import { reviewConfig } from "@/lib/partners/config";
 import { requireReviewer } from "@/lib/partners/review-auth";
 import { inventoryContext } from "@/commerce/orders/inventory-context";
 import { getLedger } from "@/commerce/orders/inventory";
-import { BOTH_CHANNELS_WARNING_UNITS, currentLive, lastLive, loadStockRows, salesSince } from "@/commerce/orders/stock-admin";
+import { BOTH_CHANNELS_WARNING_UNITS, LOW_STOCK_WARNING_UNITS, currentLive, lastLive, loadStockRows, salesSince } from "@/commerce/orders/stock-admin";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { INVENTORY_TABS, OwnerNav, OwnerSubNav } from "@/components/owner/OwnerNav";
 import { Callout, Empty, Flash, OwnerShell, PageTitle, Pill, card, input, label, one, panel } from "@/components/owner/OwnerUi";
@@ -83,7 +83,7 @@ async function Live({ searchParams }: { searchParams: PageProps<"/partners/revie
                       <span className="flex-1">
                         <span className="font-semibold">{r.productName}</span> · {r.variantName} <span className="font-mono text-sm text-ink-soft">{r.sku}</span>
                       </span>
-                      <Pill tone={r.free === 0 ? "alert" : r.free <= 3 ? "warn" : "good"}>{r.free} free</Pill>
+                      <Pill tone={r.free === 0 ? "alert" : r.free <= LOW_STOCK_WARNING_UNITS ? "warn" : "good"}>{r.free} free</Pill>
                     </label>
                   </li>
                 ))}

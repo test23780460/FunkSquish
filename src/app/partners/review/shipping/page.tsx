@@ -123,7 +123,7 @@ async function Shipping({ searchParams }: { searchParams: PageProps<"/partners/r
         </p>
       </section>
 
-      <section id="draft" aria-labelledby="dr" className={cn(card, "mt-8 scroll-mt-28 ring-2 ring-sky-300")}>
+      <section id="draft" aria-labelledby="dr" className={cn(card, "mt-8 scroll-mt-2 ring-2 ring-sky-300")}>
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
             <h2 id="dr" className="font-display text-2xl font-bold text-ink">Draft changes (private)</h2>

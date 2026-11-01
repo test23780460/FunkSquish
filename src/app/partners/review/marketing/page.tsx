@@ -89,7 +89,7 @@ async function Marketing({ searchParams }: { searchParams: PageProps<"/partners/
         ))}
       </div>
 
-      <section id="campaigns" className={cn(card, "mt-5 scroll-mt-28")} aria-labelledby="c">
+      <section id="campaigns" className={cn(card, "mt-5 scroll-mt-2")} aria-labelledby="c">
         <h2 id="c" className="font-display text-lg font-bold text-ink sm:text-xl">Drop &amp; restock alerts</h2>
         <p className="mt-1 text-sm text-ink-soft">
           Draft alerts for real products. An alert can only be sent when it&apos;s true (the product is on the website; for a restock, it&apos;s back in stock and buyable), drop alerts are switched on, sending is approved for Production, and two-step sign-in is set up. The same alert for the same products goes out at most once a day.
