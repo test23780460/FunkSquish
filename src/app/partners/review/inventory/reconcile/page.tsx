@@ -78,7 +78,7 @@ async function Reconcile({ searchParams }: { searchParams: PageProps<"/partners/
       </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <section id="tiktok" className={cn(card, "scroll-mt-28")} aria-labelledby="tt">
+        <section id="tiktok" className={cn(card, "scroll-mt-2")} aria-labelledby="tt">
           <h2 id="tt" className="font-display text-lg font-bold text-ink sm:text-xl">Upload TikTok Shop orders</h2>
           <p className={cn("mt-1 text-sm", lastDays !== null && lastDays <= 2 ? "text-ink-soft" : "font-semibold text-[#a3174f]")}>
             {last ? `Last upload ${dateTime(last.at)} (${lastDays} day${lastDays === 1 ? "" : "s"} ago): ${last.applied} change(s), ${last.held} held.` : "Never uploaded."}
@@ -99,7 +99,7 @@ async function Reconcile({ searchParams }: { searchParams: PageProps<"/partners/
           </form>
         </section>
 
-        <section id="counts" className={cn(card, "scroll-mt-28")} aria-labelledby="ct">
+        <section id="counts" className={cn(card, "scroll-mt-2")} aria-labelledby="ct">
           <h2 id="ct" className="font-display text-lg font-bold text-ink sm:text-xl">Upload shelf counts</h2>
           <p className="mt-1 text-sm text-ink-soft">A spreadsheet with columns <span className="font-mono">sku,count</span> (and optional <span className="font-mono">note</span>) sets each count. Counts lower than what website orders need are refused unless you tick the box.</p>
           <form action={importCountsAction} className="mt-3 grid gap-2">
@@ -120,7 +120,7 @@ async function Reconcile({ searchParams }: { searchParams: PageProps<"/partners/
           </a>
         </section>
 
-        <section id="restock" className={cn(card, "scroll-mt-28")} aria-labelledby="rs">
+        <section id="restock" className={cn(card, "scroll-mt-2")} aria-labelledby="rs">
           <h2 id="rs" className="font-display text-lg font-bold text-ink sm:text-xl">Record a delivery (restock)</h2>
           <form action={restockAction} className="mt-3 grid gap-2 sm:grid-cols-2">
             <input type="hidden" name="requestId" value={randomUUID()} />
@@ -150,7 +150,7 @@ async function Reconcile({ searchParams }: { searchParams: PageProps<"/partners/
           )}
         </section>
 
-        <section id="supplier-stock" className={cn(card, "scroll-mt-28")} aria-labelledby="ss">
+        <section id="supplier-stock" className={cn(card, "scroll-mt-2")} aria-labelledby="ss">
           <h2 id="ss" className="font-display text-lg font-bold text-ink sm:text-xl">Supplier stock</h2>
           <p className="mt-1 text-sm text-ink-soft">For items a supplier ships: what they last told you. &ldquo;Out&rdquo; or &ldquo;discontinued&rdquo; pauses the item on the website. Older than 7 days is shown as stale.</p>
           {supplierItems.length === 0 ? (

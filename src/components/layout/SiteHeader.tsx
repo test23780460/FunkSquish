@@ -24,13 +24,15 @@ function OwnerTopBar() {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 rounded-2xl bg-white/90 py-1.5 pl-3 pr-1.5 shadow-[0_10px_30px_-16px_rgba(19,53,122,0.35)] ring-1 ring-sky-200/80 backdrop-blur-md sm:pl-4">
         <div className="flex min-w-0 items-center gap-3">
           <Link href="/partners/review/today" className="shrink-0 rounded-full" aria-label="Owner dashboard overview">
-            <Logo size="sm" />
+            <Logo size="sm" priority />
           </Link>
           <span aria-hidden="true" className="hidden h-6 w-px bg-sky-200 sm:block" />
           <span className="hidden whitespace-nowrap rounded-full bg-ink px-2.5 py-1 font-display text-xs font-semibold uppercase tracking-[0.12em] text-white sm:inline-block">Owner area</span>
         </div>
         <Link href="/" className="inline-flex min-h-10 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 font-display text-sm font-semibold text-ink hover:bg-ice-50 hover:text-royal focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-royal">
-          View website <ArrowRightIcon className="size-4" />
+          <span className="hidden min-[360px]:inline">View website</span>
+          <span className="min-[360px]:hidden">Website</span>
+          <ArrowRightIcon className="size-4" />
         </Link>
       </div>
     </header>

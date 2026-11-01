@@ -350,7 +350,7 @@ export function stockRow(
   else {
     if (sold > onHand) w.push({ code: "oversold", text: `Website orders need ${sold - onHand} more than you have. Check the shelf, then contact those customers.` });
     else if (free === 0 && !ledger?.paused) w.push({ code: "sold-out", text: "Sold out on the website." });
-    else if (free <= LOW_STOCK_WARNING_UNITS) w.push({ code: "low", text: `Low: ${free} left to sell.` });
+    else if (free <= LOW_STOCK_WARNING_UNITS) w.push({ code: "low", text: `Low stock warning: ${free} left to sell (it warns at ${LOW_STOCK_WARNING_UNITS} or fewer).` });
     if (tiktok && item.websiteSellable && !ledger?.paused && free > 0 && free <= BOTH_CHANNELS_WARNING_UNITS)
       w.push({ code: "both-channels-low", text: `On the website and TikTok with only ${free} left — pause it on the website while you sell it on TikTok.` });
   }
