@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { Money } from "@/commerce/types";
 import { formatMoney } from "@/commerce/availability";
+import { trackCommerceEvent } from "@/components/analytics/track";
 import { quoteCheckout, startCheckout } from "@/app/actions/checkout";
 import type { CartQuote } from "@/commerce/checkout/service";
 import { CloseIcon, LockIcon } from "@/components/icons/Icons";
@@ -159,6 +160,7 @@ export function CartProvider({ children, storageKey: key = DEFAULT_KEY }: { chil
           ? lines.map((l) => (l.variantId === line.variantId ? { ...l, quantity: clampQty(l.quantity + quantity) } : l))
           : [...lines, { ...line, quantity: clampQty(quantity) }],
       );
+      trackCommerceEvent("add-to-cart"); // no product, price or person: just that it happened (off until the Privacy Policy lists it)
       setOpen(true);
     },
     setQuantity(variantId, quantity) {
@@ -246,6 +248,7 @@ function CartDrawer() {
     try {
       const result = await startCheckout(sent);
       if (result.ok) {
+        trackCommerceEvent("checkout-start");
         rememberPendingCheckout(localStorage, storageKey, result.checkoutId, sent);
         window.location.assign(result.url);
         return; // stays "Opening secure checkout…" while the browser leaves

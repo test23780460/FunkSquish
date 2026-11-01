@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
+vi.mock("next/headers", () => ({ headers: async () => new Headers({ "x-nf-client-connection-ip": "203.0.113.5" }) })); // documentation-range IP
 import { subscribeToDropAlertsAction } from "@/app/actions/drop-alerts";
 import { subscribeWithDoubleOptIn } from "@/lib/newsletter/brevo";
 

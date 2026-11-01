@@ -59,6 +59,8 @@ export const NOINDEX_PATHS: Record<string, string> = {
   "/partners/review/settings/activity": "Private owner area: activity log (sign-in required)",
   "/partners/review/fulfillment": "Private owner area: packages to ship (sign-in required)",
   "/partners/review/shipping": "Private owner area: shipping set-up (sign-in required)",
+  "/partners/review/marketing": "Private owner area: email lists and alerts (sign-in required)",
+  "/partners/review/analytics": "Private owner area: sales and visitor reports (sign-in required)",
   "/partners/review/inventory": "Private owner area: inventory (sign-in required)",
   "/partners/review/inventory/live": "Private owner area: TikTok LIVE stock (sign-in required)",
   "/partners/review/inventory/activity": "Private owner area: stock activity log (sign-in required)",
