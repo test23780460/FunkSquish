@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { requireReviewer } from "@/lib/partners/review-auth";
 import { siteOrigin } from "@/lib/partners/submit";
-import { activeMode, notifyConfigFor, orderDeps } from "@/commerce/checkout/service";
+import { activeMode, checkStripeKeyPermissions, notifyConfigFor, orderDeps } from "@/commerce/checkout/service";
 import {
   RETURN_CAUSES,
   cancelOrder,
@@ -131,6 +131,25 @@ export async function reconcileAction() {
   } catch (err) {
     console.error("[orders] reconcile failed:", (err as { code?: string })?.code ?? "error");
     q = `error=${msg("Couldn't reach Stripe. Try again in a minute.")}`;
+  }
+  redirect(`${BASE}?${q}`);
+}
+
+/**
+ * Asks Stripe whether this site's key has the permissions live checkout needs
+ * (Disputes: Read). Works before live checkout is open, so it isn't tied to a
+ * Stripe mode being switched on. Read-only: nothing from Stripe is kept.
+ */
+export async function checkKeyPermissionsAction() {
+  const ctx = await requireReviewer();
+  if (!ctx) redirect("/partners/review");
+  let q = "keys=none";
+  try {
+    const r = await checkStripeKeyPermissions();
+    if (r) q = `keys=${r.mode}-${r.result.ready ? "ready" : r.result.reason}`;
+  } catch (err) {
+    console.error("[orders] key permission check failed:", (err as { code?: string })?.code ?? "error");
+    q = "keys=error";
   }
   redirect(`${BASE}?${q}`);
 }

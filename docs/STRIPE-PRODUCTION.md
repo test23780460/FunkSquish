@@ -109,6 +109,20 @@ The **sandbox** key is restricted to Checkout Sessions only, so the owner page's
 It also lacks **Disputes: Read** (checked 2026-10-31: `more_permissions_required`), so on previews conflicting
 dispute events are settled from event times only; add Disputes: Read to the sandbox key to test the Stripe re-read.
 
+### Key permission lock (Disputes: Read)
+
+A key's permissions live in Stripe, so live checkout **asks Stripe** before opening
+(`src/commerce/checkout/key-permissions.ts`): one read-only `disputes.list` call with `limit: 1`; nothing it returns is
+kept. Missing **Disputes: Read** (Stripe answers `more_permissions_required`), a rejected key, or Stripe being
+unreachable all keep live checkout and cart quotes closed, with an owner-facing log line (no key text). A pass is reused
+for 10 minutes per server instance, a failure for 1 minute, and "unreachable" not at all. Test mode is **not** gated,
+so previews keep working with the sandbox key as it is.
+
+**Check key permissions** on the owner Orders page asks Stripe immediately about the key this site uses: the sandbox
+key on previews; on production, the live key **even before the other live locks are open**, so a missing permission
+can be fixed before launch. A live answer also refreshes the checkout gate at once. CI's safeguards check fails if
+the requirement or the gate is removed.
+
 ## Failure recovery
 
 | Problem | What happens / what to do |
@@ -164,7 +178,8 @@ dispute events are settled from event times only; add Disputes: Read to the sand
 5. Products: real, sellable products in the catalog with price, tracked stock, SKU, weight, age grade and safety
    documents (`npm run catalog:check`); final-sale labels before any blind-bag items.
 6. Live keys and webhook created **by you** in the Stripe Dashboard and saved in Netlify Production as secrets (never in
-   chat or GitHub).
+   chat or GitHub). Then press **Check key permissions** on the owner Orders page: it must say the live key has
+   **Disputes: Read**. Live checkout stays closed until Stripe confirms it (see "Key permission lock" below).
 7. Owner security: two-step sign-in set up **on production** (checkout stays closed without it), then `OWNER_MFA_REQUIRED=true` for Production
    (`docs/OWNER-SECURITY.md`); two-step verification on Stripe, Netlify, Google, GitHub, Brevo and TikTok Shop.
 8. Inventory: starting counts confirmed on the production inventory page for every product being sold
