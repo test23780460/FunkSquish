@@ -15,8 +15,8 @@ import { liveCodeSwitchOn } from "@/commerce/checkout/live";
 import { activeMode } from "@/commerce/checkout/service";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav, OwnerSubNav, SETTINGS_TABS } from "@/components/owner/OwnerNav";
-import { Flash, OwnerShell, PageTitle, Pill, card, dateTime, input, label, one, primary, secondary } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { Flash, OwnerShell, PageTitle, Pill, card, dateTime, input, label, one, primary, secondary, fileInput } from "@/components/owner/OwnerUi";
+import { cn } from "@/components/owner/cn";
 import { pruneAuditAction, restoreBackupAction } from "./actions";
 
 export const metadata: Metadata = { title: "Settings", robots: { index: false, follow: false } };
@@ -85,7 +85,7 @@ async function Settings({ searchParams }: { searchParams: PageProps<"/partners/r
 
       <div className="grid gap-5 lg:grid-cols-2">
         <section aria-labelledby="env" className={card}>
-          <h2 id="env" className="font-display text-xl font-bold text-ink">This site</h2>
+          <h2 id="env" className="font-display text-lg font-bold text-ink sm:text-xl">This site</h2>
           <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm text-ink">
             <dt className="font-semibold">Environment</dt>
             <dd>{env === "production" ? "Production (funksquish.com)" : env === "preview" ? "Deploy preview — test data only" : "Local development — data disappears on restart"}</dd>
@@ -100,7 +100,7 @@ async function Settings({ searchParams }: { searchParams: PageProps<"/partners/r
         </section>
 
         <section aria-labelledby="switches" className={card}>
-          <h2 id="switches" className="font-display text-xl font-bold text-ink">Launch switches</h2>
+          <h2 id="switches" className="font-display text-lg font-bold text-ink sm:text-xl">Launch switches</h2>
           <p className="mt-1 text-sm text-ink-soft">These are set in code and checked on every pull request, so nothing can switch on by accident. Turning one on is a launch PR you approve.</p>
           <ul className="mt-3 space-y-2">
             {switches.map((s) => (
@@ -116,7 +116,7 @@ async function Settings({ searchParams }: { searchParams: PageProps<"/partners/r
         </section>
 
         <section aria-labelledby="int" className={cn(card, "lg:col-span-2")}>
-          <h2 id="int" className="font-display text-xl font-bold text-ink">Integrations</h2>
+          <h2 id="int" className="font-display text-lg font-bold text-ink sm:text-xl">Integrations</h2>
           <ul className="mt-2 divide-y divide-sky-100">
             {integrations.map((i) => (
               <li key={i.name} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
@@ -130,7 +130,7 @@ async function Settings({ searchParams }: { searchParams: PageProps<"/partners/r
         </section>
 
         <section id="backup" aria-labelledby="bk" className={cn(card, "lg:col-span-2")}>
-          <h2 id="bk" className="font-display text-xl font-bold text-ink">Backups</h2>
+          <h2 id="bk" className="font-display text-lg font-bold text-ink sm:text-xl">Backups</h2>
           <p className="mt-1 text-sm text-ink">
             Last download: <strong>{backupAt ? dateTime(backupAt) : "never"}</strong>. The backup holds products, private costs, suppliers, shipping set-up, catalog releases and the activity log —
             keep it somewhere private (not GitHub, not email). Orders and stock have their own exports on the Orders and Inventory pages.
@@ -143,7 +143,7 @@ async function Settings({ searchParams }: { searchParams: PageProps<"/partners/r
             <p className="text-sm text-ink-soft">Adds anything missing. It only replaces records that changed if you tick the box and type RESTORE. It never deletes. Press &ldquo;Check only&rdquo; first to see what would change.</p>
             <label className={label}>
               Backup file
-              <input name="file" type="file" accept="application/json,.json" required className="text-sm" />
+              <input name="file" type="file" accept="application/json,.json" required className={fileInput} />
             </label>
             <label className="flex items-center gap-2 text-sm text-ink">
               <input name="overwrite" type="checkbox" value="yes" className="size-5" /> Also replace records that are different now
@@ -160,7 +160,7 @@ async function Settings({ searchParams }: { searchParams: PageProps<"/partners/r
         </section>
 
         <section aria-labelledby="prev" className={card}>
-          <h2 id="prev" className="font-display text-xl font-bold text-ink">Deploy preview protection</h2>
+          <h2 id="prev" className="font-display text-lg font-bold text-ink sm:text-xl">Deploy preview protection</h2>
           <p className="mt-1 text-sm text-ink">
             Previews hold test data and the test owner login, so only your Netlify team should open them. If it&apos;s off (it was turned off for webhook testing), turn it back on in Netlify:
           </p>
@@ -173,7 +173,7 @@ async function Settings({ searchParams }: { searchParams: PageProps<"/partners/r
         </section>
 
         <section aria-labelledby="ret" className={card}>
-          <h2 id="ret" className="font-display text-xl font-bold text-ink">Activity log retention</h2>
+          <h2 id="ret" className="font-display text-lg font-bold text-ink sm:text-xl">Activity log retention</h2>
           <p className="mt-1 text-sm text-ink">The activity log keeps two years of owner actions (ids and short descriptions only — no customer details). Older entries can be removed here.</p>
           <form action={pruneAuditAction} className="mt-3">
             <button className={secondary}>Remove entries older than 2 years</button>

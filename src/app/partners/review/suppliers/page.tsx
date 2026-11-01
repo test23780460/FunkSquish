@@ -14,8 +14,8 @@ import { supplierFacts } from "@/commerce/suppliers/compare";
 import { packageSupplierId } from "@/commerce/suppliers/export";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav, OwnerSubNav, SUPPLIER_TABS } from "@/components/owner/OwnerNav";
-import { Empty, Flash, OwnerShell, PageTitle, Pill, card, input, label, one, primary } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { Chips, Count, Empty, Flash, OwnerShell, PageTitle, Pill, card, input, label, one, primary, secondary, small } from "@/components/owner/OwnerUi";
+import { cn } from "@/components/owner/cn";
 import { createSupplierAction } from "./actions";
 
 export const metadata: Metadata = { title: "Suppliers", robots: { index: false, follow: false } };
@@ -54,13 +54,13 @@ async function Suppliers({ searchParams }: { searchParams: PageProps<"/partners/
 
       {waiting.length > 0 && (
         <section aria-labelledby="w" className={cn(card, "mb-5 ring-2 ring-lemon")}>
-          <h2 id="w" className="font-display text-xl font-bold text-ink">Supplier packages that need you ({waiting.length})</h2>
+          <h2 id="w" className="flex items-center gap-2 font-display text-lg font-bold text-ink sm:text-xl">Supplier packages that need you <Count n={waiting.length} tone="warn" /></h2>
           <ul className="mt-2 space-y-1.5 text-sm">
             {waiting.slice(0, 15).map(({ order, group, why }) => {
               const sid = packageSupplierId(group, records, suppliers);
               return (
                 <li key={`${order.id}-${group.id}`}>
-                  <Link href={`/partners/review/orders/${order.stripeCheckoutSessionId}#pkg-${encodeURIComponent(group.id)}`} className="block rounded-xl bg-lemon-soft/60 px-3 py-2 text-ink hover:ring-2 hover:ring-royal">
+                  <Link href={`/partners/review/orders/${order.stripeCheckoutSessionId}#pkg-${encodeURIComponent(group.id)}`} className="block rounded-xl bg-lemon-soft/60 px-3 py-2.5 text-ink ring-1 ring-inset ring-[#f3dd8a] hover:ring-2 hover:ring-royal">
                     <strong>{order.id}</strong> · {suppliers.find((s) => s.id === sid)?.name ?? "supplier not linked"} — {why}
                   </Link>
                 </li>
@@ -70,25 +70,22 @@ async function Suppliers({ searchParams }: { searchParams: PageProps<"/partners/
         </section>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_20rem]">
-        <div>
-          <nav aria-label="Filter suppliers" className="mb-4 flex flex-wrap gap-2">
-            <Link href="/partners/review/suppliers" className={cn("inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold", !status && !showArchived ? "bg-ink text-white" : "bg-white text-ink ring-1 ring-inset ring-sky-200")}>
-              All ({suppliers.filter((s) => !s.archived).length})
-            </Link>
-            {SUPPLIER_STATUSES.map((s) => (
-              <Link key={s} href={`/partners/review/suppliers?status=${s}`} className={cn("inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold capitalize", status === s ? "bg-ink text-white" : "bg-white text-ink ring-1 ring-inset ring-sky-200")}>
-                {s} ({suppliers.filter((x) => !x.archived && x.status === s).length})
-              </Link>
-            ))}
-            <Link href="/partners/review/suppliers?archived=1" className={cn("inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold", showArchived ? "bg-ink text-white" : "bg-white text-ink ring-1 ring-inset ring-sky-200")}>
-              Archived ({suppliers.filter((s) => s.archived).length})
-            </Link>
-          </nav>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="min-w-0">
+          <div className="mb-4">
+            <Chips
+              label="Filter suppliers"
+              items={[
+                { href: "/partners/review/suppliers", label: "All", count: suppliers.filter((s) => !s.archived).length, active: !status && !showArchived },
+                ...SUPPLIER_STATUSES.map((st) => ({ href: `/partners/review/suppliers?status=${st}`, label: <span className="capitalize">{st}</span>, count: suppliers.filter((x) => !x.archived && x.status === st).length, active: status === st })),
+                { href: "/partners/review/suppliers?archived=1", label: "Archived", count: suppliers.filter((s) => s.archived).length, active: showArchived },
+              ]}
+            />
+          </div>
           {suppliers.length === 0 ? (
-            <Empty>No suppliers yet. Add one on the right. (Partner applications from the public form are under &ldquo;Partner applications&rdquo; above.)</Empty>
+            <Empty title="No suppliers yet">Add one with the form beside this list. (Partner applications from the public form are under &ldquo;Partner applications&rdquo; above.)</Empty>
           ) : shown.length === 0 ? (
-            <Empty>No suppliers here.</Empty>
+            <Empty compact title="No suppliers here" action={<Link href="/partners/review/suppliers" className={cn(secondary, small)}>Show all</Link>} />
           ) : (
             <ul className="grid gap-3">
               {shown.map((s) => {

@@ -14,7 +14,7 @@ import { buttonClasses } from "@/components/ui/Button";
 import { LockIcon } from "@/components/icons/Icons";
 
 const field =
-  "mt-1.5 min-h-12 w-full rounded-2xl bg-ice-50 px-4 text-xl tracking-[0.2em] text-ink ring-2 ring-inset ring-sky-200 focus:outline-none focus:ring-royal";
+  "mt-1.5 min-h-12 w-full rounded-xl bg-white px-4 text-xl tracking-[0.2em] text-ink shadow-[inset_0_1px_2px_rgba(19,53,122,0.06)] ring-1 ring-inset ring-sky-200 focus:outline-none focus:ring-2 focus:ring-royal";
 
 function Alert({ text, id }: { text: string | null; id: string }) {
   return text ? (
@@ -28,7 +28,7 @@ function Alert({ text, id }: { text: string | null; id: string }) {
 export function MfaVerifyForm() {
   const [state, action, pending] = useActionState<CodeState, FormData>(verifyMfaAction, { error: null });
   return (
-    <form action={action} className="mx-auto max-w-md rounded-[2rem] bg-white p-6 shadow-[var(--shadow-card)] ring-1 ring-inset ring-sky-200 sm:p-8">
+    <form action={action} className="mx-auto max-w-md rounded-3xl bg-white p-6 shadow-[0_1px_2px_rgba(19,53,122,0.05),0_12px_32px_-20px_rgba(19,53,122,0.28)] ring-1 ring-sky-100 sm:p-8">
       <span className="grid size-12 place-items-center rounded-2xl bg-ice text-royal">
         <LockIcon className="size-6" />
       </span>
@@ -62,7 +62,7 @@ export function MfaVerifyForm() {
 
 function RecoveryCodes({ codes }: { codes: string[] }) {
   return (
-    <div className="mt-4 rounded-2xl bg-lemon-soft p-4">
+    <div className="mt-4 rounded-2xl bg-lemon-soft p-4 ring-1 ring-inset ring-[#f3dd8a]">
       <p className="font-display font-bold text-ink">Save these recovery codes now — they won&apos;t be shown again.</p>
       <p className="mt-1 text-sm text-ink">Each one signs you in once if you lose your phone. Keep them somewhere safe that isn&apos;t this phone (a password manager, or printed and put away). Never send them in a message.</p>
       <ul className="mt-3 grid grid-cols-2 gap-2 font-mono text-base text-ink sm:text-lg" aria-label="Recovery codes">
@@ -87,7 +87,7 @@ export function EnrollPanel({ pending, children }: { pending: boolean; children?
   const [state, action, busy] = useActionState<CodesState, FormData>(confirmEnrollmentAction, { error: null, codes: null });
   if (state.codes)
     return (
-      <section aria-labelledby="codes-title" className="rounded-[2rem] bg-white p-5 ring-2 ring-inset ring-mint sm:p-6">
+      <section aria-labelledby="codes-title" className="rounded-3xl bg-white p-5 shadow-[0_1px_2px_rgba(19,53,122,0.05),0_12px_32px_-20px_rgba(19,53,122,0.28)] ring-2 ring-mint sm:p-6">
         <h2 id="codes-title" className="sr-only">Recovery codes</h2>
         <p role="status" className="rounded-2xl bg-mint-soft px-4 py-3 font-semibold text-ink">
           Two-step sign-in is on. Every other device has been signed out.
@@ -100,7 +100,7 @@ export function EnrollPanel({ pending, children }: { pending: boolean; children?
     );
   if (!pending) return null;
   return (
-    <section aria-labelledby="setup" className="rounded-[2rem] bg-white p-5 ring-1 ring-inset ring-sky-200 sm:p-6">
+    <section aria-labelledby="setup" className="rounded-3xl bg-white p-5 shadow-[0_1px_2px_rgba(19,53,122,0.05),0_12px_32px_-20px_rgba(19,53,122,0.28)] ring-1 ring-sky-100 sm:p-6">
       {children}
       <form action={action} className="mt-4">
         <label htmlFor="enroll-code" className="block font-display font-semibold text-ink">
@@ -149,7 +149,7 @@ export function DisableMfaForm() {
         <input name="confirm" required autoComplete="off" className={`${field} tracking-normal`} />
       </label>
       <Alert text={state.error} id="disable-error" />
-      <button type="submit" disabled={pending} className="justify-self-start rounded-full bg-white px-5 py-3 font-display font-semibold text-[#b8215a] ring-2 ring-inset ring-[#b8215a]">
+      <button type="submit" disabled={pending} className="justify-self-start rounded-full bg-white px-5 py-3 font-display font-semibold text-[#a3174f] ring-2 ring-inset ring-[#a3174f]">
         Turn off and sign out everywhere
       </button>
     </form>

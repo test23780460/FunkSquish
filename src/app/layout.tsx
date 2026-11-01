@@ -3,6 +3,7 @@ import { launchCopy } from "@/content/launch";
 import { Fredoka, Nunito } from "next/font/google";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { HideInOwnerArea } from "@/components/layout/HideInOwnerArea";
 import { siteConfig } from "@/lib/site";
 import { features } from "@/lib/features";
 import { Analytics } from "@/components/analytics/Analytics";
@@ -64,7 +65,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <main id="main" className="flex-1">
               {children}
             </main>
-            <SiteFooter />
+            <HideInOwnerArea>
+              <SiteFooter />
+            </HideInOwnerArea>
           </CartProvider>
         ) : (
           <>
@@ -72,7 +75,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <main id="main" className="flex-1">
               {children}
             </main>
-            <SiteFooter />
+            <HideInOwnerArea>
+              <SiteFooter />
+            </HideInOwnerArea>
           </>
         )}
         <Analytics />

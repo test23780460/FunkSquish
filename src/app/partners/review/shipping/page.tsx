@@ -12,7 +12,7 @@ import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav } from "@/components/owner/OwnerNav";
 import { Area, Check, Select, Text } from "@/components/owner/Fields";
 import { Flash, Missing, OwnerShell, PageTitle, Pill, card, dateTime, input, one, primary, secondary } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 import { removeOriginAction, resetDraftAction, saveOriginAction } from "./actions";
 
 export const metadata: Metadata = { title: "Shipping", robots: { index: false, follow: false } };
@@ -79,7 +79,7 @@ async function Shipping({ searchParams }: { searchParams: PageProps<"/partners/r
           return (
             <li key={o.id} className={cn(card, problem ? "ring-2 ring-lemon" : "")}>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="font-display text-xl font-bold text-ink">
+                <h3 className="font-display text-lg font-bold text-ink sm:text-xl">
                   {o.publicLabel} <span className="font-mono text-sm font-normal text-ink-soft">({o.id})</span>
                 </h3>
                 <Pill tone={problem ? "warn" : "good"}>{problem ? "Can't be checked out yet" : "Ready"}</Pill>
@@ -113,7 +113,7 @@ async function Shipping({ searchParams }: { searchParams: PageProps<"/partners/r
       </ul>
 
       <section aria-labelledby="appr" className={cn(card, "mt-5")}>
-        <h2 id="appr" className="font-display text-xl font-bold text-ink">Approval for live checkout</h2>
+        <h2 id="appr" className="font-display text-lg font-bold text-ink sm:text-xl">Approval for live checkout</h2>
         <p className="mt-1 text-sm text-ink">
           Places with verified, current rates: <strong>{approval.verifiedOrigins}</strong> of {SHIPPING_ORIGINS.length}. {approval.problem ? SHIPPING_LOCK_TEXT[approval.problem] : "Live checkout may use this table."}
         </p>
@@ -154,7 +154,7 @@ async function Shipping({ searchParams }: { searchParams: PageProps<"/partners/r
                   <form action={removeOriginAction} className="mt-2">
                     <input type="hidden" name="existingId" value={o.id} />
                     <input type="hidden" name="rev" value={draft.rev} />
-                    <button className="text-sm font-semibold text-[#b8215a] underline">Remove from draft</button>
+                    <button className="text-sm font-semibold text-[#a3174f] underline">Remove from draft</button>
                   </form>
                 )}
               </details>
@@ -190,7 +190,7 @@ async function Shipping({ searchParams }: { searchParams: PageProps<"/partners/r
               (preview.ok ? (
                 <div className="rounded-xl bg-mint-soft/60 p-3 text-sm text-ink">
                   <p className="font-semibold">Example total shipping: {usd(preview.quote.totalCents)}</p>
-                  {preview.unverified.length > 0 && <p className="font-semibold text-[#b8215a]">Not verified yet: {preview.unverified.join(", ")} — priced here for checking, but checkout won&apos;t use these rates until they&apos;re verified and applied.</p>}
+                  {preview.unverified.length > 0 && <p className="font-semibold text-[#a3174f]">Not verified yet: {preview.unverified.join(", ")} — priced here for checking, but checkout won&apos;t use these rates until they&apos;re verified and applied.</p>}
                   <ul className="mt-1 list-disc pl-5">
                     {preview.quote.packages.map((p) => (
                       <li key={p.groupId}>
@@ -237,7 +237,7 @@ async function Shipping({ searchParams }: { searchParams: PageProps<"/partners/r
                     Once that&apos;s merged and deployed, set <span className="font-mono">STRIPE_LIVE_SHIPPING_TABLE</span> to the new code for Production (only when live checkout is approved). Until it matches, live checkout stays closed.
                   </li>
                 </ol>
-                {status?.removed.length ? <p className="text-sm font-semibold text-[#b8215a]">Removed in the draft: {status.removed.join(", ")} — products using them stop being checkout-ready.</p> : null}
+                {status?.removed.length ? <p className="text-sm font-semibold text-[#a3174f]">Removed in the draft: {status.removed.join(", ")} — products using them stop being checkout-ready.</p> : null}
               </>
             )}
             <p className="text-xs text-ink-soft">Why not instant? This changes what customers pay, so it goes through a reviewed deploy and your approval code — a rate can never change on customers without you seeing it first.</p>

@@ -16,8 +16,8 @@ import { packageLabel } from "@/commerce/orders/notify";
 import { fulfillmentQueue, QUEUE_LABEL, QUEUES, type QueueId } from "@/commerce/orders/fulfillment-queue";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav } from "@/components/owner/OwnerNav";
-import { Empty, OwnerShell, PageTitle, Pill, card, one } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { Chips, Empty, OwnerShell, PageTitle, Pill, card, one } from "@/components/owner/OwnerUi";
+import { cn } from "@/components/owner/cn";
 
 export const metadata: Metadata = { title: "Fulfillment", robots: { index: false, follow: false } };
 
@@ -63,20 +63,11 @@ async function Fulfillment({ searchParams }: { searchParams: PageProps<"/partner
           </>
         }
       />
-      <nav aria-label="Package queues" className="mb-4 flex flex-wrap gap-2">
-        {QUEUES.map((id) => (
-          <Link
-            key={id}
-            href={`/partners/review/fulfillment?q=${id}`}
-            aria-current={active === id ? "page" : undefined}
-            className={cn("inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold", active === id ? "bg-ink text-white" : "bg-white text-ink ring-1 ring-inset ring-sky-200")}
-          >
-            {QUEUE_LABEL[id]} ({queue[id].length})
-          </Link>
-        ))}
-      </nav>
+      <div className="mb-4">
+        <Chips label="Package queues" items={QUEUES.map((id) => ({ href: `/partners/review/fulfillment?q=${id}`, label: QUEUE_LABEL[id], count: queue[id].length, active: active === id }))} />
+      </div>
       {rows.length === 0 ? (
-        <Empty>{orders.length ? "No packages here." : "No orders yet — packages appear here once orders come in."}</Empty>
+        <Empty title={orders.length ? "Nothing in this queue" : "No orders yet"}>{orders.length ? "No packages here right now." : "Packages appear here once orders come in."}</Empty>
       ) : (
         <ul className="grid gap-3">
           {rows.map(({ order: o, group: g, items }) => {
@@ -84,7 +75,7 @@ async function Fulfillment({ searchParams }: { searchParams: PageProps<"/partner
             return (
               <li key={`${o.id}-${g.id}`} className={cn(card, "p-4")}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <Link href={`/partners/review/orders/${o.stripeCheckoutSessionId}#pkg-${encodeURIComponent(g.id)}`} className="font-display text-lg font-bold text-ink underline decoration-sky-300 underline-offset-4">
+                  <Link href={`/partners/review/orders/${o.stripeCheckoutSessionId}#pkg-${encodeURIComponent(g.id)}`} className="font-display text-lg font-bold text-ink underline decoration-sky-300 underline-offset-4 hover:decoration-royal">
                     {o.id} · {packageLabel(o, g.id)}
                   </Link>
                   <span className="flex flex-wrap gap-1.5">

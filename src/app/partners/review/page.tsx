@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -12,11 +11,11 @@ import { deletionState } from "@/lib/partners/deletion";
 import { listDeletionRequests } from "@/lib/partners/deletion-requests";
 import { PARTNER_TYPES, STAGES, STAGE_LABELS, isPartnerType, isStage } from "@/lib/partners/schema";
 import { screeningFlags } from "@/lib/partners/screening";
-import { Container } from "@/components/ui/Primitives";
+import { Chips, Empty, Flash, OwnerShell, PageTitle, Pill, Section, card, one, primary, secondary, small, type PillTone } from "@/components/owner/OwnerUi";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav, OwnerSubNav, SUPPLIER_TABS } from "@/components/owner/OwnerNav";
 import { logoutAction, runCleanupAction } from "./actions";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 
 export const metadata: Metadata = { title: "Partner applications", robots: { index: false, follow: false } };
 
@@ -24,22 +23,18 @@ export const metadata: Metadata = { title: "Partner applications", robots: { ind
 export default function ReviewPage({ searchParams }: PageProps<"/partners/review">) {
   if (!reviewConfig()) notFound();
   return (
-    <section className="min-h-screen bg-ice-50 pb-24 pt-28 sm:pt-32">
-      <Container>
-        <Suspense fallback={<p className="text-ink-soft">Loading…</p>}>
-          <Review searchParams={searchParams} />
-        </Suspense>
-      </Container>
-    </section>
+    <OwnerShell>
+      <Review searchParams={searchParams} />
+    </OwnerShell>
   );
 }
 
-const stageTone: Record<string, string> = {
-  new: "bg-royal text-white",
-  "under-review": "bg-lemon-soft text-ink",
-  "need-info": "bg-peach-soft text-ink",
-  approved: "bg-mint-soft text-ink",
-  declined: "bg-white text-ink-soft ring-1 ring-inset ring-sky-200",
+const stageTone: Record<string, PillTone> = {
+  new: "info",
+  "under-review": "warn",
+  "need-info": "warn",
+  approved: "good",
+  declined: "plain",
 };
 
 async function Review({ searchParams }: { searchParams: PageProps<"/partners/review">["searchParams"] }) {
@@ -48,7 +43,6 @@ async function Review({ searchParams }: { searchParams: PageProps<"/partners/rev
   if (!ctx) return <ReviewLogin />;
 
   const params = await searchParams;
-  const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
   const status = isStage(one(params.status)) ? one(params.status) : null;
   const type = isPartnerType(one(params.type)) ? one(params.type) : null;
 
@@ -76,103 +70,96 @@ async function Review({ searchParams }: { searchParams: PageProps<"/partners/rev
     <div>
       <OwnerNav current="/partners/review" />
       <OwnerSubNav label="Supplier pages" items={SUPPLIER_TABS} current="/partners/review" />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-3xl font-bold text-ink sm:text-4xl">Partner applications</h1>
-          <p className="text-ink-soft">
-            {all.length} total · storage: {ctx.cfg.storage === "memory" ? "local test memory (not durable)" : `Netlify Blobs${ctx.cfg.storeSuffix ? " (preview data)" : ""}`}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-        <Link href="/partners/review/orders" className="rounded-full bg-white px-4 py-2 font-display font-semibold text-ink ring-1 ring-inset ring-sky-200 hover:bg-ice">
-          Orders
-        </Link>
-        <form action={logoutAction}>
-          <button type="submit" className="rounded-full bg-white px-4 py-2 font-display font-semibold text-ink ring-1 ring-inset ring-sky-200 hover:bg-ice">
-            Sign out
-          </button>
-        </form>
-        </div>
-      </div>
-      {one(params.deleted) && <p role="status" className="mt-4 rounded-2xl bg-mint-soft px-4 py-3 font-semibold text-ink">Application deleted.</p>}
-      {one(params.cleanup) && (
-        <p role="status" className="mt-4 rounded-2xl bg-mint-soft px-4 py-3 font-semibold text-ink">
-          {one(params.cleanup) === "dry-run" ? "Dry run finished — nothing was deleted. See the report below." : `Cleanup finished (${one(params.cleanup)}).`}
-        </p>
-      )}
+      <PageTitle
+        title="Partner applications"
+        lead={<>{all.length} total · storage: {ctx.cfg.storage === "memory" ? "local test memory (not durable)" : `Netlify Blobs${ctx.cfg.storeSuffix ? " (preview data)" : ""}`}</>}
+        actions={
+          <form action={logoutAction}>
+            <button type="submit" className={cn(secondary, small)}>
+              Sign out
+            </button>
+          </form>
+        }
+      />
+      <Flash
+        ok={
+          one(params.deleted)
+            ? "Application deleted."
+            : one(params.cleanup)
+              ? one(params.cleanup) === "dry-run"
+                ? "Dry run finished — nothing was deleted. See the report below."
+                : `Cleanup finished (${one(params.cleanup)}).`
+              : null
+        }
+      />
 
-      <section aria-labelledby="retention-title" className={cn("mt-6 rounded-[2rem] bg-white p-5 ring-1 ring-inset sm:p-6", stale || overdueRequests.length ? "ring-2 ring-[#d62f6d]" : "ring-sky-200")}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 id="retention-title" className="font-display text-xl font-bold text-ink">Data retention</h2>
-            <p className="mt-1 text-sm text-ink-soft">
-              {live ? "Cleanup runs automatically every day at 08:00 UTC." : "Preview/test data: the daily schedule only runs on the live site, so use the buttons here."}
-            </p>
-          </div>
-          <Link href="/partners/review/requests" className="rounded-full bg-white px-4 py-2 font-display text-sm font-semibold text-ink ring-1 ring-inset ring-sky-200 hover:bg-ice">
+      <Section
+        id="retention-title"
+        title="Data retention"
+        tone={stale || overdueRequests.length ? "alert" : "plain"}
+        className="mb-6"
+        description={live ? "Cleanup runs automatically every day at 08:00 UTC." : "Preview/test data: the daily schedule only runs on the live site, so use the buttons here."}
+        actions={
+          <Link href="/partners/review/requests" className={cn(secondary, small)}>
             Deletion requests ({openRequests.length} open{overdueRequests.length ? `, ${overdueRequests.length} overdue` : ""})
           </Link>
-        </div>
-        <ul className="mt-3 space-y-1 text-[0.95rem] text-ink">
+        }
+      >
+        <ul className="space-y-1.5 text-sm text-ink">
           <li>
-            Last run:{" "}
+            <span className="font-semibold">Last run:</span>{" "}
             {runs.last
               ? `${new Date(runs.last.finishedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "America/New_York" })} · ${runs.last.dryRun ? "dry run" : runs.last.status} · ${runs.last.dryRun ? "would delete" : "deleted"} ${runs.last.dryRun ? runs.last.applications.due : runs.last.applications.deleted} application(s) and ${runs.last.dryRun ? runs.last.rateLimits.due : runs.last.rateLimits.deleted} rate-limit record(s)`
               : "never"}
           </li>
-          {stale && <li className="font-semibold text-[#b8215a]">No successful cleanup in the last 36 hours — check the Netlify function log for &ldquo;partner-retention&rdquo;.</li>}
-          <li>Due for deletion now: {due.length ? due.map((a) => a.id).join(", ") : "none"}</li>
-          {reviewDue.length > 0 && <li>Approved partners due for their yearly review: {reviewDue.map((a) => a.id).join(", ")}</li>}
+          {stale && <li className="font-semibold text-[#a3174f]">No successful cleanup in the last 36 hours — check the Netlify function log for &ldquo;partner-retention&rdquo;.</li>}
+          <li>
+            <span className="font-semibold">Due for deletion now:</span> {due.length ? due.map((a) => a.id).join(", ") : "none"}
+          </li>
+          {reviewDue.length > 0 && (
+            <li>
+              <span className="font-semibold">Approved partners due for their yearly review:</span> {reviewDue.map((a) => a.id).join(", ")}
+            </li>
+          )}
         </ul>
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-2 border-t border-sky-100 pt-4">
           <form action={runCleanupAction}>
             <input type="hidden" name="dryRun" value="true" />
-            <button type="submit" className="rounded-full bg-white px-4 py-2 font-display text-sm font-semibold text-ink ring-1 ring-inset ring-sky-200 hover:bg-ice">Dry run (delete nothing)</button>
+            <button type="submit" className={cn(secondary, small)}>Dry run (delete nothing)</button>
           </form>
           <form action={runCleanupAction}>
-            <button type="submit" className="rounded-full bg-royal px-4 py-2 font-display text-sm font-semibold text-white shadow-[0_3px_0_var(--color-navy)]">Run cleanup now</button>
+            <button type="submit" className={cn(primary, small)}>Run cleanup now</button>
           </form>
         </div>
-      </section>
+      </Section>
 
-      <nav aria-label="Filter by stage" className="mt-6 flex flex-wrap gap-2">
-        <Link href={qs({ status: null })} aria-current={!status ? "page" : undefined} className={cn("rounded-full px-4 py-2 font-display text-sm font-semibold ring-1 ring-inset ring-sky-200", !status ? "bg-ink text-white" : "bg-white text-ink")}>
-          All ({all.length})
-        </Link>
-        {STAGES.map((s) => (
-          <Link key={s} href={qs({ status: s })} aria-current={status === s ? "page" : undefined} className={cn("rounded-full px-4 py-2 font-display text-sm font-semibold ring-1 ring-inset ring-sky-200", status === s ? "bg-ink text-white" : "bg-white text-ink")}>
-            {STAGE_LABELS[s]} ({counts[s]})
-          </Link>
-        ))}
-      </nav>
-      <nav aria-label="Filter by type" className="mt-2 flex flex-wrap gap-2">
-        <Link href={qs({ type: null })} className={cn("rounded-full px-3 py-1.5 text-sm font-semibold", !type ? "bg-royal text-white" : "text-royal underline")}>All types</Link>
-        {PARTNER_TYPES.map((t) => (
-          <Link key={t.id} href={qs({ type: t.id })} className={cn("rounded-full px-3 py-1.5 text-sm font-semibold", type === t.id ? "bg-royal text-white" : "text-royal underline")}>
-            {t.short}
-          </Link>
-        ))}
-      </nav>
+      <div className="mb-4 space-y-2">
+        <Chips
+          label="Filter by stage"
+          items={[{ href: qs({ status: null }), label: "All", count: all.length, active: !status }, ...STAGES.map((st) => ({ href: qs({ status: st }), label: STAGE_LABELS[st], count: counts[st], active: status === st }))]}
+        />
+        <Chips label="Filter by type" items={[{ href: qs({ type: null }), label: "All types", active: !type }, ...PARTNER_TYPES.map((t) => ({ href: qs({ type: t.id }), label: t.short, active: type === t.id }))]} />
+      </div>
 
       {shown.length === 0 ? (
-        <p className="mt-8 rounded-[2rem] bg-white p-8 text-center text-ink-soft ring-1 ring-inset ring-sky-200">No applications here yet.</p>
+        <Empty title="No applications here yet">{all.length ? "Try another stage or type." : "Applications from the public partner form appear here."}</Empty>
       ) : (
-        <ul className="mt-6 grid gap-3">
+        <ul className={cn(card, "divide-y divide-sky-100 p-0 sm:p-0")}>
           {shown.map((a) => (
             <li key={a.id}>
-              <Link href={`/partners/review/${a.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[1.5rem] bg-white p-4 ring-1 ring-inset ring-sky-200 hover:ring-royal">
-                <span className={cn("rounded-full px-3 py-1 font-display text-xs font-bold", stageTone[a.status])}>{STAGE_LABELS[a.status]}</span>
+              <Link href={`/partners/review/${a.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4 first:rounded-t-3xl last:rounded-b-3xl hover:bg-ice-50 focus-visible:bg-ice-50 focus-visible:outline focus-visible:outline-[3px] focus-visible:-outline-offset-[3px] focus-visible:outline-royal sm:px-6">
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-display text-lg font-bold text-ink">{String(a.fields.business ?? "")}</span>
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="truncate font-display text-lg font-bold text-ink">{String(a.fields.business ?? "")}</span>
+                    <Pill tone={stageTone[a.status] ?? "plain"}>{STAGE_LABELS[a.status]}</Pill>
+                  </span>
                   <span className="block text-sm text-ink-soft">
                     {PARTNER_TYPES.find((t) => t.id === a.type)?.short} · {String(a.fields.country ?? "")} · {a.id}
                   </span>
                 </span>
                 <span className="text-sm text-ink-soft">{new Date(a.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
-                {a.notification.status === "failed" && <span className="rounded-full bg-berry-soft px-2.5 py-1 text-xs font-bold text-ink">Email failed</span>}
-                {screeningFlags(a.type, a.fields).some((f) => f.level === "serious") && (
-                  <span className="rounded-full bg-berry-soft px-2.5 py-1 text-xs font-bold text-ink">Safety check</span>
-                )}
+                {a.notification.status === "failed" && <Pill tone="alert">Email failed</Pill>}
+                {screeningFlags(a.type, a.fields).some((f) => f.level === "serious") && <Pill tone="alert">Safety check</Pill>}
                 <RetentionBadge decision={decisions.get(a.id)} />
               </Link>
             </li>
@@ -185,8 +172,8 @@ async function Review({ searchParams }: { searchParams: PageProps<"/partners/rev
 
 function RetentionBadge({ decision }: { decision: ReturnType<typeof retentionDecision> | undefined }) {
   if (!decision) return null;
-  if (decision.action === "hold") return <span className="rounded-full bg-grape-soft px-2.5 py-1 text-xs font-bold text-ink">Legal hold</span>;
-  if (decision.action === "delete") return <span className="rounded-full bg-lemon-soft px-2.5 py-1 text-xs font-bold text-ink">Due for deletion</span>;
-  if (decision.action === "review" && decision.overdue) return <span className="rounded-full bg-lemon-soft px-2.5 py-1 text-xs font-bold text-ink">Review due</span>;
+  if (decision.action === "hold") return <Pill tone="dark">Legal hold</Pill>;
+  if (decision.action === "delete") return <Pill tone="warn">Due for deletion</Pill>;
+  if (decision.action === "review" && decision.overdue) return <Pill tone="warn">Review due</Pill>;
   return null;
 }
