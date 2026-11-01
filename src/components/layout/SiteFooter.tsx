@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { footerNav, siteConfig } from "@/lib/site";
+import { launchCopy } from "@/content/launch";
 import { Logo } from "./Logo";
 import { Container } from "@/components/ui/Primitives";
 import { MailIcon, TikTokIcon } from "@/components/icons/Icons";
@@ -25,7 +26,7 @@ export function SiteFooter() {
               <Logo invert size="md" />
             </Link>
             <p className="mt-4 max-w-sm text-lg leading-relaxed text-sky-200">
-              Colorful, cute, and seriously satisfying squishies — coming soon from a brand-new small business.
+              {launchCopy.footerTagline}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <a

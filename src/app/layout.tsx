@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { launchCopy } from "@/content/launch";
 import { Fredoka, Nunito } from "next/font/google";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
@@ -24,7 +25,7 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: `${siteConfig.name} — ${siteConfig.tagline} Squishies coming soon`,
+    default: `${siteConfig.name} — ${siteConfig.tagline} ${launchCopy.titleSuffix}`,
     template: `%s · ${siteConfig.name}`,
   },
   description: siteConfig.description,

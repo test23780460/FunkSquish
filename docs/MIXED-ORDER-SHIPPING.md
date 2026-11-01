@@ -17,7 +17,7 @@ Nothing is charged after payment. The code has no way to charge a card again.
 
 ## 2. How shipping is calculated (`src/commerce/checkout/shipping-quote.ts`)
 
-1. Every variant has an **origin**: where it ships from (`src/commerce/origins.ts`). Our own stock is `funksquish` by
+1. Every variant has an **origin**: where it ships from (`src/commerce/data/shipping-origins.json`, checked by `src/commerce/origins.ts`; prepare changes on the dashboard's Shipping page). Our own stock is `funksquish` by
    default; supplier items must name theirs (catalog column `fulfillment_origin`).
 2. **All items from one origin go in one package and share one base charge.** A second item from the same place
    never adds a second base fee.

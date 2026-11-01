@@ -1,3 +1,5 @@
+> **Historical document (kept for the record).** Current guidance: `docs/OWNER-GUIDE.md` and `docs/LAUNCH-CHECKLIST.md` — see `docs/README.md`.
+
 > **Superseded (2026-10-27):** this first-pass review is kept for history. The full audit, which re-checked every item
 > below, is in `docs/MASTER-LEGAL-AUDIT.md`, with scenarios in `docs/ADVERSARIAL-SCENARIOS.md`, wording changes in
 > `docs/POLICY-COMPARISON.md`, attorney/accountant questions in `docs/LEGAL-OPEN-QUESTIONS.md`, launch gates in

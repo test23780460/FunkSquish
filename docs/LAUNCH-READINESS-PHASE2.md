@@ -1,3 +1,5 @@
+> **Historical document (kept for the record).** Current guidance: `docs/OWNER-GUIDE.md` and `docs/LAUNCH-CHECKLIST.md` — see `docs/README.md`.
+
 # Launch readiness — after Phase 2 (2026-10-27)
 
 **Not ready to launch, by design.** Everything the owner approved in Phase 2 is built and tested in draft PRs, but real
