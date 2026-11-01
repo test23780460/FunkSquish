@@ -213,3 +213,15 @@ describe("supplier CSV export", () => {
     expect(packagesFor(s, [supplierOrder({ status: "canceled" }), supplierOrder({ paymentStatus: "failed" })], [], [{ ...s, originId: "supplier-a" }])).toEqual([]);
   });
 });
+
+describe("supplier document downloads (security review, 2026-11-01)", () => {
+  it("an owner-typed name can never break the download header", async () => {
+    const { downloadDisposition } = await import("@/commerce/suppliers/documents");
+    const h = downloadDisposition('Price list "2026"\r\nSet-Cookie: x=1 🍓', "0123456789abcdef0123456789abcdef.pdf");
+    expect(h).not.toMatch(/[\r\n]/);
+    expect(h).toMatch(/^attachment; filename="[A-Za-z0-9._ -]+"; filename\*=UTF-8''/);
+    expect(() => new Headers({ "Content-Disposition": h })).not.toThrow();
+    expect(downloadDisposition("", "abc.png")).toMatch(/filename="document\.png"/);
+    expect(downloadDisposition("Agreement", "abc.pdf")).toMatch(/filename="Agreement\.pdf"/);
+  });
+});

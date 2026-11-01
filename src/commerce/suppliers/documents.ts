@@ -50,3 +50,17 @@ export function checkDocument(b: Uint8Array): CheckedDoc {
 
 /** Safe display name: letters, numbers, spaces and . _ - only. */
 export const cleanName = (n: string) => n.replace(/[^\w .-]+/g, "_").replace(/^[.\s]+/, "").slice(0, 80) || "document";
+
+/**
+ * Content-Disposition for a document download. The owner-typed name can hold
+ * anything (quotes, line breaks, emoji), so the plain filename is reduced to
+ * safe ASCII and the full name goes in RFC 5987 `filename*`. A bad character
+ * can never break the header or make the download fail.
+ */
+export function downloadDisposition(name: string, file: string): string {
+  const ext = file.split(".").pop() ?? "";
+  const base = name.replace(/[\u0000-\u001f\u007f]/g, "").trim() || "document";
+  const full = /\.[A-Za-z0-9]{1,5}$/.test(base) ? base : `${base}.${ext}`;
+  const ascii = full.normalize("NFKD").replace(/[^A-Za-z0-9._ -]/g, "_").replace(/_+/g, "_").slice(0, 100) || `document.${ext}`;
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(full.slice(0, 150))}`;
+}

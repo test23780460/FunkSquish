@@ -7,7 +7,8 @@ import type { StoredFile } from "@/lib/storage/files";
  */
 export function fileResponse(file: StoredFile, req: Request, headers: Record<string, string>): Response {
   const size = file.bytes.length;
-  const base = { "Content-Type": file.contentType, "Accept-Ranges": "bytes", "X-Content-Type-Options": "nosniff", ...headers };
+  // Defence in depth: even if a file were ever opened as a page, it could run nothing and load nothing.
+  const base = { "Content-Type": file.contentType, "Accept-Ranges": "bytes", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; sandbox", ...headers };
   const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.get("range") ?? "");
   const body = (b: Uint8Array) => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer;
   if (range && (range[1] || range[2])) {
