@@ -1,7 +1,7 @@
 import { connection } from "next/server";
 import { requireReviewer } from "@/lib/partners/review-auth";
 import { ownerDataStore, ownerMediaStore } from "@/lib/owner/data";
-import { docFileKey, docKey, type SupplierDoc } from "@/commerce/suppliers/documents";
+import { docFileKey, docKey, type SupplierDoc, downloadDisposition } from "@/commerce/suppliers/documents";
 import { SUPPLIER_ID } from "@/commerce/suppliers/supplier";
 
 /** PRIVATE download of one supplier document. Signed-in owner only, always as a download, never cached. */
@@ -21,9 +21,9 @@ export async function GET(_req: Request, { params }: RouteContext<"/partners/rev
   return new Response(body, {
     headers: {
       "Content-Type": meta.contentType,
-      "Content-Disposition": `attachment; filename="${meta.name.replace(/"/g, "")}${meta.name.includes(".") ? "" : `.${meta.file.split(".").pop()}`}"`,
+      "Content-Disposition": downloadDisposition(meta.name, meta.file),
       "Cache-Control": "private, no-store",
-      "Content-Security-Policy": "sandbox",
+      "Content-Security-Policy": "default-src 'none'; sandbox",
       "X-Content-Type-Options": "nosniff",
       "X-Robots-Tag": "noindex, nofollow",
     },
