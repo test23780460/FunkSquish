@@ -168,7 +168,7 @@ export function StatGroup({ id, title, children, cols = 4 }: { id: string; title
       <h2 id={id} className="mb-2.5 font-display text-xs font-semibold uppercase tracking-[0.14em] text-ink-soft">
         {title}
       </h2>
-      <div className={cn("grid grid-cols-2 gap-3", cols === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3")}>{children}</div>
+      <div className={cn("grid grid-cols-2 gap-3 [&>*:last-child:nth-child(odd)]:col-span-2 lg:[&>*:last-child:nth-child(odd)]:col-span-1", cols === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3")}>{children}</div>
     </section>
   );
 }
