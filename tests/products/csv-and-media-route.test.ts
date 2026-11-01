@@ -74,6 +74,7 @@ describe("public /media route serves only published files", () => {
     expect(r.status).toBe(200);
     expect(r.headers.get("content-type")).toBe("image/jpeg");
     expect(r.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(r.headers.get("content-security-policy")).toBe("default-src 'none'; sandbox");
     expect(r.headers.get("cache-control")).toMatch(/public/);
   });
 
