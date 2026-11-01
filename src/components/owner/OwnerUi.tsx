@@ -22,6 +22,9 @@ export const panel = "rounded-2xl bg-ice-50/80 p-4 ring-1 ring-inset ring-sky-10
 export const input =
   "min-h-11 w-full rounded-xl bg-white px-3.5 py-2 text-base text-ink shadow-[inset_0_1px_2px_rgba(19,53,122,0.06)] ring-1 ring-inset ring-sky-200 transition-shadow placeholder:text-ink-soft/60 hover:ring-sky-300 focus:outline-none focus:ring-2 focus:ring-royal disabled:cursor-not-allowed disabled:bg-ice-50 disabled:text-ink-soft motion-reduce:transition-none";
 export const label = "grid gap-1.5 text-sm font-semibold text-ink";
+/** Native file picker styled to match the buttons. */
+export const fileInput =
+  "block w-full rounded-xl bg-white text-sm text-ink-soft ring-1 ring-inset ring-sky-200 file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-l-xl file:border-0 file:bg-ink file:px-4 file:font-display file:font-semibold file:text-white hover:file:bg-navy focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-royal";
 export const hint = "text-xs font-normal leading-relaxed text-ink-soft";
 
 const focus = "focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-royal";

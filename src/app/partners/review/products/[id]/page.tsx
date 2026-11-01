@@ -17,7 +17,7 @@ import type { ProductVariant } from "@/commerce/types";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav } from "@/components/owner/OwnerNav";
 import { Area, Check, FieldGroup, Rev, Select, Text } from "@/components/owner/Fields";
-import { Empty, Flash, Missing, OwnerShell, PageTitle, Pill, Progress, card, danger, dateTime, hint, input, label, one, primary, secondary, small } from "@/components/owner/OwnerUi";
+import { Empty, Flash, Missing, OwnerShell, PageTitle, Pill, Progress, card, danger, dateTime, hint, input, label, one, primary, secondary, small , fileInput } from "@/components/owner/OwnerUi";
 import { cn } from "@/lib/cn";
 import {
   deleteDraftAction,
@@ -490,7 +490,7 @@ function Media({ r }: { r: ProductRecord }) {
             type="file"
             required
             accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
-            className="block w-full rounded-xl bg-white text-sm text-ink-soft ring-1 ring-inset ring-sky-200 file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-l-xl file:border-0 file:bg-ink file:px-4 file:font-display file:font-semibold file:text-white hover:file:bg-navy"
+            className={fileInput}
           />
         </label>
         <Text name="alt" title="Alt text (what it shows)" required minLength={5} maxLength={200} placeholder="Pink jelly squishy shaped like a strawberry, squeezed in a hand" className="sm:col-span-2" />
