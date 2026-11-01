@@ -35,10 +35,11 @@ const PRE_AUTH: Record<string, RegExp> = {
 };
 
 describe("owner area coverage", () => {
-  const actionFiles = files(ROOT, (f) => f === "actions.ts");
+  // Every file under the owner area that declares server actions, whatever it's called.
+  const actionFiles = files(ROOT, (f) => /.tsx?$/.test(f)).filter((f) => /^s*["']use server["']/.test(fs.readFileSync(f, "utf8")));
 
   it("finds the owner action files", () => {
-    expect(actionFiles.map((f) => rel(f)).sort()).toEqual(["actions.ts", "inventory/actions.ts", "orders/actions.ts", "products/actions.ts", "security/actions.ts", "settings/actions.ts"]);
+    expect(actionFiles.map((f) => rel(f)).sort()).toEqual(["actions.ts", "inventory/actions.ts", "orders/actions.ts", "products/actions.ts", "security/actions.ts", "settings/actions.ts", "suppliers/actions.ts"]);
   });
 
   it("every exported server action checks the owner session first", () => {
@@ -61,7 +62,7 @@ describe("owner area coverage", () => {
 
   it("every owner download (route handler) checks the session, runs per request and only reads", () => {
     const routes = files(ROOT, (f) => f === "route.ts");
-    expect(routes.map((f) => rel(f)).sort()).toEqual(["inventory/export/route.ts", "products/export/route.ts", "products/media/[file]/route.ts", "settings/backup/route.ts"]);
+    expect(routes.map((f) => rel(f)).sort()).toEqual(["inventory/export/route.ts", "products/export/route.ts", "products/media/[file]/route.ts", "settings/backup/route.ts", "suppliers/[id]/docs/[doc]/route.ts", "suppliers/[id]/export/route.ts"]);
     for (const r of routes) {
       const src = fs.readFileSync(r, "utf8");
       const rel = path.relative(ROOT, r);

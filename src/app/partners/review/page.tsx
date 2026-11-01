@@ -14,7 +14,7 @@ import { PARTNER_TYPES, STAGES, STAGE_LABELS, isPartnerType, isStage } from "@/l
 import { screeningFlags } from "@/lib/partners/screening";
 import { Container } from "@/components/ui/Primitives";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
-import { OwnerNav } from "@/components/owner/OwnerNav";
+import { OwnerNav, OwnerSubNav, SUPPLIER_TABS } from "@/components/owner/OwnerNav";
 import { logoutAction, runCleanupAction } from "./actions";
 import { cn } from "@/lib/cn";
 
@@ -75,6 +75,7 @@ async function Review({ searchParams }: { searchParams: PageProps<"/partners/rev
   return (
     <div>
       <OwnerNav current="/partners/review" />
+      <OwnerSubNav label="Supplier pages" items={SUPPLIER_TABS} current="/partners/review" />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-bold text-ink sm:text-4xl">Partner applications</h1>

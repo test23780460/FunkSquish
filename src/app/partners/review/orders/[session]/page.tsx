@@ -14,6 +14,10 @@ import { Container } from "@/components/ui/Primitives";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { ArrowLeftIcon } from "@/components/icons/Icons";
 import { OwnerNav } from "@/components/owner/OwnerNav";
+import { SupplierPackagePanel } from "@/components/owner/SupplierPackagePanel";
+import { ownerDataStore } from "@/lib/owner/data";
+import { listSuppliers } from "@/commerce/suppliers/supplier";
+import { listRecords } from "@/commerce/catalog-admin/store";
 import {
   cancelAction,
   cancelPackageAction,
@@ -62,6 +66,7 @@ const saved: Record<string, string> = {
   lost: "Package marked lost. Send a replacement or refund it.",
   returned: "Return recorded. Refund or reship before the deadline shown.",
   reship: "Replacement started — ship it and add the new tracking number.",
+  supplier: "Supplier order saved.",
 };
 const canShip = (status: string) => !["canceled", "lost", "returned"].includes(status);
 const notShipped = (status: string) => !["shipped", "delivered", "canceled", "lost", "returned"].includes(status);
@@ -83,6 +88,13 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
   const n = order.notifications;
   const shipped = order.fulfillments.some((f) => f.shippedAt);
   const attention = orderAttention(order);
+  const data = await ownerDataStore(ctx.cfg);
+  const [suppliers, records] = order.fulfillments.some((f) => f.source === "supplier") ? await Promise.all([listSuppliers(data), listRecords(data)]) : [[], []];
+  /** The supplier linked to a package's items in Products (first match), to preselect. */
+  const suggestedSupplier = (variantIds: string[]) => {
+    for (const r of records) for (const id of variantIds) if (r.private.variants[id]?.supplierId) return r.private.variants[id].supplierId;
+    return null;
+  };
 
   return (
     <div className="space-y-6">
@@ -154,7 +166,7 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
             const items = order.lineItems.filter((l) => f.variantIds.includes(l.variantId));
             const open = order.status !== "canceled";
             return (
-            <div key={f.id} className="rounded-2xl bg-ice-50 p-4">
+            <div key={f.id} id={`pkg-${f.id}`} className="scroll-mt-28 rounded-2xl bg-ice-50 p-4">
               <p className="font-semibold text-ink">
                 {packageLabel(order, f.id)} · <span className="uppercase tracking-wide">{f.status.replace("_", " ")}</span>
                 {f.trackingNumber ? ` · ${f.carrier} ${f.trackingNumber}` : ""}
@@ -170,9 +182,7 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
                 </p>
               )}
               {f.militaryAddresses === false && <p className="mt-1 text-sm text-ink-soft">This origin can&apos;t ship to APO/FPO/DPO addresses.</p>}
-              {f.source === "supplier" && f.status === "awaiting_supplier" && (
-                <p className="mt-1 text-sm text-ink-soft">Place this with the supplier yourself — nothing is ordered from suppliers automatically.</p>
-              )}
+              {f.source === "supplier" && <SupplierPackagePanel order={order} group={f} suppliers={suppliers.filter((x) => !x.archived)} suggested={suggestedSupplier(f.variantIds)} />}
               <p className="mt-1 text-sm text-ink">
                 Ship by: <strong>{f.shipBy ?? "not set"}</strong>
                 {(f.delayNotices?.length ?? 0) > 0 && ` · ${f.delayNotices!.length} delay notice(s), last ${fmt(f.delayNotices!.at(-1)!.at)} (${f.delayNotices!.at(-1)!.email})`}

@@ -14,7 +14,7 @@ export const OWNER_SECTIONS = [
   { id: "products", href: "/partners/review/products", label: "Products", ready: true },
   { id: "inventory", href: "/partners/review/inventory", label: "Inventory", ready: true },
   { id: "orders", href: "/partners/review/orders", label: "Orders", ready: true },
-  { id: "suppliers", href: "/partners/review", label: "Suppliers", ready: true },
+  { id: "suppliers", href: "/partners/review/suppliers", label: "Suppliers", ready: true },
   { id: "fulfillment", href: "/partners/review/fulfillment", label: "Fulfillment", ready: true },
   { id: "shipping", href: "/partners/review/shipping", label: "Shipping", ready: true },
   { id: "marketing", href: "/partners/review/marketing", label: "Email & marketing", ready: false },
@@ -95,4 +95,10 @@ export const PRODUCT_TABS = [
   { href: "/partners/review/products", label: "All products" },
   { href: "/partners/review/products/releases", label: "Website catalog & rollback" },
   { href: "/partners/review/products/import", label: "Import / export" },
+];
+
+export const SUPPLIER_TABS = [
+  { href: "/partners/review/suppliers", label: "Suppliers" },
+  { href: "/partners/review/suppliers/compare", label: "Compare" },
+  { href: "/partners/review", label: "Partner applications" },
 ];
