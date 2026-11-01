@@ -20,7 +20,8 @@ import {
   setShipBy,
 } from "@/commerce/orders/admin";
 import type { ReturnCause } from "@/commerce/orders/types";
-import { notifyPaidOrder, notifyShipped } from "@/commerce/orders/notify";
+import { notifyCanceled, notifyPaidOrder, notifyRefund, notifyShipped, notifyTrackingUpdate, retryOtherEmails } from "@/commerce/orders/notify";
+import type { Order } from "@/commerce/orders/types";
 import { addSupplierException, claimTracking, EXCEPTION_KINDS, placeWithSupplier, resolveSupplierException, supplierCanceled, supplierUpdate } from "@/commerce/orders/supplier-orders";
 import type { SupplierExceptionKind, SupplierOrderStatus } from "@/commerce/orders/types";
 import { ownerTools } from "@/lib/owner/data";
@@ -64,6 +65,7 @@ export async function markShippedAction(fd: FormData) {
     const claim = await claimTracking(deps.store, tracking, sessionId, groupId, existing.id);
     if (!claim.ok) redirect(detail(sessionId, `error=${msg(claim.error)}`));
   }
+  const before = existing?.fulfillments.find((g) => g.id === groupId);
   const r = await markShipped(
     deps.store,
     sessionId,
@@ -77,13 +79,15 @@ export async function markShippedAction(fd: FormData) {
     deps.onHand, // the package's units come off the stock count (once)
   );
   if (!r.ok) redirect(detail(sessionId, `error=${msg(r.error)}`));
-  await notifyShipped(deps.store, r.order, groupId, notify);
+  // A new tracking number on a package that already shipped: tell the customer once. Otherwise the shipping email (once).
+  if (before?.shippedAt && before.trackingNumber && before.trackingNumber !== r.order.fulfillments.find((g) => g.id === groupId)?.trackingNumber) await notifyTrackingUpdate(deps.store, r.order, groupId, notify);
+  else await notifyShipped(deps.store, r.order, groupId, notify);
   console.info(`[orders] ${r.order.id} package ${groupId} marked shipped`);
   redirect(detail(sessionId, r.warning ? `saved=shipped&error=${msg(r.warning)}` : "saved=shipped"));
 }
 
 export async function refundAction(fd: FormData) {
-  const { deps } = await context();
+  const { deps, notify } = await context();
   const sessionId = sessionFrom(fd);
   if (!sessionId) redirect(BASE);
   const order = await getOrder(deps.store, sessionId);
@@ -98,12 +102,13 @@ export async function refundAction(fd: FormData) {
     r = { ok: false as const, error: "Stripe didn't accept the refund. Check the Stripe Dashboard." };
   }
   if (!r.ok) redirect(detail(sessionId, `error=${msg(r.error)}`));
+  await emailNewRefunds(deps.store, order, r.order, notify);
   console.info(`[orders] ${order.id} refunded ${amount} cents`);
   redirect(detail(sessionId, "saved=refund"));
 }
 
 export async function cancelAction(fd: FormData) {
-  const { deps } = await context();
+  const { deps, notify } = await context();
   const sessionId = sessionFrom(fd);
   if (!sessionId) redirect(BASE);
   const order = await getOrder(deps.store, sessionId);
@@ -117,6 +122,7 @@ export async function cancelAction(fd: FormData) {
     r = { ok: false as const, error: "Stripe didn't accept the refund. Nothing was canceled." };
   }
   if (!r.ok) redirect(detail(sessionId, `error=${msg(r.error)}`));
+  await notifyCanceled(deps.store, r.order, notify);
   console.info(`[orders] ${order.id} canceled`);
   redirect(detail(sessionId, "saved=canceled"));
 }
@@ -130,6 +136,7 @@ export async function resendEmailsAction(fd: FormData) {
   // Only emails that failed are retried; sent or skipped ones are left alone.
   await notifyPaidOrder(deps.store, order, notify);
   for (const f of order.fulfillments) if (f.shippedAt) await notifyShipped(deps.store, order, f.id, notify);
+  await retryOtherEmails(deps.store, order, notify);
   redirect(detail(sessionId, "saved=emails"));
 }
 
@@ -200,7 +207,7 @@ async function confirmedOrder(fd: FormData, deps: Awaited<ReturnType<typeof cont
 
 /** Cancel one unshipped package (e.g. the customer declined a delay): refund it in full and return its stock. */
 export async function cancelPackageAction(fd: FormData) {
-  const { deps } = await context();
+  const { deps, notify } = await context();
   const sessionId = sessionFrom(fd);
   if (!sessionId) redirect(BASE);
   const order = await confirmedOrder(fd, deps, sessionId, "canceling this package");
@@ -212,13 +219,14 @@ export async function cancelPackageAction(fd: FormData) {
     r = { ok: false as const, error: "Stripe didn't accept the refund. Nothing was canceled." };
   }
   if (!r.ok) redirect(detail(sessionId, `error=${msg(r.error)}`));
+  await emailNewRefunds(deps.store, order, r.order, notify);
   console.info(`[orders] ${order.id} package canceled`);
   redirect(detail(sessionId, "saved=package-canceled"));
 }
 
 /** Refund one package in full (items + its shipping + tax): lost, came back, or customer canceled after a delay. */
 export async function refundPackageAction(fd: FormData) {
-  const { deps } = await context();
+  const { deps, notify } = await context();
   const sessionId = sessionFrom(fd);
   if (!sessionId) redirect(BASE);
   const order = await confirmedOrder(fd, deps, sessionId, "this package refund");
@@ -230,6 +238,7 @@ export async function refundPackageAction(fd: FormData) {
     r = { ok: false as const, error: "Stripe didn't accept the refund. Check the Stripe Dashboard." };
   }
   if (!r.ok) redirect(detail(sessionId, `error=${msg(r.error)}`));
+  await emailNewRefunds(deps.store, order, r.order, notify);
   console.info(`[orders] ${order.id} package refunded`);
   redirect(detail(sessionId, "saved=package-refund"));
 }
@@ -318,4 +327,10 @@ export async function supplierCanceledAction(fd: FormData) {
   if (!r.ok) redirect(detail(sessionId, `error=${msg(r.error)}`));
   await tools.audit("fulfillment", "supplier-canceled", r.order.id, `Package ${groupId}: supplier order canceled; back to "place with supplier"`);
   redirect(detail(sessionId, "saved=supplier"));
+}
+
+/** Email the customer about refunds this action just added (each refund at most once). */
+async function emailNewRefunds(store: Awaited<ReturnType<typeof context>>["deps"]["store"], before: Order, after: Order, notify: Awaited<ReturnType<typeof context>>["notify"]) {
+  const seen = new Set(before.refunds.map((r) => r.stripeRefundId ?? r.createdAt));
+  for (const r of after.refunds) if (!seen.has(r.stripeRefundId ?? r.createdAt)) await notifyRefund(store, after, r, notify);
 }

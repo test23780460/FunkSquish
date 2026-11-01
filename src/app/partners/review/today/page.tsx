@@ -53,6 +53,7 @@ function failedEmails(o: Order): string[] {
   if (n?.owner?.status === "failed") out.push("your new-order alert");
   for (const [id, r] of Object.entries(n?.shipping ?? {})) if (r.status === "failed") out.push(`shipping email (${id.split("~")[0]})`);
   for (const g of o.fulfillments) for (const d of g.delayNotices ?? []) if (d.email === "failed") out.push("delay notice");
+  for (const [k, r] of Object.entries(n?.other ?? {})) if (r.status === "failed") out.push(k === "canceled" ? "cancellation email" : k.startsWith("refund-") ? "refund email" : "tracking update email");
   return out;
 }
 

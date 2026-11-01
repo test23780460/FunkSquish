@@ -30,19 +30,21 @@ export interface NotifyConfig {
   contactEmail: string;
 }
 
-type Slot = "customer" | "owner" | `shipping:${string}`;
+type Slot = "customer" | "owner" | `shipping:${string}` | `other:${string}`;
 
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
 const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
 function readSlot(order: Order, slot: Slot): NotificationRecord | undefined {
   if (slot === "customer" || slot === "owner") return order.notifications?.[slot];
+  if (slot.startsWith("other:")) return order.notifications?.other?.[slot.slice("other:".length)];
   return order.notifications?.shipping?.[slot.slice("shipping:".length)];
 }
 
 function writeSlot(order: Order, slot: Slot, record: NotificationRecord) {
   order.notifications ??= {};
   if (slot === "customer" || slot === "owner") order.notifications[slot] = record;
+  else if (slot.startsWith("other:")) (order.notifications.other ??= {})[slot.slice("other:".length)] = record;
   else (order.notifications.shipping ??= {})[slot.slice("shipping:".length)] = record;
 }
 
@@ -235,4 +237,87 @@ ${silence}
 <p>You can cancel any time before the items ship. See our <a href="${esc(cfg.siteUrl)}/shipping">Shipping Policy</a>.</p>
 </body></html>`,
   };
+}
+
+/* ------------------------------ cancellations, refunds, tracking changes ------------------------------ */
+
+const refundedTotal = (order: Order) => order.refunds.reduce((s, r) => s + r.amount, 0);
+const BANK_TIMING = "Refunds go back to your original payment method; banks usually take 5–10 business days to show them.";
+
+/** The whole order was canceled before shipping (and refunded). */
+export function cancellationEmail(order: Order, cfg: Pick<NotifyConfig, "contactEmail">) {
+  const items = order.lineItems.map((l) => `<li>${esc(l.name)} × ${l.quantity}</li>`).join("");
+  return {
+    subject: `${prefix(order)}Your FunkSquish order ${order.id} was canceled`,
+    html: `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#0e2a5c">
+<h2>Your order was canceled</h2>
+<p>Order <b>${esc(order.id)}</b> has been canceled and nothing will ship:</p>
+<ul>${items}</ul>
+<p>We refunded <b>${money(refundedTotal(order))}</b>. ${BANK_TIMING}</p>
+<p>Questions? Just reply, or write to ${esc(cfg.contactEmail)}.</p>
+</body></html>`,
+  };
+}
+
+/** One refund (part of an order, a package, or the rest of it). */
+export function refundEmail(order: Order, refund: Order["refunds"][number], cfg: Pick<NotifyConfig, "contactEmail">) {
+  const pkg = refund.groupId ? order.fulfillments.find((f) => f.id === refund.groupId) : null;
+  const what = pkg ? `for ${esc(packageLabel(order, pkg.id))}` : "on your order";
+  return {
+    subject: `${prefix(order)}Refund for your FunkSquish order ${order.id}`,
+    html: `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#0e2a5c">
+<h2>We sent you a refund</h2>
+<p>We refunded <b>${money(refund.amount)}</b> ${what} (order <b>${esc(order.id)}</b>). ${BANK_TIMING}</p>
+${pkg ? "<p>Anything else in your order isn't affected.</p>" : ""}
+<p>Questions? Just reply, or write to ${esc(cfg.contactEmail)}.</p>
+</body></html>`,
+  };
+}
+
+/** The tracking number of a package that already shipped changed (e.g. the carrier re-labeled it). */
+export function trackingUpdateEmail(order: Order, groupId: string) {
+  const g = order.fulfillments.find((f) => f.id === groupId);
+  const tracking = g?.trackingUrl ? `<a href="${esc(g.trackingUrl)}">${esc(g.trackingNumber)}</a>` : esc(g?.trackingNumber);
+  return {
+    subject: `${prefix(order)}New tracking for your FunkSquish order ${order.id}`,
+    html: `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#0e2a5c">
+<h2>Updated tracking</h2>
+<p>${esc(packageLabel(order, groupId))} from order <b>${esc(order.id)}</b> has a new tracking number${g?.carrier ? ` with ${esc(g.carrier)}` : ""}: ${tracking}</p>
+<p>Please use this one instead of the number in our earlier email.</p>
+</body></html>`,
+  };
+}
+
+const slotKey = (s: string) => s.replace(/[^\w~-]/g, "").slice(0, 80);
+
+export async function notifyCanceled(store: KvStore, order: Order, cfg: NotifyConfig, now = new Date()) {
+  await sendOnce(store, order, "other:canceled", cfg, now, () => ({ to: order.customer.email, tag: "order-canceled", ...cancellationEmail(order, cfg) }));
+}
+
+export const refundSlot = (r: Order["refunds"][number]) => `refund-${slotKey(r.stripeRefundId ?? r.createdAt)}`;
+
+/** Email each refund once. Refunds made directly in Stripe (not from this dashboard) aren't emailed here. */
+export async function notifyRefund(store: KvStore, order: Order, refund: Order["refunds"][number], cfg: NotifyConfig, now = new Date()) {
+  await sendOnce(store, order, `other:${refundSlot(refund)}`, cfg, now, () => ({ to: order.customer.email, tag: "order-refund", ...refundEmail(order, refund, cfg) }));
+}
+
+export const trackingSlot = (groupId: string, trackingNumber: string) => `tracking-${slotKey(groupId)}-${slotKey(trackingNumber)}`;
+
+export async function notifyTrackingUpdate(store: KvStore, order: Order, groupId: string, cfg: NotifyConfig, now = new Date()) {
+  const g = order.fulfillments.find((f) => f.id === groupId);
+  if (!g?.trackingNumber) return;
+  await sendOnce(store, order, `other:${trackingSlot(groupId, g.trackingNumber)}`, cfg, now, () => ({ to: order.customer.email, tag: "order-tracking-update", ...trackingUpdateEmail(order, groupId) }));
+}
+
+/** Retry every failed cancellation/refund/tracking email on an order (sent or skipped ones are left alone). */
+export async function retryOtherEmails(store: KvStore, order: Order, cfg: NotifyConfig, now = new Date()) {
+  const failed = Object.entries(order.notifications?.other ?? {})
+    .filter(([, r]) => r.status === "failed")
+    .map(([k]) => k);
+  for (const k of failed) {
+    if (k === "canceled") await notifyCanceled(store, order, cfg, now);
+    const refund = order.refunds.find((r) => refundSlot(r) === k);
+    if (refund) await notifyRefund(store, order, refund, cfg, now);
+    for (const g of order.fulfillments) if (g.trackingNumber && trackingSlot(g.id, g.trackingNumber) === k) await notifyTrackingUpdate(store, order, g.id, cfg, now);
+  }
 }

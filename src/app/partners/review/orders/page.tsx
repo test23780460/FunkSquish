@@ -52,6 +52,24 @@ async function Orders({ searchParams }: { searchParams: PageProps<"/partners/rev
   const deps = mode ? await orderDeps(mode) : null;
   const orders = deps ? await listOrders(deps.store) : [];
   const reconciled = one(sp.reconciled)?.split("-");
+  const q = (one(sp.q) ?? "").trim().toLowerCase().slice(0, 80);
+  const f = one(sp.f) ?? "all";
+  const FILTERS: Record<string, { label: string; test: (o: (typeof orders)[number]) => boolean }> = {
+    all: { label: "All", test: () => true },
+    attention: { label: "Needs attention", test: (o) => orderAttention(o).length > 0 },
+    open: { label: "To ship", test: (o) => o.status === "open" || o.status === "partially_fulfilled" },
+    supplier: { label: "Supplier packages", test: (o) => o.fulfillments.some((g) => g.source === "supplier" && !["shipped", "delivered", "canceled"].includes(g.status)) },
+    refunded: { label: "Refunded", test: (o) => refundedSoFar(o) > 0 },
+    disputed: { label: "Disputed", test: (o) => (o.disputes ?? []).length > 0 },
+    canceled: { label: "Canceled", test: (o) => o.status === "canceled" },
+  };
+  const filter = FILTERS[f] ? f : "all";
+  const matches = (o: (typeof orders)[number]) =>
+    !q ||
+    [o.id, o.customer.email, o.customer.name, o.shippingAddress?.name, ...o.lineItems.map((l) => l.sku), ...o.fulfillments.map((g) => g.trackingNumber ?? ""), ...o.fulfillments.map((g) => g.supplierRef ?? "")]
+      .filter(Boolean)
+      .some((v) => String(v).toLowerCase().includes(q));
+  const shown = orders.filter((o) => FILTERS[filter].test(o) && matches(o));
 
   return (
     <div className="space-y-6">
@@ -79,12 +97,29 @@ async function Orders({ searchParams }: { searchParams: PageProps<"/partners/rev
       {one(sp.error) && <p role="alert" className="rounded-2xl bg-berry-soft px-4 py-3 font-semibold text-ink">{one(sp.error) === "closed" ? "Checkout isn't switched on here." : one(sp.error)}</p>}
       <KeyPermissionsCheck result={one(sp.keys)} />
       {mode !== "test" && <LiveShippingApproval />}
+      {orders.length > 0 && (
+        <div className="space-y-3">
+          <form action="/partners/review/orders" className="flex flex-wrap gap-2">
+            {filter !== "all" && <input type="hidden" name="f" value={filter} />}
+            <input name="q" defaultValue={q} placeholder="Order number, customer, SKU, tracking or supplier ref" aria-label="Search orders" className="min-h-11 w-full max-w-md rounded-full bg-white px-4 ring-2 ring-inset ring-sky-200 focus:outline-none focus:ring-royal" />
+            <button type="submit" className="min-h-11 rounded-full bg-ink px-5 font-display font-semibold text-white">Search</button>
+          </form>
+          <nav aria-label="Filter orders" className="flex flex-wrap gap-2">
+            {Object.entries(FILTERS).map(([k, v]) => (
+              <Link key={k} href={`/partners/review/orders?${new URLSearchParams({ ...(k !== "all" ? { f: k } : {}), ...(q ? { q } : {}) })}`} aria-current={filter === k ? "page" : undefined} className={cn("inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold", filter === k ? "bg-ink text-white" : "bg-white text-ink ring-1 ring-inset ring-sky-200")}>
+                {v.label} ({orders.filter(v.test).length})
+              </Link>
+            ))}
+            <Link href="/partners/review/orders/emails" className="inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold text-royal underline">Customer email previews</Link>
+          </nav>
+        </div>
+      )}
 
-      {orders.length === 0 ? (
-        <p className="rounded-[2rem] bg-white p-8 text-center text-ink-soft ring-1 ring-inset ring-sky-200">No orders yet.</p>
+      {shown.length === 0 ? (
+        <p className="rounded-[2rem] bg-white p-8 text-center text-ink-soft ring-1 ring-inset ring-sky-200">{orders.length ? "No orders match." : "No orders yet."}</p>
       ) : (
         <ul className="grid gap-3">
-          {orders.map((o) => (
+          {shown.map((o) => (
             <li key={o.stripeCheckoutSessionId}>
               <Link href={`/partners/review/orders/${o.stripeCheckoutSessionId}`} className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[1.5rem] bg-white p-4 ring-1 ring-inset ring-sky-200 hover:ring-royal">
                 <span className={cn("rounded-full px-3 py-1 font-display text-xs font-bold", statusTone[o.status] ?? "bg-ice text-ink")}>{o.status.replace("_", " ")}</span>

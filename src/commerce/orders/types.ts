@@ -215,6 +215,8 @@ export interface OrderNotifications {
   owner?: NotificationRecord;
   /** Per fulfillment group id. */
   shipping?: Record<string, NotificationRecord>;
+  /** Cancellation, refund and tracking-update emails, keyed by event (e.g. "refund-re_123"). */
+  other?: Record<string, NotificationRecord>;
 }
 
 export interface Order {
