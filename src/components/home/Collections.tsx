@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { categories } from "@/commerce/categories";
+import { isPreviewCatalog } from "@/commerce/catalog";
+import { purchasingEnabled } from "@/lib/features";
 import { Container, SectionHeading, Badge } from "@/components/ui/Primitives";
 import { ProductArt } from "@/components/illustrations/ProductArt";
 import { ArrowRightIcon } from "@/components/icons/Icons";
@@ -13,7 +15,11 @@ export function Collections() {
         <SectionHeading
           eyebrow="Upcoming collections"
           title={<span id="collections-title">Four ways to squish</span>}
-          lead="A sneak peek at the collections we're putting together. These are previews — nothing is for sale just yet."
+          lead={
+            isPreviewCatalog
+              ? "A sneak peek at the collections we're putting together. These are previews — nothing is for sale just yet."
+              : `Four collections, each with its own kind of squish.${purchasingEnabled ? "" : " Ordering isn't open just yet."}`
+          }
         />
 
         <ul className="mt-10 grid gap-3.5 sm:mt-12 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 lg:gap-6">
@@ -53,7 +59,7 @@ export function Collections() {
                     <h3 className="mt-0.5 font-display text-xl font-bold leading-tight text-ink sm:mt-1 sm:text-2xl">{cat.name}</h3>
                     <p className="mt-2 hidden flex-1 leading-relaxed text-ink-soft sm:block">{cat.description}</p>
                     <span className="mt-2 inline-flex items-center gap-1.5 font-display text-[0.95rem] font-semibold text-royal sm:mt-4 sm:text-base">
-                      See sample designs
+                      {isPreviewCatalog ? "See sample designs" : "Shop the collection"}
                       <ArrowRightIcon className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
                     </span>
                   </div>

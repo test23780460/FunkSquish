@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { textures } from "@/content/textures";
+import { isPreviewCatalog } from "@/commerce/catalog";
 import { Container, SectionHeading } from "@/components/ui/Primitives";
 import { ButtonLink } from "@/components/ui/Button";
 import { TextureBlob } from "@/components/illustrations/TextureBlob";
@@ -18,7 +19,7 @@ export function SquishLabTeaser() {
             align="responsive"
             eyebrow="New · Squish Lab"
             title={<span id="lab-teaser-title">What kind of squish are you?</span>}
-            lead="Soft, slow-rise, jelly, crunchy or buttery — try each texture on screen, then explore the sample designs made for it."
+            lead={`Soft, slow-rise, jelly, crunchy or buttery — try each texture on screen, then explore the ${isPreviewCatalog ? "sample designs made" : "squishies"} for it.`}
           />
           <ul className="mt-7 flex flex-wrap justify-center gap-2 lg:justify-start">
             {textures.map((t) => (

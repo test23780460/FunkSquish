@@ -338,3 +338,15 @@
     list-style: decimal;
   }
 }
+
+/*
+ * Netlify's free plan pins a small "Powered by Netlify" badge (about 52px tall)
+ * to the bottom-right corner of the live site. While it's on the page, fixed
+ * bars and the footer's last row leave room for it so it never covers a button.
+ */
+html:has(#nl-badge-frame) .clear-host-badge {
+  padding-bottom: calc(max(0.75rem, env(safe-area-inset-bottom)) + 3.5rem);
+}
+html:has(#nl-badge-frame) .above-host-badge {
+  bottom: 4.5rem;
+}

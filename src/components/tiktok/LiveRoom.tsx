@@ -19,7 +19,16 @@ const fmt = (tz?: string) =>
  * during a scheduled window we say it's "scheduled for now" and send people to
  * TikTok — we can't see TikTok's real status, so we never claim "LIVE now".
  */
-export function LiveStatusPanel({ sessions, featured }: { sessions: LiveSession[]; featured: Record<string, ReactNode> }) {
+export function LiveStatusPanel({
+  sessions,
+  featured,
+  previewOnly = true,
+}: {
+  sessions: LiveSession[];
+  featured: Record<string, ReactNode>;
+  /** True while the catalog only holds illustrated samples (wording only). */
+  previewOnly?: boolean;
+}) {
   const nowMs = useNow();
   const known = nowMs > 0;
   const { scheduledNow, next } = liveState(sessions, new Date(known ? nowMs : 0));
@@ -86,7 +95,7 @@ export function LiveStatusPanel({ sessions, featured }: { sessions: LiveSession[
       {focus && featured[focus.id] && (
         <div className="bg-white/5 p-6 ring-1 ring-inset ring-white/10 sm:p-8">
           <p className="font-display text-lg font-bold">On the table this time</p>
-          <p className="text-sm text-sky-200">Sample designs we plan to show — not products for sale.</p>
+          <p className="text-sm text-sky-200">{previewOnly ? "Sample designs we plan to show — not products for sale." : "Squishies we plan to show."}</p>
           <div className="mt-4">{featured[focus.id]}</div>
         </div>
       )}

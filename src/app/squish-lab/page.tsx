@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { listProducts } from "@/commerce/catalog";
+import { isPreviewCatalog, listProducts } from "@/commerce/catalog";
 import { textures, type TextureId } from "@/content/textures";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { PageHero } from "@/components/layout/PageHero";
@@ -15,11 +15,12 @@ import { Mascot } from "@/components/illustrations/Mascot";
 import { HeartIcon, SparklesIcon } from "@/components/icons/Icons";
 import { pageMetadata } from "@/lib/seo";
 import { cn } from "@/lib/cn";
+import { purchasingEnabled } from "@/lib/features";
 
 export const metadata = pageMetadata({
   title: "Squish Lab",
   description:
-    "Try five squishy textures — cloud soft, slow rise, jelly, crunchy and buttery — in the FunkSquish Squish Lab, then explore sample designs for each.",
+    `Try five squishy textures — cloud soft, slow rise, jelly, crunchy and buttery — in the FunkSquish Squish Lab, then explore ${isPreviewCatalog ? "sample designs" : "squishies"} for each.`,
   path: "/squish-lab",
 });
 
@@ -73,13 +74,13 @@ export default async function SquishLabPage() {
             Welcome to the <span className="text-squish">Squish Lab</span>
           </>
         }
-        lead="Every squishy has a personality. Pick a texture, press and hold, and feel the difference — then see the sample designs we're exploring for it."
+        lead={`Every squishy has a personality. Pick a texture, press and hold, and feel the difference — then see ${isPreviewCatalog ? "the sample designs we're exploring" : "our squishies"} for it.`}
       />
 
       <section aria-label="Texture explorer" className="bg-white pb-16 pt-4 sm:pb-20">
         <Container>
-          <Suspense fallback={<SquishLab matches={matches} />}>
-            <SquishLabFromUrl matches={matches} />
+          <Suspense fallback={<SquishLab matches={matches} previewOnly={isPreviewCatalog} />}>
+            <SquishLabFromUrl matches={matches} previewOnly={isPreviewCatalog} />
           </Suspense>
         </Container>
       </section>
@@ -120,11 +121,12 @@ export default async function SquishLabPage() {
             Found a favorite?
           </h2>
           <p className="mt-3 max-w-xl text-lg text-ink-soft">
-            Save sample designs to your wishlist and we&apos;ll keep them on this device for you. Nothing is for sale yet.
+            Save {isPreviewCatalog ? "sample designs" : "favorites"} to your wishlist and we&apos;ll keep them on this device for you.
+            {!purchasingEnabled && " Nothing is for sale yet."}
           </p>
           <div className="mt-7 flex flex-col flex-wrap justify-center gap-3 min-[440px]:flex-row">
             <ButtonLink href="/shop" size="lg">
-              See all sample designs
+              {isPreviewCatalog ? "See all sample designs" : "Shop all squishies"}
             </ButtonLink>
             <ButtonLink href="/quiz" size="lg" variant="secondary">
               Take the personality quiz
