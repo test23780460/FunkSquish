@@ -117,7 +117,7 @@ async function Marketing({ searchParams }: { searchParams: PageProps<"/partners/
                     </p>
                     <span className="text-xs text-ink-soft">{c.sentAt ? `sent ${dateTime(c.sentAt)}` : `drafted ${dateTime(c.createdAt)}`}</span>
                   </div>
-                  {c.error && <p className="mt-1 text-sm font-semibold text-[#b8215a]">{c.error}</p>}
+                  {c.error && <p className="mt-1 text-sm font-semibold text-[#a3174f]">{c.error}</p>}
                   <details className="mt-2">
                     <summary className="cursor-pointer text-sm font-semibold text-royal">Preview the email</summary>
                     <iframe title={`Preview: ${c.subject}`} srcDoc={campaignHtml(c, products, { url: siteConfig.url, mailingAddress: address })} sandbox="" className="mt-2 h-96 w-full rounded-2xl bg-white ring-1 ring-inset ring-sky-200" />
@@ -143,7 +143,7 @@ async function Marketing({ searchParams }: { searchParams: PageProps<"/partners/
                   {c.status === "draft" && (
                     <form action={deleteCampaignAction} className="mt-2">
                       <input type="hidden" name="id" value={c.id} />
-                      <button className="text-sm font-semibold text-[#b8215a] underline">Delete draft</button>
+                      <button className="text-sm font-semibold text-[#a3174f] underline">Delete draft</button>
                     </form>
                   )}
                 </li>

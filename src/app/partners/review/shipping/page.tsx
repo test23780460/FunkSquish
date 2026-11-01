@@ -154,7 +154,7 @@ async function Shipping({ searchParams }: { searchParams: PageProps<"/partners/r
                   <form action={removeOriginAction} className="mt-2">
                     <input type="hidden" name="existingId" value={o.id} />
                     <input type="hidden" name="rev" value={draft.rev} />
-                    <button className="text-sm font-semibold text-[#b8215a] underline">Remove from draft</button>
+                    <button className="text-sm font-semibold text-[#a3174f] underline">Remove from draft</button>
                   </form>
                 )}
               </details>
@@ -190,7 +190,7 @@ async function Shipping({ searchParams }: { searchParams: PageProps<"/partners/r
               (preview.ok ? (
                 <div className="rounded-xl bg-mint-soft/60 p-3 text-sm text-ink">
                   <p className="font-semibold">Example total shipping: {usd(preview.quote.totalCents)}</p>
-                  {preview.unverified.length > 0 && <p className="font-semibold text-[#b8215a]">Not verified yet: {preview.unverified.join(", ")} — priced here for checking, but checkout won&apos;t use these rates until they&apos;re verified and applied.</p>}
+                  {preview.unverified.length > 0 && <p className="font-semibold text-[#a3174f]">Not verified yet: {preview.unverified.join(", ")} — priced here for checking, but checkout won&apos;t use these rates until they&apos;re verified and applied.</p>}
                   <ul className="mt-1 list-disc pl-5">
                     {preview.quote.packages.map((p) => (
                       <li key={p.groupId}>
@@ -237,7 +237,7 @@ async function Shipping({ searchParams }: { searchParams: PageProps<"/partners/r
                     Once that&apos;s merged and deployed, set <span className="font-mono">STRIPE_LIVE_SHIPPING_TABLE</span> to the new code for Production (only when live checkout is approved). Until it matches, live checkout stays closed.
                   </li>
                 </ol>
-                {status?.removed.length ? <p className="text-sm font-semibold text-[#b8215a]">Removed in the draft: {status.removed.join(", ")} — products using them stop being checkout-ready.</p> : null}
+                {status?.removed.length ? <p className="text-sm font-semibold text-[#a3174f]">Removed in the draft: {status.removed.join(", ")} — products using them stop being checkout-ready.</p> : null}
               </>
             )}
             <p className="text-xs text-ink-soft">Why not instant? This changes what customers pay, so it goes through a reviewed deploy and your approval code — a rate can never change on customers without you seeing it first.</p>

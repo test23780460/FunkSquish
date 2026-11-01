@@ -9,7 +9,7 @@ import { LockIcon } from "@/components/icons/Icons";
 export function PassphraseForm() {
   const [state, action, pending] = useActionState<LoginState, FormData>(loginAction, { error: null });
   return (
-    <form action={action} className="mx-auto max-w-md rounded-[2rem] bg-white p-6 shadow-[var(--shadow-card)] ring-1 ring-inset ring-sky-200 sm:p-8">
+    <form action={action} className="mx-auto max-w-md rounded-3xl bg-white p-6 shadow-[0_1px_2px_rgba(19,53,122,0.05),0_12px_32px_-20px_rgba(19,53,122,0.28)] ring-1 ring-sky-100 sm:p-8">
       <span className="grid size-12 place-items-center rounded-2xl bg-ice text-royal">
         <LockIcon className="size-6" />
       </span>
