@@ -137,7 +137,8 @@ export function testCheckoutEnabled(): boolean {
  *     = its fingerprint (src/commerce/shipping-approval.ts). This replaced the
  *     old STRIPE_LIVE_SHIPPING_RATE_IDS, which no longer set any price.
  * (The checkout service also refuses real orders until the owner has two-step
- * sign-in — src/lib/owner/mfa-gate.ts.)
+ * sign-in — src/lib/owner/mfa-gate.ts — and until Stripe confirms the live key
+ * has Disputes: Read — src/commerce/checkout/key-permissions.ts.)
  * Live variables have their own names (STRIPE_LIVE_*), so test and live can
  * never share a key, webhook secret or order store.
  */

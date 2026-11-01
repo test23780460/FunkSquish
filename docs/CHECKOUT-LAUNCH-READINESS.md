@@ -51,6 +51,7 @@ Current decisions: U.S. only (50 states + APO/FPO/DPO), buyer-paid shipping with
 
 - [ ] Real products: inventory on hand or supplier authorization, CPC/test reports, photos, weights (`npm run catalog:check`)
 - [ ] Stripe account verified by you; **live** keys created by you at launch time only
+- [ ] Live restricted key includes **Disputes: Read**: owner Orders page → **Check key permissions** says so (live checkout stays closed until it does)
 - [ ] Shipping rates from real package weights
 - [ ] Kentucky sales tax permit; Stripe Tax registration added
 - [x] Order storage: Netlify Blobs with compare-and-set, timeouts and separate test/live stores (enough for launch volume; a database stays optional — see docs/STRIPE-PRODUCTION.md)

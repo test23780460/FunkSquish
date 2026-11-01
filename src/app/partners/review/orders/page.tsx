@@ -11,7 +11,8 @@ import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav } from "@/components/owner/OwnerNav";
 import { cn } from "@/components/owner/cn";
 import { Chips, Empty, Flash, OwnerShell, PageTitle, Pill, SearchBar, card, dateTime, one, secondary, small, type PillTone } from "@/components/owner/OwnerUi";
-import { reconcileAction } from "./actions";
+import { checkKeyPermissionsAction, reconcileAction } from "./actions";
+import { REQUIRED_KEY_PERMISSIONS } from "@/commerce/checkout/key-permissions";
 import { SHIPPING_ORIGINS } from "@/commerce/origins";
 import { SHIPPING_LOCK_TEXT, shippingApprovalStatus } from "@/commerce/shipping-approval";
 
@@ -92,6 +93,7 @@ async function Orders({ searchParams }: { searchParams: PageProps<"/partners/rev
         ok={reconciled ? `Checked ${reconciled[0]} paid checkout(s) in Stripe; ${reconciled[1]} missing order(s) recorded.` : null}
         error={error ? (error === "closed" ? "Checkout isn't switched on here." : error) : null}
       />
+      <KeyPermissionsCheck result={one(sp.keys)} />
       {mode !== "test" && <LiveShippingApproval />}
 
       {orders.length > 0 && (
@@ -166,6 +168,50 @@ async function Orders({ searchParams }: { searchParams: PageProps<"/partners/rev
             );
           })}
         </ul>
+      )}
+    </div>
+  );
+}
+
+const KEY_OUTCOMES = ["ready", "missing-permission", "key-rejected", "stripe-unreachable"] as const;
+
+/** Live checkout's key lock: Stripe must confirm the key's permissions (key-permissions.ts). */
+function KeyPermissionsCheck({ result }: { result?: string }) {
+  const needed = REQUIRED_KEY_PERMISSIONS.map((p) => p.label).join(", ");
+  const m = /^(test|live)-(.+)$/.exec(result ?? "");
+  const outcome = m && (KEY_OUTCOMES as readonly string[]).includes(m[2]) ? (m[2] as (typeof KEY_OUTCOMES)[number]) : null;
+  const which = m?.[1] === "live" ? "live" : "sandbox";
+  const message =
+    result === "none"
+      ? "No Stripe key is set here yet. On production this checks STRIPE_LIVE_SECRET_KEY once you've added it."
+      : result === "error"
+        ? "The check couldn't run. Try again in a minute."
+        : outcome === "ready"
+          ? `✓ The ${which} key has ${needed}.`
+          : outcome === "missing-permission"
+            ? `The ${which} key is missing ${needed}. In Stripe → Developers → API keys, edit the restricted key, set ${needed.replace(": ", " to ")}, save, then check again.${which === "live" ? " Live checkout stays closed until then." : ""}`
+            : outcome === "key-rejected"
+              ? `Stripe rejected the ${which} key (revoked, rolled or mistyped). Update it in Netlify, then check again.`
+              : outcome === "stripe-unreachable"
+                ? "Couldn't reach Stripe. Try again in a minute."
+                : null;
+  return (
+    <div className={cn(card, "mb-5 py-4 sm:py-4")}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-ink">
+          <span className="font-display font-semibold">Stripe key permissions.</span> Live checkout stays closed until Stripe confirms the live key has{" "}
+          <strong>{needed}</strong>.
+        </p>
+        <form action={checkKeyPermissionsAction}>
+          <button type="submit" className={cn(secondary, small)}>
+            Check key permissions
+          </button>
+        </form>
+      </div>
+      {message && (
+        <p role="status" className={cn("mt-3 rounded-2xl px-4 py-3 text-sm font-semibold text-ink", outcome === "ready" ? "bg-mint-soft" : "bg-lemon-soft")}>
+          {message}
+        </p>
       )}
     </div>
   );
