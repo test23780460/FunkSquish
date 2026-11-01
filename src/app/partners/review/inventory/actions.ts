@@ -16,6 +16,10 @@ import {
   undoAdjustment,
   type OwnerKind,
 } from "@/commerce/orders/stock-admin";
+import { ownerTools } from "@/lib/owner/data";
+import { applyTikTok, parseCounts, parseTikTokOrders, planTikTok, setSupplierStock, stableId, SUPPLIER_STOCK, type SupplierStockState } from "@/commerce/orders/reconcile";
+import { dollarsToCents } from "@/commerce/catalog-admin/record";
+import { getSupplier } from "@/commerce/suppliers/supplier";
 
 /*
  * Owner-only inventory actions. Server actions are public endpoints, so each
@@ -25,7 +29,7 @@ import {
  */
 
 const BASE = "/partners/review/inventory";
-const BACK = new Set([BASE, `${BASE}/live`, "/partners/review/today"]);
+const BACK = new Set([BASE, `${BASE}/live`, `${BASE}/reconcile`, "/partners/review/today"]);
 
 async function context() {
   if (!(await requireReviewer())) redirect("/partners/review");
@@ -155,4 +159,112 @@ export async function endLiveAction(fd: FormData) {
   if (!r.ok) redirect(`${BASE}/live?${q({ error: r.error })}`);
   console.info(`[inventory] ${ctx.mode} LIVE ended; ${r.errors.length} problem(s)`);
   redirect(`${BASE}/live?${q(r.errors.length ? { error: msg(r.errors.join(" ")), ended: "1" } : { saved: "LIVE ended and stock reconciled.", ended: "1" })}`);
+}
+
+/* ------------------------------ reconciliation, restocks, supplier stock ------------------------------ */
+
+const REC = `${BASE}/reconcile`;
+const recBack = (params: Record<string, string>, hash = "") => `${REC}?${q(params)}${hash ? `#${hash}` : ""}`;
+const MAX_CSV = 2 * 1024 * 1024;
+
+async function tools() {
+  const ctx = await requireReviewer();
+  if (!ctx) redirect("/partners/review");
+  return ownerTools(ctx);
+}
+
+async function csvFrom(fd: FormData, hash: string): Promise<string> {
+  const file = fd.get("file");
+  if (!(file instanceof File) || file.size === 0) redirect(recBack({ error: "Choose the .csv file." }, hash));
+  if (file.size > MAX_CSV) redirect(recBack({ error: "That file is over 2 MB." }, hash));
+  return file.text();
+}
+
+/** TikTok Shop order export: one "Sold on TikTok" change per order line, at most once ever. */
+export async function importTikTokAction(fd: FormData) {
+  const ctx = await context();
+  const t = await tools();
+  if (!(await t.allow("reconcile", 60, 60 * 60))) redirect(recBack({ error: "Too many uploads in an hour." }, "tiktok"));
+  const parsed = parseTikTokOrders(await csvFrom(fd, "tiktok"));
+  if (parsed.missingColumns.length) redirect(recBack({ error: `Couldn't find these columns: ${parsed.missingColumns.join(", ")}. Use the order export from TikTok Seller Center (Orders, then Export).` }, "tiktok"));
+  if (parsed.errors.length) redirect(recBack({ error: msg(`Nothing recorded. Fix these first: ${parsed.errors.slice(0, 5).join("; ")}`) }, "tiktok"));
+  const plan = await planTikTok(ctx.store, parsed.lines, ctx.items);
+  const count = (a: string) => plan.filter((p) => p.action === a).length;
+  const summary = `${count("record-sale")} new sale line(s), ${count("put-back")} cancellation(s) to put back, ${count("already-recorded") + count("already-put-back")} already done, ${count("unknown-sku")} unknown SKU(s), ${count("quantity-changed")} with a changed quantity (check by hand)`;
+  if (fd.get("intent") !== "apply") redirect(recBack({ ok: `Check only — nothing recorded. ${summary}.` }, "tiktok"));
+  const out = await applyTikTok(ctx.store, plan);
+  const applied = out.filter((o) => o.result === "applied").length;
+  const held = out.filter((o) => o.result === "held");
+  await t.audit("inventory", "tiktok-import", null, `TikTok Shop orders upload: ${applied} stock change(s), ${held.length} held for review`);
+  redirect(
+    recBack(
+      held.length ? { error: msg(`Recorded ${applied}. Held ${held.length} for you to check: ${held.slice(0, 3).map((h) => `${h.row.orderId} ${h.row.sku}: ${h.message}`).join("; ")}`) } : { ok: `Recorded ${applied} stock change(s). ${summary}.` },
+      "tiktok",
+    ),
+  );
+}
+
+/** "sku,count" sheet: set counts. The same file twice changes nothing the second time. */
+export async function importCountsAction(fd: FormData) {
+  const ctx = await context();
+  const t = await tools();
+  if (!(await t.allow("reconcile", 60, 60 * 60))) redirect(recBack({ error: "Too many uploads in an hour." }, "counts"));
+  const text = await csvFrom(fd, "counts");
+  const { rows, errors } = parseCounts(text);
+  if (errors.length) redirect(recBack({ error: msg(`Nothing saved. ${errors.slice(0, 5).join("; ")}`) }, "counts"));
+  const unknown = rows.filter((r) => !ctx.items.some((i) => i.sku.toUpperCase() === r.sku.toUpperCase()));
+  if (fd.get("intent") !== "apply")
+    redirect(recBack({ ok: `Check only — nothing saved. ${rows.length - unknown.length} count(s) to set${unknown.length ? `, unknown SKUs: ${unknown.map((u) => u.sku).slice(0, 5).join(", ")}` : ""}.` }, "counts"));
+  const fileId = stableId("counts", text);
+  let set = 0;
+  const failed: string[] = [];
+  for (const r of rows) {
+    const item = ctx.items.find((i) => i.sku.toUpperCase() === r.sku.toUpperCase());
+    if (!item) continue;
+    const res = await adjustStock(ctx.store, { variantId: item.variantId, sku: item.sku, kind: "count", quantity: r.count, note: r.note ?? "Counted (spreadsheet)", requestId: stableId(fileId, item.sku), catalogOnHand: item.catalogOnHand, force: fd.get("force") === "on" });
+    if (res.ok) set += res.duplicate ? 0 : 1;
+    else failed.push(`${item.sku}: ${res.error}`);
+  }
+  await t.audit("inventory", "count-import", null, `Counts spreadsheet: ${set} set, ${failed.length} refused`);
+  redirect(recBack(failed.length ? { error: msg(`Set ${set}. Refused: ${failed.slice(0, 3).join("; ")}`) } : { ok: `Set ${set} count(s).` }, "counts"));
+}
+
+/** Stock arrived: adds the units and keeps a private restock record (supplier, invoice, unit cost). */
+export async function restockAction(fd: FormData) {
+  const ctx = await context();
+  const t = await tools();
+  if (!(await t.allow("inventory-write", 300, 60 * 60))) redirect(recBack({ error: "Too many changes in an hour." }, "restock"));
+  const item = variantFrom(ctx, fd);
+  if (!item) redirect(recBack({ error: "Pick the item that arrived." }, "restock"));
+  const qty = units(fd.get("quantity"));
+  const cost = dollarsToCents(String(fd.get("unitCost") ?? ""));
+  if (Number.isNaN(cost)) redirect(recBack({ error: "Unit cost: dollars and cents, e.g. 2.40." }, "restock"));
+  const supplierId = String(fd.get("supplierId") ?? "") || null;
+  if (supplierId && !(await getSupplier(t.data, supplierId))) redirect(recBack({ error: "Pick a supplier from the list." }, "restock"));
+  const invoiceRef = String(fd.get("invoiceRef") ?? "").trim().slice(0, 120) || null;
+  const requestId = String(fd.get("requestId") ?? "");
+  const r = await adjustStock(ctx.store, { variantId: item.variantId, sku: item.sku, kind: "received", quantity: qty, note: invoiceRef ? `Restock · ${invoiceRef}` : "Restock", requestId, catalogOnHand: item.catalogOnHand });
+  if (!r.ok) redirect(recBack({ error: msg(r.error) }, "restock"));
+  if (!r.duplicate) {
+    const at = new Date().toISOString();
+    await t.data.create(`restock/${at.slice(0, 10)}/${at}~${requestId}`, { id: requestId, at, variantId: item.variantId, sku: item.sku, quantity: qty, supplierId, invoiceRef, unitCostCents: cost, mode: ctx.mode });
+    await t.audit("inventory", "restock", item.sku, `Restock: +${qty} ${item.sku}${invoiceRef ? ` (${invoiceRef})` : ""}`);
+  }
+  redirect(recBack({ ok: r.duplicate ? "Already recorded." : `Added ${qty} to ${item.sku}.` }, "restock"));
+}
+
+/** What a supplier told you about their stock. Out or discontinued pauses the item on the website. */
+export async function supplierStockAction(fd: FormData) {
+  const ctx = await context();
+  const t = await tools();
+  const item = variantFrom(ctx, fd);
+  if (!item || !item.supplier) redirect(recBack({ error: "Pick a supplier-shipped item." }, "supplier-stock"));
+  const state = String(fd.get("state") ?? "") as SupplierStockState;
+  if (!(state in SUPPLIER_STOCK)) redirect(recBack({ error: "Pick what the supplier said." }, "supplier-stock"));
+  const raw = String(fd.get("quantity") ?? "").trim();
+  const quantity = raw ? Number(raw) : null;
+  if (quantity !== null && !(Number.isInteger(quantity) && quantity >= 0 && quantity <= 1_000_000)) redirect(recBack({ error: "Quantity: a whole number, or empty." }, "supplier-stock"));
+  const r = await setSupplierStock(ctx.store, { variantId: item.variantId, state, quantity, note: String(fd.get("note") ?? "").trim().slice(0, 200) || null });
+  await t.audit("inventory", "supplier-stock", item.sku, `Supplier stock for ${item.sku}: ${SUPPLIER_STOCK[state]}${r.paused ? " (paused on the website)" : ""}`);
+  redirect(recBack({ ok: `Saved${r.paused ? " — and paused on the website until you resume it" : ""}.` }, "supplier-stock"));
 }

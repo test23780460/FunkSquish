@@ -16,6 +16,7 @@ import { ACTION_WARNINGS, KIND_LABEL, canceledCheckouts, currentLive, loadStockR
 import type { Order } from "@/commerce/orders/types";
 import { formatMoney } from "@/commerce/availability";
 import { SHIPPING_ORIGINS, originProblem } from "@/commerce/origins";
+import { getSupplierStock, lastTikTokReconcile, supplierStockStale } from "@/commerce/orders/reconcile";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav } from "@/components/owner/OwnerNav";
 import { OwnerShell, PageTitle, Stat, card, dateTime } from "@/components/owner/OwnerUi";
@@ -104,6 +105,16 @@ async function Overview() {
   if (!auth?.enrollment) warnings.push({ text: "Two-step sign-in isn't set up. It's required before live checkout or partner applications can open.", href: "/partners/review/security" });
   const verified = SHIPPING_ORIGINS.filter((o) => originProblem(o, now, o.source) === null).length;
   if (verified === 0) warnings.push({ text: "No shipping origin has verified rates yet, so real products can't be checked out on the website.", href: "/partners/review/shipping" });
+  const tiktokItems = rows.filter((r) => r.tiktok);
+  if (tiktokItems.length) {
+    const last = await lastTikTokReconcile(ctx.store).catch(() => null);
+    const days = last ? Math.floor((now.getTime() - Date.parse(last.at)) / 86_400_000) : null;
+    if (days === null || days > 2)
+      warnings.push({ text: last ? `TikTok Shop orders were last uploaded ${days} days ago — stock may be out of date.` : "TikTok Shop orders have never been uploaded here — stock only knows the TikTok sales you recorded by hand.", href: "/partners/review/inventory/reconcile#tiktok" });
+  }
+  const supplierRows = rows.filter((r) => r.supplier && r.published);
+  const stale = (await Promise.all(supplierRows.map(async (r) => supplierStockStale(await getSupplierStock(ctx.store, r.variantId).catch(() => null), now)))).filter(Boolean).length;
+  if (stale) warnings.push({ text: `${stale} supplier-shipped item(s) haven't had their supplier stock checked in 7 days.`, href: "/partners/review/inventory/reconcile#supplier-stock" });
   if (audit === null) warnings.push({ text: "The dashboard's activity log couldn't be read just now. Reload; if it keeps happening, check Netlify Blobs status." });
   for (const w of extras?.warnings ?? []) warnings.push(w);
 

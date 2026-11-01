@@ -10,7 +10,7 @@ import { listOrders } from "@/commerce/orders/admin";
 import { ACTION_WARNINGS, canceledCheckouts, currentLive, loadStockRows } from "@/commerce/orders/stock-admin";
 import { Container } from "@/components/ui/Primitives";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
-import { OwnerNav } from "@/components/owner/OwnerNav";
+import { INVENTORY_TABS, OwnerNav, OwnerSubNav } from "@/components/owner/OwnerNav";
 import { StockCard } from "@/components/owner/StockCard";
 import { SearchIcon } from "@/components/icons/Icons";
 import { cn } from "@/lib/cn";
@@ -31,7 +31,7 @@ export default function InventoryPage({ searchParams }: PageProps<"/partners/rev
   );
 }
 
-const FILTERS = { all: "All", attention: "Needs attention", low: "Low or sold out", paused: "Paused", tiktok: "On TikTok" } as const;
+const FILTERS = { all: "All", attention: "Needs attention", low: "Low or sold out", paused: "Paused", tiktok: "On TikTok", ours: "Ships from you", supplier: "Supplier ships" } as const;
 type Filter = keyof typeof FILTERS;
 
 async function Inventory({ searchParams }: { searchParams: PageProps<"/partners/review/inventory">["searchParams"] }) {
@@ -52,7 +52,9 @@ async function Inventory({ searchParams }: { searchParams: PageProps<"/partners/
       filter === "attention" ? r.warnings.some((w) => ACTION_WARNINGS.has(w.code)) :
       filter === "low" ? r.warnings.some((w) => ["low", "sold-out", "oversold"].includes(w.code)) :
       filter === "paused" ? !!r.paused :
-      filter === "tiktok" ? r.tiktok : true,
+      filter === "tiktok" ? r.tiktok :
+      filter === "ours" ? !r.supplier :
+      filter === "supplier" ? r.supplier : true,
     )
     // LIVE items first, then whatever needs attention.
     .sort((a, b) => Number(live?.variantIds.includes(b.variantId) ?? false) - Number(live?.variantIds.includes(a.variantId) ?? false) || b.warnings.length - a.warnings.length);
@@ -65,6 +67,7 @@ async function Inventory({ searchParams }: { searchParams: PageProps<"/partners/
   return (
     <div>
       <OwnerNav current="/partners/review/inventory" />
+      <OwnerSubNav label="Inventory pages" items={INVENTORY_TABS} current="/partners/review/inventory" />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-bold text-ink sm:text-4xl">Inventory</h1>

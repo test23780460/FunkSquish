@@ -102,3 +102,10 @@ export const SUPPLIER_TABS = [
   { href: "/partners/review/suppliers/compare", label: "Compare" },
   { href: "/partners/review", label: "Partner applications" },
 ];
+
+export const INVENTORY_TABS = [
+  { href: "/partners/review/inventory", label: "Stock" },
+  { href: "/partners/review/inventory/reconcile", label: "TikTok, counts & restocks" },
+  { href: "/partners/review/inventory/live", label: "TikTok LIVE" },
+  { href: "/partners/review/inventory/activity", label: "Activity" },
+];
