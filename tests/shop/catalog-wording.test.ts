@@ -58,14 +58,14 @@ describe("pages switch on the catalog flag, not hard-coded copy", () => {
 
   it("shop page: preview title and notice only while every product is a sample; 'ordering isn't open' until purchasing is on", () => {
     const page = read("src/app/shop/page.tsx");
-    expect(page).toContain("isPreviewCatalog");
+    expect(page).toContain("catalogIsPreview()");
     expect(page).toMatch(/allPreview \? \(\s*<Notice\s+title="These are sample illustrations, not real products"/);
     expect(page).toMatch(/!allPreview && !purchasingEnabled && \(\s*<Notice title="Ordering isn't open yet"/);
   });
 
   it("home, Squish Lab and TikTok LIVE pages use the same flag", () => {
     for (const f of ["src/components/home/Hero.tsx", "src/components/home/Collections.tsx", "src/components/home/SquishLabTeaser.tsx", "src/app/squish-lab/page.tsx", "src/app/tiktok-live/page.tsx"])
-      expect(read(f), f).toContain("isPreviewCatalog");
+      expect(read(f), f).toContain("catalogIsPreview()");
   });
 });
 

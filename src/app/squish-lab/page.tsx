@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { isPreviewCatalog, listProducts } from "@/commerce/catalog";
+import { catalogIsPreview, listProducts } from "@/commerce/catalog";
 import { textures, type TextureId } from "@/content/textures";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { PageHero } from "@/components/layout/PageHero";
@@ -17,15 +17,16 @@ import { pageMetadata } from "@/lib/seo";
 import { cn } from "@/lib/cn";
 import { purchasingEnabled } from "@/lib/features";
 
-export const metadata = pageMetadata({
-  title: "Squish Lab",
-  description:
-    `Try five squishy textures — cloud soft, slow rise, jelly, crunchy and buttery — in the FunkSquish Squish Lab, then explore ${isPreviewCatalog ? "sample designs" : "squishies"} for each.`,
-  path: "/squish-lab",
-});
+export async function generateMetadata() {
+  return pageMetadata({
+    title: "Squish Lab",
+    description: `Try five squishy textures — cloud soft, slow rise, jelly, crunchy and buttery — in the FunkSquish Squish Lab, then explore ${(await catalogIsPreview()) ? "sample designs" : "squishies"} for each.`,
+    path: "/squish-lab",
+  });
+}
 
 export default async function SquishLabPage() {
-  const products = await listProducts();
+  const [products, isPreviewCatalog] = await Promise.all([listProducts(), catalogIsPreview()]);
 
   // Server-rendered product grids per texture, handed to the interactive lab.
   const matches = Object.fromEntries(

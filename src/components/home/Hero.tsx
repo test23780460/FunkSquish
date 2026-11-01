@@ -1,6 +1,6 @@
 import { siteConfig } from "@/lib/site";
 import { purchasingEnabled } from "@/lib/features";
-import { isPreviewCatalog } from "@/commerce/catalog";
+import { catalogIsPreview } from "@/commerce/catalog";
 import { Container } from "@/components/ui/Primitives";
 import { ButtonAnchor, ButtonLink } from "@/components/ui/Button";
 import { ArrowRightIcon, SparklesIcon, TikTokIcon } from "@/components/icons/Icons";
@@ -9,7 +9,8 @@ import { CapsuleArt, CrunchyArt, JellyArt, SlushieArt } from "@/components/illus
 import { Bubble, Sparkle, Wave } from "@/components/decor/Decor";
 import { previewPalettes as p } from "@/commerce/providers/preview";
 
-export function Hero() {
+export async function Hero() {
+  const isPreviewCatalog = await catalogIsPreview();
   return (
     <section aria-labelledby="hero-title" className="relative overflow-hidden sky-wash">
       {/* soft background shapes */}

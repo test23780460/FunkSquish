@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { isPreviewCatalog, listProducts } from "@/commerce/catalog";
+import { catalogIsPreview, listProducts } from "@/commerce/catalog";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { PageHero } from "@/components/layout/PageHero";
 import { Container, Notice } from "@/components/ui/Primitives";
@@ -15,8 +15,9 @@ import { pageMetadata } from "@/lib/seo";
  * "preview" and says so; once real products are imported it becomes the shop,
  * and still says ordering isn't open until purchasing is switched on.
  */
-export const metadata = pageMetadata(
-  isPreviewCatalog
+export async function generateMetadata() {
+  return pageMetadata(
+  (await catalogIsPreview())
     ? {
         title: "Shop (preview)",
         description: "Preview the FunkSquish shop: sample designs from our upcoming Fruity Slushies, Jelly Squishies, Crunchy Squishies, and Cute Collectibles. Nothing is for sale yet.",
@@ -27,7 +28,8 @@ export const metadata = pageMetadata(
         description: "Shop FunkSquish squishies: Fruity Slushies, Jelly Squishies, Crunchy Squishies and Cute Collectibles.",
         path: "/shop",
       },
-);
+  );
+}
 
 export default async function ShopPage() {
   const products = await listProducts();

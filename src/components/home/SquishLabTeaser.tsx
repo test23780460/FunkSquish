@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { textures } from "@/content/textures";
-import { isPreviewCatalog } from "@/commerce/catalog";
+import { catalogIsPreview } from "@/commerce/catalog";
 import { Container, SectionHeading } from "@/components/ui/Primitives";
 import { ButtonLink } from "@/components/ui/Button";
 import { TextureBlob } from "@/components/illustrations/TextureBlob";
@@ -9,7 +9,8 @@ import { TeaserPad } from "./TeaserPad";
 import { cn } from "@/lib/cn";
 
 /** Homepage invitation into the Squish Lab, with a live squish demo. */
-export function SquishLabTeaser() {
+export async function SquishLabTeaser() {
+  const isPreviewCatalog = await catalogIsPreview();
   return (
     <section aria-labelledby="lab-teaser-title" className="relative overflow-hidden bg-ice-50 py-16 sm:py-24">
       <div aria-hidden="true" className="absolute inset-0 dots opacity-60" />

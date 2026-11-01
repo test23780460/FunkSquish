@@ -11,8 +11,12 @@ const CATEGORIES = ["fruity-slushies", "jelly-squishies", "crunchy-squishies", "
 const PUBLICATION = ["draft", "preview", "published", "archived"];
 const ART = ["slushie", "jelly", "crunchy", "capsule"];
 const TEXTURES = ["soft", "slow-rise", "jelly", "crunchy", "buttery"];
-/** Real media must be our own files under /public/products/ (no hotlinked or copied images). */
-const MEDIA_SRC = /^\/products\/[a-z0-9-]+\/[\w.-]+$/i;
+/**
+ * Real media must be our own files: under /public/products/ (build-time catalog),
+ * or uploaded through the owner dashboard and served from /media/<content hash>.
+ * Never hotlinked or copied images.
+ */
+const MEDIA_SRC = /^(\/products\/[a-z0-9-]+\/[\w.-]+|\/media\/[a-f0-9]{32}\.(jpg|png|webp|mp4|webm))$/i;
 
 /** Keys that indicate private data. They must never appear in public JSON. */
 const FORBIDDEN_KEY = /(cost|supplier|vendor|internal|note|margin|invoice|wholesale|compliance|certificate|purchase_?order)/i;
@@ -72,8 +76,8 @@ export function validateProducts(input: unknown): Product[] {
           errors.push(`${at}.media[${j}]: needs type (image|video), src and descriptive alt text`);
         else if (!(typeof m.width === "number" && typeof m.height === "number")) errors.push(`${at}.media[${j}]: width and height required`);
         else {
-          if (!MEDIA_SRC.test(m.src as string)) errors.push(`${at}.media[${j}].src: must be a file under /products/<slug>/`);
-          if (m.poster !== undefined && !(isStr(m.poster) && MEDIA_SRC.test(m.poster))) errors.push(`${at}.media[${j}].poster: must be a file under /products/<slug>/`);
+          if (!MEDIA_SRC.test(m.src as string)) errors.push(`${at}.media[${j}].src: must be a file under /products/<slug>/ or an uploaded /media/ file`);
+          if (m.poster !== undefined && !(isStr(m.poster) && MEDIA_SRC.test(m.poster))) errors.push(`${at}.media[${j}].poster: must be a file under /products/<slug>/ or an uploaded /media/ file`);
           if (m.captions !== undefined && !(isStr(m.captions) && MEDIA_SRC.test(m.captions) && m.captions.endsWith(".vtt")))
             errors.push(`${at}.media[${j}].captions: must be a .vtt file under /products/<slug>/`);
         }

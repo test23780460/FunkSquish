@@ -1,6 +1,7 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import { MemoryKvStore, createBlobsKvStore, type KvStore } from "@/lib/storage/kv";
+import { MemoryFileStore, createBlobsFileStore, type FileStore } from "@/lib/storage/files";
 import { takeRateLimits, type PartnerStores } from "@/lib/partners/store";
 import type { PartnerConfig } from "@/lib/partners/config";
 
@@ -14,11 +15,21 @@ import type { PartnerConfig } from "@/lib/partners/config";
  * deploy context (src/lib/partners/config.ts), not from anything a request sends.
  */
 type StoreCfg = Pick<PartnerConfig, "storage" | "storeSuffix">;
-const memory = globalThis as { __fsOwnerDataStore?: MemoryKvStore };
+const memory = globalThis as { __fsOwnerDataStore?: MemoryKvStore; __fsOwnerMediaStore?: MemoryFileStore };
 
 export async function ownerDataStore(cfg: StoreCfg): Promise<KvStore> {
   if (cfg.storage === "memory") return (memory.__fsOwnerDataStore ??= new MemoryKvStore());
   return createBlobsKvStore(`owner-data${cfg.storeSuffix}`);
+}
+
+/**
+ * Product photos/videos and supplier documents ("owner-media", plus "-preview").
+ * Private: product media is served publicly only once it is in the published
+ * catalog (src/app/media/[file]/route.ts); supplier documents never are.
+ */
+export async function ownerMediaStore(cfg: StoreCfg): Promise<FileStore> {
+  if (cfg.storage === "memory") return (memory.__fsOwnerMediaStore ??= new MemoryFileStore());
+  return createBlobsFileStore(`owner-media${cfg.storeSuffix}`);
 }
 
 /* --------------------------------- audit log --------------------------------- */

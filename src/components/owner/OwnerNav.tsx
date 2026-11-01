@@ -11,7 +11,7 @@ import { cn } from "@/lib/cn";
  */
 export const OWNER_SECTIONS = [
   { id: "overview", href: "/partners/review/today", label: "Overview", ready: true },
-  { id: "products", href: "/partners/review/products", label: "Products", ready: false },
+  { id: "products", href: "/partners/review/products", label: "Products", ready: true },
   { id: "inventory", href: "/partners/review/inventory", label: "Inventory", ready: true },
   { id: "orders", href: "/partners/review/orders", label: "Orders", ready: true },
   { id: "suppliers", href: "/partners/review", label: "Suppliers", ready: true },
@@ -89,4 +89,10 @@ export const SETTINGS_TABS = [
   { href: "/partners/review/settings", label: "Settings" },
   { href: "/partners/review/settings/activity", label: "Activity log" },
   { href: "/partners/review/security", label: "Security & two-step sign-in" },
+];
+
+export const PRODUCT_TABS = [
+  { href: "/partners/review/products", label: "All products" },
+  { href: "/partners/review/products/releases", label: "Website catalog & rollback" },
+  { href: "/partners/review/products/import", label: "Import / export" },
 ];

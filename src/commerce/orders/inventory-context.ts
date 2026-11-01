@@ -3,6 +3,10 @@ import { activeMode } from "../checkout/service";
 import { testCheckoutEnabled } from "../checkout/environment";
 import { TEST_FIXTURE_PRODUCTS, TEST_SHIPPING_ORIGINS, isTestFixtureVariant } from "../checkout/test-fixtures";
 import { localProducts } from "../providers/local";
+import { deployStorage } from "@/lib/partners/config";
+import { ownerDataStore } from "@/lib/owner/data";
+import { listRecords } from "../catalog-admin/store";
+import { toPublicProduct } from "../catalog-admin/record";
 import { canPurchase } from "../availability";
 import { staticOriginProblem, findOrigin, originIdFor } from "../origins";
 import { getLiveOrderStore, getTestOrderStore, type KvStore } from "./store";
@@ -12,7 +16,8 @@ import type { StockItem } from "./stock-admin";
 /**
  * Which stock the private inventory page manages here.
  *  - Production: the REAL stock (live order store), for every real product —
- *    published or still a draft. Works before website checkout opens, so
+ *    published or still a draft, from the dashboard (Products) and the
+ *    build-time catalog. Works before website checkout opens, so
  *    TikTok sales can be tracked from day one. Never anything else.
  *  - Previews and local dev: the TEST fixtures in the test store only.
  * Test and real stock never share a store (store.ts).
@@ -54,7 +59,7 @@ function itemsFrom(products: Product[], sellable: (p: Product, v: ProductVariant
 export async function inventoryContext(): Promise<InventoryContext> {
   const mode = activeMode();
   if (mode === "live" || (!mode && process.env.BUILD_CONTEXT === "production")) {
-    const products = localProducts.filter((p) => p.publication === "published" || p.publication === "draft");
+    const products = await realProducts();
     const items = itemsFrom(products, canPurchase);
     return {
       mode: "live",
@@ -75,4 +80,13 @@ export async function inventoryContext(): Promise<InventoryContext> {
     items,
     catalogOnHand: (id) => items.find((i) => i.variantId === id)?.catalogOnHand ?? null,
   };
+}
+
+/** Every real product: dashboard records (not archived) first, then build-time catalog products not in the dashboard. */
+export async function realProducts(): Promise<Product[]> {
+  const storage = deployStorage();
+  const records = storage ? await listRecords(await ownerDataStore(storage)) : [];
+  const fromDashboard = records.filter((r) => r.status !== "archived").map(toPublicProduct);
+  const ids = new Set(records.map((r) => r.id));
+  return [...fromDashboard, ...localProducts.filter((p) => (p.publication === "published" || p.publication === "draft") && !ids.has(p.id))];
 }
