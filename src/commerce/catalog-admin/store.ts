@@ -1,7 +1,8 @@
+import { createHash, randomUUID } from "node:crypto";
 import { updateWithRetry, type KvStore } from "../../lib/storage/kv-core";
 import { validateProducts, CatalogError } from "../validate";
 import type { Product } from "../types";
-import { newRecord, toPublicProduct, type ProductRecord } from "./record";
+import { newRecord, toPublicProduct, type PendingChange, type ProductRecord } from "./record";
 import { productReadiness, type ReadinessContext } from "./readiness";
 
 /**
@@ -15,6 +16,19 @@ import { productReadiness, type ReadinessContext } from "./readiness";
  * holds nothing private. A release changes only when the owner publishes,
  * unpublishes or rolls back ONE product at a time, so an unfinished edit to
  * one product can never go live with another.
+ *
+ * Consistency between a record and the live catalog (review finding, PR #27):
+ *  - Every record write is compare-and-set. Deleting a draft first replaces it
+ *    with a tombstone by compare-and-set, so a publish or save racing with the
+ *    delete either wins before it (and the delete is refused) or sees the
+ *    tombstone (and is refused) — never "deleted record, product still live".
+ *  - Publish/unpublish record their intent on the record (compare-and-set)
+ *    BEFORE touching the public catalog, then finish the record afterwards.
+ *    While the intent is there, saves and deletes are refused. If the action is
+ *    interrupted (timeout, storage error), the intent is resolved from what the
+ *    live catalog really shows once it's older than PENDING_STALE_MS: finished
+ *    if the change is live, undone if not. The owner page is never left saying
+ *    "not published" for a live product, or the reverse.
  */
 export const recordKey = (id: string) => `product/${id}`;
 const releaseKey = (seq: number) => `release/${String(seq).padStart(6, "0")}`;
@@ -31,14 +45,62 @@ export interface Release {
   products: Product[];
 }
 
-export async function listRecords(store: KvStore): Promise<ProductRecord[]> {
+/** An interrupted publish/unpublish is resolved once its intent is this old (well past any request's time limit). */
+export const PENDING_STALE_MS = 2 * 60_000;
+const isStale = (p: PendingChange | null | undefined, now: Date) => !!p && now.getTime() - Date.parse(p.at) >= PENDING_STALE_MS;
+export const publicHash = (p: Product) => createHash("sha256").update(JSON.stringify(p)).digest("hex").slice(0, 24);
+
+async function readAll(store: KvStore): Promise<ProductRecord[]> {
   const keys = await store.list("product/");
   const rows = await Promise.all(keys.map(async (k) => ((await (store.getListed ?? store.get).call(store, k)) as { value: ProductRecord } | null)?.value));
-  return rows.filter((r): r is ProductRecord => !!r).sort((a, b) => a.product.name.localeCompare(b.product.name));
+  return rows.filter((r): r is ProductRecord => !!r && !r.deletedAt);
 }
 
-export async function getRecord(store: KvStore, id: string): Promise<ProductRecord | null> {
-  return (await store.get<ProductRecord>(recordKey(id)))?.value ?? null;
+export async function listRecords(store: KvStore, now = new Date()): Promise<ProductRecord[]> {
+  let rows = await readAll(store);
+  const stuck = rows.filter((r) => isStale(r.pending, now));
+  if (stuck.length) {
+    for (const r of stuck) await reconcileRecord(store, r.id, now);
+    rows = await readAll(store);
+  }
+  return rows.sort((a, b) => a.product.name.localeCompare(b.product.name));
+}
+
+export async function getRecord(store: KvStore, id: string, now = new Date()): Promise<ProductRecord | null> {
+  let rec = (await store.get<ProductRecord>(recordKey(id)))?.value ?? null;
+  if (rec && isStale(rec.pending, now)) {
+    await reconcileRecord(store, id, now);
+    rec = (await store.get<ProductRecord>(recordKey(id)))?.value ?? null;
+  }
+  return rec && !rec.deletedAt ? rec : null;
+}
+
+/**
+ * Resolve an interrupted publish/unpublish from what the live catalog shows.
+ * Only touches intents older than PENDING_STALE_MS, so it never races a
+ * publish that is still running. Safe to call any number of times.
+ */
+export async function reconcileRecord(store: KvStore, id: string, now = new Date()): Promise<"none" | "finished" | "undone"> {
+  const cur = (await store.get<ProductRecord>(recordKey(id)))?.value;
+  const p = cur?.pending;
+  if (!cur || !p || !isStale(p, now)) return "none";
+  const live = await currentRelease(store);
+  const onSite = live?.products.find((x) => x.id === id);
+  const done = p.op === "publish" ? !!onSite && publicHash(onSite) === p.hash : !onSite;
+  let result: "none" | "finished" | "undone" = "none";
+  await updateWithRetry<ProductRecord>(store, recordKey(id), (r) => {
+    if (!r || r.pending?.token !== p.token) return undefined;
+    result = done ? "finished" : "undone";
+    if (!done) return { ...r, pending: null };
+    const at = now.toISOString();
+    const patch: Partial<ProductRecord> =
+      p.op === "publish"
+        ? { status: "published", publishedRev: r.rev + 1, publishedAt: r.publishedAt ?? p.at }
+        : { status: p.to ?? "draft", publishedRev: null };
+    const summary = p.op === "publish" ? "Published (finished after an interrupted publish)" : "Taken off the website (finished after an interrupted change)";
+    return { ...r, ...patch, pending: null, rev: r.rev + 1, updatedAt: at, history: [{ at, summary }, ...r.history].slice(0, HISTORY) };
+  });
+  return result;
 }
 
 export type SaveResult = { ok: true; record: ProductRecord } | { ok: false; error: string; conflict?: boolean };
@@ -77,8 +139,10 @@ export async function saveRecord(
   now = new Date(),
 ): Promise<SaveResult> {
   let out: SaveResult = { ok: false, error: "That product no longer exists." };
+  await reconcileRecord(store, id, now);
   await updateWithRetry<ProductRecord>(store, recordKey(id), (cur) => {
-    if (!cur) return ((out = { ok: false, error: "That product no longer exists." }), undefined);
+    if (!cur || cur.deletedAt) return ((out = { ok: false, error: "That product no longer exists." }), undefined);
+    if (cur.pending) return ((out = { ok: false, conflict: true, error: "This product is being published or taken off the website right now. Reload in a moment, then make your change." }), undefined);
     if (cur.rev !== expectedRev)
       return ((out = { ok: false, conflict: true, error: "This product was changed somewhere else (another tab or device) since you opened it. Reload to see the latest, then make your change again." }), undefined);
     const r = fn(structuredClone(cur));
@@ -93,14 +157,74 @@ export async function saveRecord(
   return out;
 }
 
-/** Only never-published drafts can be deleted (anything that was live is archived instead, so its history stays). */
-export async function deleteDraft(store: KvStore, id: string, expectedRev: number): Promise<SaveResult> {
-  const cur = await store.get<ProductRecord>(recordKey(id));
-  if (!cur) return { ok: false, error: "That product no longer exists." };
-  if (cur.value.rev !== expectedRev) return { ok: false, conflict: true, error: "This product changed since you opened it. Reload first." };
-  if (cur.value.publishedAt) return { ok: false, error: "This product has been published before, so it can only be archived (its record stays for your history)." };
-  await store.delete(recordKey(id));
-  return { ok: true, record: cur.value };
+/**
+ * Only never-published drafts can be deleted (anything that was live is archived instead, so its history stays).
+ * Step 1 replaces the record with a tombstone by compare-and-set — a publish or save that got in first makes
+ * this fail and re-check; one that comes later sees the tombstone. Step 2 removes the tombstone (if that
+ * fails, the tombstone simply stays: it's never shown and can't be written to).
+ */
+export async function deleteDraft(store: KvStore, id: string, expectedRev: number, now = new Date()): Promise<SaveResult> {
+  await reconcileRecord(store, id, now);
+  if ((await currentRelease(store))?.products.some((p) => p.id === id)) return { ok: false, error: "This product is on the website. Take it off (archive) instead." };
+  let out: SaveResult = { ok: false, error: "That product no longer exists." };
+  await updateWithRetry<ProductRecord>(store, recordKey(id), (cur) => {
+    if (!cur || cur.deletedAt) return ((out = { ok: false, error: "That product no longer exists." }), undefined);
+    if (cur.pending) return ((out = { ok: false, conflict: true, error: "This product is being published right now, so it can't be deleted. Reload in a moment." }), undefined);
+    if (cur.rev !== expectedRev) return ((out = { ok: false, conflict: true, error: "This product changed since you opened it. Reload first." }), undefined);
+    if (cur.publishedAt || cur.status === "published") return ((out = { ok: false, error: "This product has been published before, so it can only be archived (its record stays for your history)." }), undefined);
+    const tomb: ProductRecord = { ...cur, deletedAt: now.toISOString(), rev: cur.rev + 1 };
+    out = { ok: true, record: cur };
+    return tomb;
+  });
+  if (out.ok) {
+    try {
+      await store.delete(recordKey(id));
+    } catch {
+      /* the tombstone stays; it's invisible and blocks any later write */
+    }
+  }
+  return out;
+}
+
+/* ------------------------- publish intent (claim / finish / undo) ------------------------- */
+
+type Claim = { ok: true; rec: ProductRecord; token: string } | { ok: false; error: string };
+
+async function claimChange(store: KvStore, id: string, expectedRev: number, change: Omit<PendingChange, "token" | "at">, now: Date): Promise<Claim> {
+  const token = randomUUID();
+  let out: Claim = { ok: false, error: "That product no longer exists." };
+  await updateWithRetry<ProductRecord>(store, recordKey(id), (cur) => {
+    if (!cur || cur.deletedAt) return ((out = { ok: false, error: "That product no longer exists." }), undefined);
+    if (cur.pending) return ((out = { ok: false, error: "Another publish or unpublish of this product is still running. Reload in a moment." }), undefined);
+    if (cur.rev !== expectedRev) return ((out = { ok: false, error: "This product changed since you opened it. Reload, check it, then try again." }), undefined);
+    const next = { ...cur, pending: { ...change, token, at: now.toISOString() } };
+    out = { ok: true, rec: next, token };
+    return next;
+  });
+  return out;
+}
+
+/** Drop our own intent (the public catalog wasn't changed). */
+async function undoClaim(store: KvStore, id: string, token: string) {
+  try {
+    await updateWithRetry<ProductRecord>(store, recordKey(id), (cur) => (cur && cur.pending?.token === token ? { ...cur, pending: null } : undefined));
+  } catch {
+    /* left for reconcileRecord: the catalog doesn't show the change, so it will be undone */
+  }
+}
+
+/** Finish our own intent. Returns null if the record couldn't be written (then reconcileRecord finishes it later). */
+async function finishClaim(store: KvStore, id: string, token: string, summary: string, patch: (r: ProductRecord) => Partial<ProductRecord>, now: Date): Promise<ProductRecord | null> {
+  try {
+    const { value, changed } = await updateWithRetry<ProductRecord>(store, recordKey(id), (cur) => {
+      if (!cur || cur.pending?.token !== token) return undefined;
+      const at = now.toISOString();
+      return { ...cur, ...patch(cur), pending: null, rev: cur.rev + 1, updatedAt: at, history: [{ at, summary }, ...cur.history].slice(0, HISTORY) };
+    });
+    return changed ? value : null;
+  } catch {
+    return null;
+  }
 }
 
 /* --------------------------------- releases --------------------------------- */
@@ -167,35 +291,55 @@ export type PublishResult = { ok: true; release: Release; record: ProductRecord 
 
 /** Put this product's current version on the website. Refused unless every readiness item passes. */
 export async function publishProduct(store: KvStore, id: string, expectedRev: number, ctx: ReadinessContext, now = new Date()): Promise<PublishResult> {
-  const rec = await getRecord(store, id);
+  const rec = await getRecord(store, id, now);
   if (!rec) return { ok: false, error: "That product no longer exists." };
   if (rec.rev !== expectedRev) return { ok: false, error: "This product changed since you opened it. Reload, check it, then publish." };
   if (rec.status === "archived") return { ok: false, error: "Restore this product from the archive first." };
   const readiness = productReadiness(rec, ctx);
   if (!readiness.ready) return { ok: false, error: "This product isn't ready to publish yet.", missing: readiness.items.filter((i) => !i.ok).flatMap((i) => i.missing.map((m) => `${i.label}: ${m}`)) };
   const pub = toPublicProduct({ ...rec, status: "published" });
-  const r = await makeRelease(store, `Published ${rec.product.name}`, (list) => [...list.filter((p) => p.id !== id), pub], now);
-  if (!r.ok) return r;
-  const saved = await saveRecord(store, id, rec.rev, `Published (catalog release ${r.release.seq})`, (x) => ({ ok: true, record: { ...x, status: "published", publishedRev: x.rev + 1, publishedAt: now.toISOString() } }), undefined, now);
-  if (!saved.ok) return { ok: false, error: `The product went live (release ${r.release.seq}) but its record couldn't be updated: ${saved.error}` };
-  return { ok: true, release: r.release, record: saved.record };
+  const claim = await claimChange(store, id, expectedRev, { op: "publish", hash: publicHash(pub) }, now);
+  if (!claim.ok) return claim;
+  let r: ReleaseResult;
+  try {
+    r = await makeRelease(store, `Published ${rec.product.name}`, (list) => [...list.filter((p) => p.id !== id), pub], now);
+  } catch {
+    r = { ok: false, error: "Couldn't reach storage to publish. Nothing changed on the website — try again." };
+  }
+  if (!r.ok) {
+    await undoClaim(store, id, claim.token);
+    return r;
+  }
+  const saved = await finishClaim(store, id, claim.token, `Published (catalog release ${r.release.seq})`, (x) => ({ status: "published", publishedRev: x.rev + 1, publishedAt: now.toISOString() }), now);
+  if (!saved) return { ok: false, error: `The product went live (release ${r.release.seq}), but its record couldn't be updated just now. It will show as published automatically within a few minutes — don't publish it again.` };
+  return { ok: true, release: r.release, record: saved };
 }
 
 /** Take a product off the website (to draft, or to the archive). */
 export async function unpublishProduct(store: KvStore, id: string, expectedRev: number, to: "draft" | "archived", now = new Date()): Promise<PublishResult> {
-  const rec = await getRecord(store, id);
+  const rec = await getRecord(store, id, now);
   if (!rec) return { ok: false, error: "That product no longer exists." };
   if (rec.rev !== expectedRev) return { ok: false, error: "This product changed since you opened it. Reload first." };
-  const live = await currentRelease(store);
-  let release = live;
-  if (live?.products.some((p) => p.id === id)) {
-    const r = await makeRelease(store, `${to === "archived" ? "Archived" : "Unpublished"} ${rec.product.name}`, (list) => list.filter((p) => p.id !== id), now);
-    if (!r.ok) return r;
-    release = r.release;
+  const claim = await claimChange(store, id, expectedRev, { op: "unpublish", to }, now);
+  if (!claim.ok) return claim;
+  let release: Release | null;
+  try {
+    release = await currentRelease(store);
+    if (release?.products.some((p) => p.id === id)) {
+      const r = await makeRelease(store, `${to === "archived" ? "Archived" : "Unpublished"} ${rec.product.name}`, (list) => list.filter((p) => p.id !== id), now);
+      if (!r.ok) {
+        await undoClaim(store, id, claim.token);
+        return r;
+      }
+      release = r.release;
+    }
+  } catch {
+    await undoClaim(store, id, claim.token);
+    return { ok: false, error: "Couldn't reach storage. Nothing changed on the website — try again." };
   }
-  const saved = await saveRecord(store, id, rec.rev, to === "archived" ? "Archived" : "Moved back to draft", (x) => ({ ok: true, record: { ...x, status: to, publishedRev: null } }), undefined, now);
-  if (!saved.ok) return { ok: false, error: saved.error };
-  return { ok: true, release: release ?? (await currentRelease(store))!, record: saved.record };
+  const saved = await finishClaim(store, id, claim.token, to === "archived" ? "Archived" : "Moved back to draft", () => ({ status: to, publishedRev: null }), now);
+  if (!saved) return { ok: false, error: "The product was taken off the website, but its record couldn't be updated just now. It will catch up automatically within a few minutes." };
+  return { ok: true, release: release ?? (await currentRelease(store))!, record: saved };
 }
 
 /** Show an earlier release again (as a NEW release, so history stays linear). Records follow: in the release → published, otherwise → draft. */

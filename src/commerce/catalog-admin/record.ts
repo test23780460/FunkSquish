@@ -67,6 +67,24 @@ export interface ProductRecord {
   publishedRev: number | null;
   publishedAt: string | null;
   history: { at: string; summary: string }[];
+  /**
+   * A publish/unpublish in progress (store.ts). Set before the public catalog
+   * changes and cleared after; if the action is interrupted, the next read
+   * finishes or undoes it from what the live catalog actually shows.
+   */
+  pending?: PendingChange | null;
+  /** Set when a draft is deleted (a tombstone, so no later write can bring it back). */
+  deletedAt?: string | null;
+}
+
+export interface PendingChange {
+  op: "publish" | "unpublish";
+  token: string;
+  at: string;
+  /** publish: fingerprint of the public product being put live. */
+  hash?: string;
+  /** unpublish: where the record goes. */
+  to?: "draft" | "archived";
 }
 
 export const CATEGORY_SLUGS: CategorySlug[] = ["fruity-slushies", "jelly-squishies", "crunchy-squishies", "cute-collectibles"];
