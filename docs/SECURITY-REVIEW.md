@@ -1,6 +1,6 @@
 # Security and data-protection review — owner dashboard
 
-Reviewed 2026-10-31, across the dashboard PR stack. Covers every new and existing owner function.
+Reviewed 2026-10-31, across the dashboard PR stack, and again on 2026-11-01 after the PR #27 review fixes (combined stack plus PR #24: 813 tests). Covers every new and existing owner function.
 
 ## Findings fixed during this work
 
@@ -8,9 +8,12 @@ Reviewed 2026-10-31, across the dashboard PR stack. Covers every new and existin
 | --- | --- | --- |
 | S-1 | **Launch safeguard could be removed by deleting its file.** The CI check skipped any lock whose file was missing, so deleting `key-permissions.ts` together with its call passed CI (PR #24 review). | Every file a safeguard depends on is now required. A mutation test deletes each one in a temporary copy and confirms the check fails (PR #24). |
 | S-2 | **Public email forms could be used to send mail to anyone.** The launch-list and drop-alert sign-ups had only a honeypot, so a script could make Brevo send confirmation emails to arbitrary addresses. | Per-network (keyed IP hash), per-day and total limits (`src/lib/newsletter/limits.ts`). |
-| S-3 | **Phone photos carry GPS location.** EXIF/XMP data in a product photo could reveal where it was taken (often home). | EXIF/XMP/text metadata is stripped from JPEG, PNG and WebP before storage. |
+| S-3 | **Phone photos carry GPS location.** EXIF/XMP data in a product photo could reveal where it was taken (often home). | EXIF/XMP/text metadata is stripped from JPEG, PNG and WebP before storage (hardened in S-6). |
 | S-4 | **Race: double put-back / double send.** A "claimed" flag set during a lost compare-and-set attempt survived the retry, so two simultaneous TikTok uploads could put a cancellation back twice, or two clicks could send a campaign twice. | Flags reset per attempt; concurrency tests added. |
 | S-5 | **Same tracking number on two orders.** A supplier's tracking could be recorded on the wrong order. | Each tracking number is claimed for one package (create-only). |
+| S-6 | **Photo metadata could survive in damaged files** (PR #27 review). The sanitizer returned the original bytes when it couldn't parse a file, so a malformed file with EXIF/GPS could be stored and served. | Fails closed: files are walked end to end and rebuilt from an allow-list of image parts; damaged, truncated or unusual files are refused. Data after the end marker (phones append extra images with their own GPS) and comments/MPF/unknown chunks are dropped; PNG checksums verified; a final scan rejects any EXIF/XMP signature. 12 malformed-file tests (PR #27). |
+| S-7 | **Publish/delete could disagree under concurrency or storage failure** (PR #27 review). Delete was unconditional after a read; publish changed the public catalog before the record. | Delete tombstones the record by compare-and-set first; publish/unpublish record an intent on the record before touching the catalog and finish it after. An interrupted change is finished or undone from what the live catalog shows. 12 interleaving and fault-injection tests (PR #27). |
+| S-8 | **Supplier document names could break the download** (combined review, 2026-11-01). The owner-typed name went straight into `Content-Disposition`; a line break or emoji made the download fail. | Safe ASCII `filename=` plus RFC 5987 `filename*` (PR #28). Every served upload also gets `Content-Security-Policy: default-src 'none'; sandbox` (PR #27). |
 
 ## Checks
 
