@@ -18,7 +18,7 @@ import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav } from "@/components/owner/OwnerNav";
 import { Area, Check, FieldGroup, Rev, Select, Text } from "@/components/owner/Fields";
 import { Empty, Flash, Missing, OwnerShell, PageTitle, Pill, Progress, card, danger, dateTime, hint, input, label, one, primary, secondary, small , fileInput } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 import {
   deleteDraftAction,
   mediaAction,

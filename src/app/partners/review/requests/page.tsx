@@ -10,7 +10,7 @@ import { STAGE_LABELS } from "@/lib/partners/schema";
 import { OwnerNav, OwnerSubNav, SUPPLIER_TABS } from "@/components/owner/OwnerNav";
 import { Empty, Flash, OwnerShell, PageTitle, Pill, button, card, input, label as lbl, one, panel, primary, secondary, small, type PillTone } from "@/components/owner/OwnerUi";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 import { completeDeletionRequestAction, createDeletionRequestAction, deletionExceptionAction, reopenDeletionRequestAction } from "../actions";
 
 export const metadata: Metadata = { title: "Deletion requests", robots: { index: false, follow: false } };

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { adjustAction, pauseAction, releaseCanceledAction, resumeAction, tiktokListedAction, undoAction } from "@/app/partners/review/inventory/actions";
 import { ACTION_WARNINGS, KIND_LABEL, type StockRow } from "@/commerce/orders/stock-admin";
-import { cn } from "@/lib/cn";
+import { cn } from "./cn";
 import { Pill, card, danger as dangerBtn, input, primary, secondary } from "./OwnerUi";
 
 /**
@@ -32,9 +32,9 @@ function Adjust({ row, back, kind, label, hint, tone = "plain" }: { row: StockRo
       <label className="text-sm font-semibold text-ink" htmlFor={`${kind}-${row.variantId}`}>
         {label}
       </label>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <input id={`${kind}-${row.variantId}`} name="quantity" type="number" inputMode="numeric" min={kind === "count" ? 0 : 1} max={10000} required defaultValue={kind === "count" ? (row.onHand ?? "") : undefined} placeholder={kind === "count" ? "Counted" : "Units"} className={cn(field, "w-28")} />
-        <input name="note" maxLength={200} placeholder="Note (optional)" aria-label={`${label}: note`} className={field} />
+        <input name="note" maxLength={200} placeholder="Note (optional)" aria-label={`${label}: note`} className={cn(field, "w-auto min-w-[9rem] flex-1")} />
         <button type="submit" className={cn(tone === "danger" ? dangerBtn : primary, small, "min-h-12 shrink-0")}>
           Save
         </button>
@@ -108,7 +108,7 @@ export function StockCard({ row, back, now, conflict }: { row: StockRow; back: s
         </form>
       )}
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-[auto_1fr] sm:items-end">
+      <div className="mt-3 grid gap-2 sm:grid-cols-[auto_1fr] sm:items-end lg:grid-cols-1">
         <form action={adjustAction}>
           <Hidden row={row} back={back} />
           <input type="hidden" name="kind" value="tiktok-sale" />

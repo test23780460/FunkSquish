@@ -18,7 +18,7 @@ import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav } from "@/components/owner/OwnerNav";
 import { Area, Check, Select, Text } from "@/components/owner/Fields";
 import { card, danger, dateTime, fileInput, Flash, input, label, Missing, one, OwnerShell, Pill, primary, secondary } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 import { addLogAction, addQuoteAction, archiveSupplierAction, deleteDocAction, logDoneAction, removeQuoteAction, saveSupplierAction, uploadDocAction } from "../actions";
 
 export const metadata: Metadata = { title: "Supplier", robots: { index: false, follow: false } };
@@ -101,7 +101,7 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
       <div className="grid gap-5 lg:grid-cols-[1fr_22rem]">
         <div className="min-w-0 space-y-5">
           <section id="details" className={cn(card, "scroll-mt-28")} aria-labelledby="d">
-            <h2 id="d" className="font-display text-xl font-bold text-ink">Details, terms &amp; agreement</h2>
+            <h2 id="d" className="font-display text-lg font-bold text-ink sm:text-xl">Details, terms &amp; agreement</h2>
             <form action={saveSupplierAction} className="mt-3 grid gap-3 sm:grid-cols-2">
               {hidden}
               <Text name="name" title="Business name" value={s.name} required maxLength={100} />
@@ -166,7 +166,7 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
           </section>
 
           <section id="quotes" className={cn(card, "scroll-mt-28")} aria-labelledby="q">
-            <h2 id="q" className="font-display text-xl font-bold text-ink">Quotes ({s.quotes.length})</h2>
+            <h2 id="q" className="font-display text-lg font-bold text-ink sm:text-xl">Quotes ({s.quotes.length})</h2>
             <p className="mt-1 text-sm text-ink-soft">Written prices for products you haven&apos;t linked to a SKU yet. They feed the Compare page.</p>
             {s.quotes.length > 0 && (
               <div className="mt-3 overflow-x-auto">
@@ -222,7 +222,7 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
           </section>
 
           <section id="log" className={cn(card, "scroll-mt-28")} aria-labelledby="l">
-            <h2 id="l" className="font-display text-xl font-bold text-ink">Contact history</h2>
+            <h2 id="l" className="font-display text-lg font-bold text-ink sm:text-xl">Contact history</h2>
             <form action={addLogAction} className="mt-3 grid gap-2 sm:grid-cols-[10rem_1fr_10rem_auto] sm:items-end">
               {hidden}
               <Select name="channel" title="How" value="email" options={["email", "call", "message", "meeting", "other"].map((x) => ({ value: x, label: x }))} />
@@ -257,7 +257,7 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
           </section>
 
           <section id="docs" className={cn(card, "scroll-mt-28")} aria-labelledby="dc">
-            <h2 id="dc" className="font-display text-xl font-bold text-ink">Private documents ({docs.length})</h2>
+            <h2 id="dc" className="font-display text-lg font-bold text-ink sm:text-xl">Private documents ({docs.length})</h2>
             <p className="mt-1 text-sm text-ink-soft">Agreements, price lists, catalogs, certificates, invoices. Stored privately; only you can download them. PDF, photo/scan or CSV, up to 4 MB.</p>
             {docs.length > 0 && (
               <ul className="mt-3 divide-y divide-sky-100 text-sm">

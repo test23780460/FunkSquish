@@ -6,8 +6,8 @@ import { requireReviewer } from "@/lib/partners/review-auth";
 import { buildTimeProducts } from "@/lib/owner/products";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav, OwnerSubNav, PRODUCT_TABS } from "@/components/owner/OwnerNav";
-import { Flash, OwnerShell, PageTitle, card, label, one, primary, secondary } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { Flash, OwnerShell, PageTitle, card, label, one, primary, secondary, fileInput } from "@/components/owner/OwnerUi";
+import { cn } from "@/components/owner/cn";
 import { importBuildCatalogAction, importCsvAction } from "../actions";
 
 export const metadata: Metadata = { title: "Import / export products", robots: { index: false, follow: false } };
@@ -35,13 +35,13 @@ async function Import({ searchParams }: { searchParams: PageProps<"/partners/rev
       <Flash ok={one(sp.ok)} error={one(sp.error)} />
       <div className="grid gap-5 lg:grid-cols-2">
         <form action={importCsvAction} className={cn(card, "grid gap-3")}>
-          <h2 className="font-display text-xl font-bold text-ink">Import the catalog spreadsheet</h2>
+          <h2 className="font-display text-lg font-bold text-ink sm:text-xl">Import the catalog spreadsheet</h2>
           <p className="text-sm text-ink-soft">
             New web addresses become new drafts. Existing ones get the sheet&apos;s values as a new revision (published products then show &ldquo;edits not published yet&rdquo; until you publish them). Private columns (costs, supplier, compliance) go to private fields only. Press &ldquo;Check only&rdquo; first.
           </p>
           <label className={label}>
             Catalog .csv (up to 2 MB)
-            <input name="file" type="file" accept=".csv,text/csv" required className="text-sm" />
+            <input name="file" type="file" accept=".csv,text/csv" required className={fileInput} />
           </label>
           <div className="flex flex-wrap gap-2">
             <button name="intent" value="check" className={secondary}>Check only</button>
@@ -50,7 +50,7 @@ async function Import({ searchParams }: { searchParams: PageProps<"/partners/rev
         </form>
 
         <section className={cn(card, "grid gap-3")}>
-          <h2 className="font-display text-xl font-bold text-ink">Export</h2>
+          <h2 className="font-display text-lg font-bold text-ink sm:text-xl">Export</h2>
           <p className="text-sm text-ink-soft">Download every dashboard product as the catalog spreadsheet — for backups, for editing in a spreadsheet and importing again, or for `npm run catalog:import`.</p>
           <div className="flex flex-wrap gap-2">
             <a href="/partners/review/products/export" className={secondary} download>
@@ -64,7 +64,7 @@ async function Import({ searchParams }: { searchParams: PageProps<"/partners/rev
         </section>
 
         <form action={importBuildCatalogAction} className={cn(card, "grid gap-3 lg:col-span-2")}>
-          <h2 className="font-display text-xl font-bold text-ink">Copy the build-time catalog</h2>
+          <h2 className="font-display text-lg font-bold text-ink sm:text-xl">Copy the build-time catalog</h2>
           <p className="text-sm text-ink-soft">
             The website was built with {buildTime} real product{buildTime === 1 ? "" : "s"} from products.json. Copying makes them dashboard drafts (with the same ids, so stock and order history stay linked). Their private columns aren&apos;t on the server — import your private spreadsheet afterwards to add costs and compliance.
           </p>

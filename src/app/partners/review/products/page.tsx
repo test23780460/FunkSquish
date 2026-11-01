@@ -16,7 +16,7 @@ import { purchasingEnabled } from "@/lib/features";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav, OwnerSubNav, PRODUCT_TABS } from "@/components/owner/OwnerNav";
 import { Chips, Empty, Flash, OwnerShell, PageTitle, Pill, Progress, SearchBar, card, hint, input, label, one, primary, secondary, small } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 import { cleanupMediaAction, createProductAction } from "./actions";
 
 export const metadata: Metadata = { title: "Products", robots: { index: false, follow: false } };

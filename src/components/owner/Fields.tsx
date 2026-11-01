@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { hint as hintCls, input, label } from "./OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "./cn";
 
 /** Small labeled form fields for owner forms (server-rendered, no client JS). */
 

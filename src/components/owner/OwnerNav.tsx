@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { cn } from "@/lib/cn";
+import { cn } from "./cn";
 
 /**
  * Private owner area navigation: the ten dashboard sections. Big touch

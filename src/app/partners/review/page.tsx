@@ -15,7 +15,7 @@ import { Chips, Empty, Flash, OwnerShell, PageTitle, Pill, Section, card, one, p
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav, OwnerSubNav, SUPPLIER_TABS } from "@/components/owner/OwnerNav";
 import { logoutAction, runCleanupAction } from "./actions";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 
 export const metadata: Metadata = { title: "Partner applications", robots: { index: false, follow: false } };
 

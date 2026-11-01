@@ -9,7 +9,7 @@ import { listOrders, orderAttention, refundedSoFar } from "@/commerce/orders/adm
 import { formatMoney } from "@/commerce/availability";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav } from "@/components/owner/OwnerNav";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 import { Chips, Empty, Flash, OwnerShell, PageTitle, Pill, SearchBar, card, dateTime, one, secondary, small, type PillTone } from "@/components/owner/OwnerUi";
 import { reconcileAction } from "./actions";
 import { SHIPPING_ORIGINS } from "@/commerce/origins";

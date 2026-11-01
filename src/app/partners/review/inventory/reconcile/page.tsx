@@ -14,7 +14,7 @@ import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { INVENTORY_TABS, OwnerNav, OwnerSubNav } from "@/components/owner/OwnerNav";
 import { Select, Text } from "@/components/owner/Fields";
 import { Flash, OwnerShell, PageTitle, Pill, card, dateTime, fileInput, label, one, panel, primary, secondary } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 import { importCountsAction, importTikTokAction, restockAction, supplierStockAction } from "../actions";
 
 export const metadata: Metadata = { title: "Reconcile stock", robots: { index: false, follow: false } };

@@ -13,7 +13,7 @@ import { formatMoney } from "@/commerce/availability";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav, OwnerSubNav, SUPPLIER_TABS } from "@/components/owner/OwnerNav";
 import { Empty, Missing, OwnerShell, PageTitle, Pill, card, input, one, secondary } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 
 export const metadata: Metadata = { title: "Compare suppliers", robots: { index: false, follow: false } };
 
@@ -55,7 +55,7 @@ async function Compare({ searchParams }: { searchParams: PageProps<"/partners/re
       ) : (
         <>
           <section className={cn(card, "mb-5 overflow-x-auto")} aria-labelledby="t">
-            <h2 id="t" className="font-display text-xl font-bold text-ink">Terms side by side</h2>
+            <h2 id="t" className="font-display text-lg font-bold text-ink sm:text-xl">Terms side by side</h2>
             <table className="mt-3 w-full min-w-[52rem] text-left text-sm">
               <thead className="text-ink-soft">
                 <tr>
@@ -114,7 +114,7 @@ async function Compare({ searchParams }: { searchParams: PageProps<"/partners/re
           </form>
 
           <section className={cn(card, "overflow-x-auto")} aria-labelledby="o">
-            <h2 id="o" className="font-display text-xl font-bold text-ink">Costs and estimated margins ({list.length})</h2>
+            <h2 id="o" className="font-display text-lg font-bold text-ink sm:text-xl">Costs and estimated margins ({list.length})</h2>
             {list.length === 0 ? (
               <p className="mt-2 text-sm text-ink-soft">No quotes or linked SKUs match.</p>
             ) : (

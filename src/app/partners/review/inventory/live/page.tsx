@@ -9,7 +9,7 @@ import { BOTH_CHANNELS_WARNING_UNITS, currentLive, lastLive, loadStockRows, sale
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { INVENTORY_TABS, OwnerNav, OwnerSubNav } from "@/components/owner/OwnerNav";
 import { Callout, Empty, Flash, OwnerShell, PageTitle, Pill, card, input, label, one, panel } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 import { StockCard } from "@/components/owner/StockCard";
 import { endLiveAction, startLiveAction } from "../actions";
 
@@ -18,7 +18,7 @@ export const metadata: Metadata = { title: "TikTok LIVE", robots: { index: false
 export default function LivePage({ searchParams }: PageProps<"/partners/review/inventory/live">) {
   if (!reviewConfig()) notFound();
   return (
-    <OwnerShell narrow>
+    <OwnerShell>
       <Live searchParams={searchParams} />
     </OwnerShell>
   );
@@ -75,7 +75,7 @@ async function Live({ searchParams }: { searchParams: PageProps<"/partners/revie
                 <Empty compact>No products yet.</Empty>
               </div>
             ) : (
-              <ul className="mt-3 grid gap-2">
+              <ul className="mt-3 grid gap-2 md:grid-cols-2">
                 {rows.map((r) => (
                   <li key={r.variantId}>
                     <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl bg-ice-50/80 px-3 py-2 text-ink ring-1 ring-inset ring-sky-100 hover:ring-sky-300 has-[:checked]:bg-[#eef3ff] has-[:checked]:ring-royal">
@@ -109,7 +109,7 @@ async function Live({ searchParams }: { searchParams: PageProps<"/partners/revie
               <Callout tone="alert">Some LIVE items are still for sale on the website with only a few left. Pause them below so the same unit can&apos;t sell twice.</Callout>
             </div>
           )}
-          <ul className="mt-4 grid gap-4">
+          <ul className="mt-4 grid gap-4 lg:grid-cols-2 lg:items-start">
             {featured.map((r) => (
               <StockCard key={r.variantId} row={r} now={now.getTime()} back="/partners/review/inventory/live" />
             ))}

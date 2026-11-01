@@ -9,14 +9,14 @@ import { MAX_EXPORT_DAYS, parseExportRange } from "@/commerce/orders/stock-expor
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { INVENTORY_TABS, OwnerNav, OwnerSubNav } from "@/components/owner/OwnerNav";
 import { Empty, OwnerShell, PageTitle, Pill, card, input, label, primary } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 
 export const metadata: Metadata = { title: "Inventory activity", robots: { index: false, follow: false } };
 
 export default function ActivityPage() {
   if (!reviewConfig()) notFound();
   return (
-    <OwnerShell narrow>
+    <OwnerShell>
       <Activity />
     </OwnerShell>
   );

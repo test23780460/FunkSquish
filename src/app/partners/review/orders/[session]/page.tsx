@@ -13,7 +13,7 @@ import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { ArrowLeftIcon } from "@/components/icons/Icons";
 import { OwnerNav } from "@/components/owner/OwnerNav";
 import { Callout, Empty, Flash, OwnerShell, Pill, button, card, danger, input as field, label as labelCls, one, panel, primary, secondary, small, type PillTone } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 import { SupplierPackagePanel } from "@/components/owner/SupplierPackagePanel";
 import { ownerDataStore } from "@/lib/owner/data";
 import { listSuppliers } from "@/commerce/suppliers/supplier";

@@ -1,7 +1,7 @@
 import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import { Container } from "@/components/ui/Primitives";
-import { cn } from "@/lib/cn";
+import { cn } from "./cn";
 
 /**
  * Shared building blocks for the private owner dashboard (no data access here).

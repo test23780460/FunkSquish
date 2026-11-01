@@ -17,7 +17,7 @@ import { fulfillmentQueue, QUEUE_LABEL, QUEUES, type QueueId } from "@/commerce/
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav } from "@/components/owner/OwnerNav";
 import { Chips, Empty, OwnerShell, PageTitle, Pill, card, one } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 
 export const metadata: Metadata = { title: "Fulfillment", robots: { index: false, follow: false } };
 

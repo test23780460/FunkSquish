@@ -11,7 +11,7 @@ import { screeningFlags } from "@/lib/partners/screening";
 import { safeUrl } from "@/lib/partners/validate";
 import { OwnerNav } from "@/components/owner/OwnerNav";
 import { Callout, Empty, Flash, OwnerShell, Pill, button, card, input, label as lbl, panel, primary, secondary, small } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { ArrowLeftIcon } from "@/components/icons/Icons";
 import { confirmActiveAction, deleteApplicationAction, legalHoldAction, releaseHoldAction, resendNotificationAction, updateStatusAction } from "../actions";

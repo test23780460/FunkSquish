@@ -18,7 +18,7 @@ import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav } from "@/components/owner/OwnerNav";
 import { Select, Text, Area } from "@/components/owner/Fields";
 import { Empty, Flash, OwnerShell, PageTitle, Pill, card, dateTime, input, label, one, primary, secondary } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 import { createCampaignAction, deleteCampaignAction, sendCampaignAction } from "./actions";
 
 export const metadata: Metadata = { title: "Email & marketing", robots: { index: false, follow: false } };
@@ -75,7 +75,7 @@ async function Marketing({ searchParams }: { searchParams: PageProps<"/partners/
         {lists.map((l) => (
           <section key={l.name} className={card} aria-label={l.name}>
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-display text-xl font-bold text-ink">{l.name}</h2>
+              <h2 className="font-display text-lg font-bold text-ink sm:text-xl">{l.name}</h2>
               <Pill tone={l.active ? "good" : l.connected ? "warn" : "plain"}>{l.active ? "Sign-ups open" : l.connected ? "Connected, off" : "Not connected here"}</Pill>
             </div>
             <ul className="mt-2 space-y-1 text-sm text-ink">
@@ -90,7 +90,7 @@ async function Marketing({ searchParams }: { searchParams: PageProps<"/partners/
       </div>
 
       <section id="campaigns" className={cn(card, "mt-5 scroll-mt-28")} aria-labelledby="c">
-        <h2 id="c" className="font-display text-xl font-bold text-ink">Drop &amp; restock alerts</h2>
+        <h2 id="c" className="font-display text-lg font-bold text-ink sm:text-xl">Drop &amp; restock alerts</h2>
         <p className="mt-1 text-sm text-ink-soft">
           Draft alerts for real products. An alert can only be sent when it&apos;s true (the product is on the website; for a restock, it&apos;s back in stock and buyable), drop alerts are switched on, sending is approved for Production, and two-step sign-in is set up. The same alert for the same products goes out at most once a day.
         </p>
@@ -180,7 +180,7 @@ async function Marketing({ searchParams }: { searchParams: PageProps<"/partners/
       </section>
 
       <section className={cn(card, "mt-5")} aria-labelledby="int">
-        <h2 id="int" className="font-display text-xl font-bold text-ink">Product-specific &ldquo;tell me when&rdquo; alerts</h2>
+        <h2 id="int" className="font-display text-lg font-bold text-ink sm:text-xl">Product-specific &ldquo;tell me when&rdquo; alerts</h2>
         <p className="mt-1 text-sm text-ink">
           Not built on purpose. Remembering which product each person wants means storing their interest with their email, which needs its own consent wording in the Privacy Policy. Today the drops list covers everything; if you want per-product alerts later, it&apos;s a reviewed change together with that wording.
         </p>

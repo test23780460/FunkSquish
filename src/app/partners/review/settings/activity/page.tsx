@@ -8,7 +8,7 @@ import { AUDIT_AREAS, listAudit, ownerDataStore, type AuditArea } from "@/lib/ow
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav, OwnerSubNav, SETTINGS_TABS } from "@/components/owner/OwnerNav";
 import { Empty, OwnerShell, PageTitle, Pill, card, dateTime, one } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 
 export const metadata: Metadata = { title: "Activity log", robots: { index: false, follow: false } };
 

@@ -15,7 +15,7 @@ import { packageSupplierId } from "@/commerce/suppliers/export";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav, OwnerSubNav, SUPPLIER_TABS } from "@/components/owner/OwnerNav";
 import { Chips, Count, Empty, Flash, OwnerShell, PageTitle, Pill, card, input, label, one, primary, secondary, small } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 import { createSupplierAction } from "./actions";
 
 export const metadata: Metadata = { title: "Suppliers", robots: { index: false, follow: false } };
@@ -70,8 +70,8 @@ async function Suppliers({ searchParams }: { searchParams: PageProps<"/partners/
         </section>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_20rem]">
-        <div>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="min-w-0">
           <div className="mb-4">
             <Chips
               label="Filter suppliers"

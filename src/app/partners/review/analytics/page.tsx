@@ -15,7 +15,7 @@ import { formatMoney } from "@/commerce/availability";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav } from "@/components/owner/OwnerNav";
 import { Callout, Chips, Empty, OwnerShell, PageTitle, Pill, Section, Stat, StatGroup, one, panel, secondary, small } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 
 export const metadata: Metadata = { title: "Analytics", robots: { index: false, follow: false } };
 

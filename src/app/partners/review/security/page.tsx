@@ -8,7 +8,7 @@ import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav, OwnerSubNav, SETTINGS_TABS } from "@/components/owner/OwnerNav";
 import { DisableMfaForm, EnrollPanel, RegenerateCodesForm } from "@/components/owner/SecurityForms";
 import { Callout, OwnerShell, PageTitle, Pill, card, one, panel, primary, secondary } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 import { signOutEverywhereAction, startEnrollmentAction } from "./actions";
 
 export const metadata: Metadata = { title: "Security", robots: { index: false, follow: false } };
@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Security", robots: { index: false, f
 export default function SecurityPage({ searchParams }: PageProps<"/partners/review/security">) {
   if (!reviewConfig()) notFound();
   return (
-    <OwnerShell narrow>
+    <OwnerShell>
       <Security searchParams={searchParams} />
     </OwnerShell>
   );
@@ -46,7 +46,7 @@ async function Security({ searchParams }: { searchParams: PageProps<"/partners/r
   const recovery = one(sp.recovery);
 
   return (
-    <div className="space-y-5">
+    <div>
       {auth.status === "full" && (
         <>
           <OwnerNav current="security" />
@@ -58,6 +58,7 @@ async function Security({ searchParams }: { searchParams: PageProps<"/partners/r
         meta={e ? <Pill tone="good">Two-step sign-in on</Pill> : <Pill tone="warn">Two-step sign-in off</Pill>}
         lead="Two-step sign-in for the owner area: your passphrase plus a code from an authenticator app on your phone."
       />
+      <div className="max-w-3xl space-y-5">
 
       {auth.status === "needs-enrollment" && (
         <p role="alert" className="flex items-start gap-3 rounded-2xl bg-berry-soft px-4 py-3 font-semibold text-ink ring-1 ring-inset ring-[#f2b9cd]">
@@ -142,6 +143,7 @@ async function Security({ searchParams }: { searchParams: PageProps<"/partners/r
           ))}
         </ul>
       </section>
+      </div>
     </div>
   );
 }

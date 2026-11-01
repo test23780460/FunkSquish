@@ -12,7 +12,7 @@ import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav } from "@/components/owner/OwnerNav";
 import { Area, Check, Select, Text } from "@/components/owner/Fields";
 import { Flash, Missing, OwnerShell, PageTitle, Pill, card, dateTime, input, one, primary, secondary } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 import { removeOriginAction, resetDraftAction, saveOriginAction } from "./actions";
 
 export const metadata: Metadata = { title: "Shipping", robots: { index: false, follow: false } };
@@ -79,7 +79,7 @@ async function Shipping({ searchParams }: { searchParams: PageProps<"/partners/r
           return (
             <li key={o.id} className={cn(card, problem ? "ring-2 ring-lemon" : "")}>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="font-display text-xl font-bold text-ink">
+                <h3 className="font-display text-lg font-bold text-ink sm:text-xl">
                   {o.publicLabel} <span className="font-mono text-sm font-normal text-ink-soft">({o.id})</span>
                 </h3>
                 <Pill tone={problem ? "warn" : "good"}>{problem ? "Can't be checked out yet" : "Ready"}</Pill>
@@ -113,7 +113,7 @@ async function Shipping({ searchParams }: { searchParams: PageProps<"/partners/r
       </ul>
 
       <section aria-labelledby="appr" className={cn(card, "mt-5")}>
-        <h2 id="appr" className="font-display text-xl font-bold text-ink">Approval for live checkout</h2>
+        <h2 id="appr" className="font-display text-lg font-bold text-ink sm:text-xl">Approval for live checkout</h2>
         <p className="mt-1 text-sm text-ink">
           Places with verified, current rates: <strong>{approval.verifiedOrigins}</strong> of {SHIPPING_ORIGINS.length}. {approval.problem ? SHIPPING_LOCK_TEXT[approval.problem] : "Live checkout may use this table."}
         </p>

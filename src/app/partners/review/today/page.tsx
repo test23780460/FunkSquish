@@ -21,7 +21,7 @@ import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav } from "@/components/owner/OwnerNav";
 import { Callout, Empty, Notices, OwnerShell, PageTitle, Pill, Section, Stat, StatGroup, button, card, dateTime, input, panel, primary, quiet, secondary } from "@/components/owner/OwnerUi";
 import { SearchIcon } from "@/components/icons/Icons";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 
 export const metadata: Metadata = { title: "Overview", robots: { index: false, follow: false } };
 

@@ -11,7 +11,7 @@ import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { INVENTORY_TABS, OwnerNav, OwnerSubNav } from "@/components/owner/OwnerNav";
 import { StockCard } from "@/components/owner/StockCard";
 import { SearchIcon } from "@/components/icons/Icons";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 import { Callout, Chips, Empty, Flash, OwnerShell, PageTitle, input, one, primary, secondary } from "@/components/owner/OwnerUi";
 
 export const metadata: Metadata = { title: "Inventory", robots: { index: false, follow: false } };
@@ -20,7 +20,7 @@ export const metadata: Metadata = { title: "Inventory", robots: { index: false, 
 export default function InventoryPage({ searchParams }: PageProps<"/partners/review/inventory">) {
   if (!reviewConfig()) notFound();
   return (
-    <OwnerShell narrow>
+    <OwnerShell>
       <Inventory searchParams={searchParams} />
     </OwnerShell>
   );
@@ -117,7 +117,7 @@ async function Inventory({ searchParams }: { searchParams: PageProps<"/partners/
           <Empty compact title="Nothing matches" action={<Link href="/partners/review/inventory" className={secondary}>Clear search and filters</Link>} />
         </div>
       ) : (
-        <ul className="mt-4 grid gap-4">
+        <ul className="mt-4 grid gap-4 lg:grid-cols-2 lg:items-start">
           {shown.map((r) => (
             <StockCard key={r.variantId} row={r} now={now.getTime()} back="/partners/review/inventory" conflict={conflict?.variantId === r.variantId ? conflict : undefined} />
           ))}

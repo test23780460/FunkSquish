@@ -27,7 +27,7 @@ export function PassphraseForm() {
         maxLength={200}
         aria-invalid={!!state.error}
         aria-describedby={state.error ? "login-error" : undefined}
-        className="mt-1.5 min-h-12 w-full rounded-2xl bg-ice-50 px-4 text-ink ring-2 ring-inset ring-sky-200 focus:outline-none focus:ring-royal"
+        className="mt-1.5 min-h-12 w-full rounded-xl bg-white px-4 text-ink shadow-[inset_0_1px_2px_rgba(19,53,122,0.06)] ring-1 ring-inset ring-sky-200 focus:outline-none focus:ring-2 focus:ring-royal"
       />
       {state.error && (
         <p id="login-error" role="alert" className="mt-3 rounded-xl bg-berry-soft px-3 py-2 text-sm font-semibold text-ink">
