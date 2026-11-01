@@ -17,8 +17,8 @@ import { formatMoney } from "@/commerce/availability";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav } from "@/components/owner/OwnerNav";
 import { Area, Check, Select, Text } from "@/components/owner/Fields";
-import { Flash, Missing, OwnerShell, Pill, card, danger, dateTime, input, label, one, primary, secondary } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { card, danger, dateTime, fileInput, Flash, input, label, Missing, one, OwnerShell, Pill, primary, secondary } from "@/components/owner/OwnerUi";
+import { cn } from "@/components/owner/cn";
 import { addLogAction, addQuoteAction, archiveSupplierAction, deleteDocAction, logDoneAction, removeQuoteAction, saveSupplierAction, uploadDocAction } from "../actions";
 
 export const metadata: Metadata = { title: "Supplier", robots: { index: false, follow: false } };
@@ -67,13 +67,21 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
     <div>
       <OwnerNav current="suppliers" />
       <nav aria-label="Breadcrumb" className="mb-3 text-sm">
-        <Link href="/partners/review/suppliers" className="font-semibold text-royal underline">
-          ← All suppliers
-        </Link>
+        <ol className="flex flex-wrap items-center gap-1.5 text-ink-soft">
+          <li>
+            <Link href="/partners/review/suppliers" className="font-semibold text-royal hover:underline">
+              Suppliers
+            </Link>
+          </li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page" className="truncate font-semibold text-ink">
+            {s.name}
+          </li>
+        </ol>
       </nav>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-3xl font-bold text-ink sm:text-4xl">{s.name}</h1>
+          <h1 className="font-display text-[1.85rem] font-bold leading-tight text-ink sm:text-[2.25rem]">{s.name}</h1>
           <p className="mt-1 flex flex-wrap gap-2 text-sm">
             <Pill>{s.status}</Pill>
             <Pill tone={s.agreement.status === "signed" ? "good" : "plain"}>agreement: {s.agreement.status}</Pill>
@@ -92,8 +100,8 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
 
       <div className="grid gap-5 lg:grid-cols-[1fr_22rem]">
         <div className="min-w-0 space-y-5">
-          <section id="details" className={cn(card, "scroll-mt-28")} aria-labelledby="d">
-            <h2 id="d" className="font-display text-xl font-bold text-ink">Details, terms &amp; agreement</h2>
+          <section id="details" className={cn(card, "scroll-mt-2")} aria-labelledby="d">
+            <h2 id="d" className="font-display text-lg font-bold text-ink sm:text-xl">Details, terms &amp; agreement</h2>
             <form action={saveSupplierAction} className="mt-3 grid gap-3 sm:grid-cols-2">
               {hidden}
               <Text name="name" title="Business name" value={s.name} required maxLength={100} />
@@ -157,8 +165,8 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
             </form>
           </section>
 
-          <section id="quotes" className={cn(card, "scroll-mt-28")} aria-labelledby="q">
-            <h2 id="q" className="font-display text-xl font-bold text-ink">Quotes ({s.quotes.length})</h2>
+          <section id="quotes" className={cn(card, "scroll-mt-2")} aria-labelledby="q">
+            <h2 id="q" className="font-display text-lg font-bold text-ink sm:text-xl">Quotes ({s.quotes.length})</h2>
             <p className="mt-1 text-sm text-ink-soft">Written prices for products you haven&apos;t linked to a SKU yet. They feed the Compare page.</p>
             {s.quotes.length > 0 && (
               <div className="mt-3 overflow-x-auto">
@@ -188,7 +196,7 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
                           <form action={removeQuoteAction}>
                             {hidden}
                             <input type="hidden" name="quote" value={q.id} />
-                            <button className="text-xs font-semibold text-[#b8215a] underline">Remove</button>
+                            <button className="min-h-9 rounded-full px-2 text-xs font-semibold text-[#a3174f] underline-offset-4 hover:underline">Remove</button>
                           </form>
                         </td>
                       </tr>
@@ -213,8 +221,8 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
             </form>
           </section>
 
-          <section id="log" className={cn(card, "scroll-mt-28")} aria-labelledby="l">
-            <h2 id="l" className="font-display text-xl font-bold text-ink">Contact history</h2>
+          <section id="log" className={cn(card, "scroll-mt-2")} aria-labelledby="l">
+            <h2 id="l" className="font-display text-lg font-bold text-ink sm:text-xl">Contact history</h2>
             <form action={addLogAction} className="mt-3 grid gap-2 sm:grid-cols-[10rem_1fr_10rem_auto] sm:items-end">
               {hidden}
               <Select name="channel" title="How" value="email" options={["email", "call", "message", "meeting", "other"].map((x) => ({ value: x, label: x }))} />
@@ -230,7 +238,7 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
                   <li key={e.id} className="flex flex-wrap items-start justify-between gap-2 py-2">
                     <span className="min-w-0">
                       <Pill>{e.channel}</Pill> <span className="text-ink">{e.summary}</span>
-                      {e.followUpOn && <span className={cn("block text-xs", !e.done && e.followUpOn <= new Date().toISOString().slice(0, 10) ? "font-semibold text-[#b8215a]" : "text-ink-soft")}>Follow up {e.followUpOn}{e.done ? " · done" : ""}</span>}
+                      {e.followUpOn && <span className={cn("block text-xs", !e.done && e.followUpOn <= new Date().toISOString().slice(0, 10) ? "font-semibold text-[#a3174f]" : "text-ink-soft")}>Follow up {e.followUpOn}{e.done ? " · done" : ""}</span>}
                     </span>
                     <span className="flex items-center gap-2 text-ink-soft">
                       {dateTime(e.at)}
@@ -238,7 +246,7 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
                         <form action={logDoneAction}>
                           {hidden}
                           <input type="hidden" name="entry" value={e.id} />
-                          <button className="text-xs font-semibold text-royal underline">Done</button>
+                          <button className="min-h-9 rounded-full px-2 text-xs font-semibold text-royal underline-offset-4 hover:underline">Done</button>
                         </form>
                       )}
                     </span>
@@ -248,8 +256,8 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
             )}
           </section>
 
-          <section id="docs" className={cn(card, "scroll-mt-28")} aria-labelledby="dc">
-            <h2 id="dc" className="font-display text-xl font-bold text-ink">Private documents ({docs.length})</h2>
+          <section id="docs" className={cn(card, "scroll-mt-2")} aria-labelledby="dc">
+            <h2 id="dc" className="font-display text-lg font-bold text-ink sm:text-xl">Private documents ({docs.length})</h2>
             <p className="mt-1 text-sm text-ink-soft">Agreements, price lists, catalogs, certificates, invoices. Stored privately; only you can download them. PDF, photo/scan or CSV, up to 4 MB.</p>
             {docs.length > 0 && (
               <ul className="mt-3 divide-y divide-sky-100 text-sm">
@@ -271,7 +279,7 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
                       <label className="flex items-center gap-1 text-xs text-ink">
                         <input type="checkbox" name="confirm" className="size-4" /> sure
                       </label>
-                      <button className="text-xs font-semibold text-[#b8215a] underline">Delete</button>
+                      <button className="min-h-9 rounded-full px-2 text-xs font-semibold text-[#a3174f] underline-offset-4 hover:underline">Delete</button>
                     </form>
                   </li>
                 ))}
@@ -281,7 +289,7 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
               {hidden}
               <label className={cn(label, "sm:col-span-3")}>
                 File
-                <input name="file" type="file" required accept="application/pdf,image/jpeg,image/png,image/webp,text/csv,.csv" className="text-sm" />
+                <input name="file" type="file" required accept="application/pdf,image/jpeg,image/png,image/webp,text/csv,.csv" className={fileInput} />
               </label>
               <Select name="kind" title="Kind" value="price-list" options={Object.entries(DOC_KINDS).map(([k, v]) => ({ value: k, label: v }))} />
               <Text name="note" title="Note" maxLength={200} />

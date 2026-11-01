@@ -1,6 +1,4 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { reviewConfig } from "@/lib/partners/config";
@@ -8,23 +6,19 @@ import { requireReviewer } from "@/lib/partners/review-auth";
 import { inventoryContext } from "@/commerce/orders/inventory-context";
 import { KIND_LABEL, recentActivity } from "@/commerce/orders/stock-admin";
 import { MAX_EXPORT_DAYS, parseExportRange } from "@/commerce/orders/stock-export";
-import { Container } from "@/components/ui/Primitives";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
-import { OwnerNav } from "@/components/owner/OwnerNav";
-import { cn } from "@/lib/cn";
+import { INVENTORY_TABS, OwnerNav, OwnerSubNav } from "@/components/owner/OwnerNav";
+import { Empty, OwnerShell, PageTitle, Pill, card, input, label, primary } from "@/components/owner/OwnerUi";
+import { cn } from "@/components/owner/cn";
 
 export const metadata: Metadata = { title: "Inventory activity", robots: { index: false, follow: false } };
 
 export default function ActivityPage() {
   if (!reviewConfig()) notFound();
   return (
-    <section className="min-h-screen bg-ice-50 pb-24 pt-28 sm:pt-32">
-      <Container className="max-w-3xl">
-        <Suspense fallback={<p className="text-ink-soft">Loading…</p>}>
-          <Activity />
-        </Suspense>
-      </Container>
-    </section>
+    <OwnerShell>
+      <Activity />
+    </OwnerShell>
   );
 }
 
@@ -40,19 +34,20 @@ async function Activity() {
   return (
     <div>
       <OwnerNav current="/partners/review/inventory" />
-      <Link href="/partners/review/inventory" className="text-sm font-semibold text-royal underline">← All inventory</Link>
-      <h1 className="mt-2 font-display text-3xl font-bold text-ink sm:text-4xl">Inventory activity</h1>
-      <p className="text-ink-soft">Every stock change in the last 14 days, newest first. {ctx.label}</p>
-      <ExportForm />
+      <OwnerSubNav label="Inventory pages" items={INVENTORY_TABS} current="/partners/review/inventory/activity" />
+      <PageTitle title="Inventory activity" lead={<>Every stock change in the last 14 days, newest first. {ctx.label}</>} />
       {rows.length === 0 ? (
-        <p className="mt-6 rounded-[2rem] bg-white p-8 text-center text-ink-soft ring-1 ring-inset ring-sky-200">No changes yet.</p>
+        <Empty title="No changes yet">Sales, deliveries, counts and corrections show up here as they happen.</Empty>
       ) : (
-        <ul className="mt-4 divide-y divide-sky-100 rounded-[2rem] bg-white px-4 ring-1 ring-inset ring-sky-200">
+        <ul className={cn(card, "divide-y divide-sky-100 px-4 py-1 sm:px-6 sm:py-1")}>
           {rows.map((a) => (
-            <li key={a.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-3">
+            <li key={a.id} className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1 py-3.5">
               <span className="min-w-0">
-                <span className={cn("block font-semibold text-ink", a.undoneBy && "line-through opacity-60")}>
-                  {KIND_LABEL[a.kind]} {a.delta > 0 ? `+${a.delta}` : a.delta} · {names.get(a.variantId) ?? a.sku}
+                <span className={cn("flex flex-wrap items-center gap-2 font-semibold text-ink", a.undoneBy && "line-through opacity-60")}>
+                  <Pill tone={a.delta > 0 ? "good" : a.delta < 0 ? "warn" : "plain"}>
+                    {KIND_LABEL[a.kind]} {a.delta > 0 ? `+${a.delta}` : a.delta}
+                  </Pill>
+                  {names.get(a.variantId) ?? a.sku}
                 </span>
                 <span className="block text-sm text-ink-soft">
                   {fmt(a.at)} · {SOURCE[a.source]} · {a.onHandBefore} → {a.onHandAfter} on the shelf
@@ -66,6 +61,7 @@ async function Activity() {
           ))}
         </ul>
       )}
+      <ExportForm />
     </div>
   );
 }
@@ -75,18 +71,18 @@ function ExportForm() {
   const range = parseExportRange(null, null);
   const defaults = range.ok ? range : { from: "", to: "" };
   return (
-    <form method="get" action="/partners/review/inventory/export" className="mt-4 rounded-[2rem] bg-white p-4 ring-1 ring-inset ring-sky-200">
-      <p className="font-display font-bold text-ink">Download stock history (CSV)</p>
+    <form method="get" action="/partners/review/inventory/export" className={cn(card, "mt-5")}>
+      <h2 className="font-display text-lg font-bold text-ink sm:text-xl">Download stock history (CSV)</h2>
       <div className="mt-3 flex flex-wrap items-end gap-3">
-        <label className="flex flex-col text-sm font-semibold text-ink">
+        <label className={label}>
           From
-          <input type="date" name="from" defaultValue={defaults.from} required className="mt-1 min-h-11 rounded-xl bg-ice-50 px-3 ring-1 ring-inset ring-sky-200" />
+          <input type="date" name="from" defaultValue={defaults.from} required className={input} />
         </label>
-        <label className="flex flex-col text-sm font-semibold text-ink">
+        <label className={label}>
           To
-          <input type="date" name="to" defaultValue={defaults.to} required className="mt-1 min-h-11 rounded-xl bg-ice-50 px-3 ring-1 ring-inset ring-sky-200" />
+          <input type="date" name="to" defaultValue={defaults.to} required className={input} />
         </label>
-        <button type="submit" className="min-h-11 rounded-full bg-royal px-5 font-display font-semibold text-white">
+        <button type="submit" className={primary}>
           Download CSV
         </button>
       </div>

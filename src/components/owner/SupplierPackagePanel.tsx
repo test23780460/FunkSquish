@@ -63,7 +63,7 @@ export function SupplierPackagePanel({ order, group, suppliers, suggested }: { o
             </div>
           </form>
         ) : (
-          <p className="text-sm font-semibold text-[#b8215a]">This order isn&apos;t paid or was canceled — don&apos;t place it with a supplier.</p>
+          <p className="text-sm font-semibold text-[#a3174f]">This order isn&apos;t paid or was canceled — don&apos;t place it with a supplier.</p>
         )
       ) : (
         <>
@@ -78,7 +78,7 @@ export function SupplierPackagePanel({ order, group, suppliers, suggested }: { o
             · order <span className="font-mono">{so.reference}</span> · placed {so.placedAt.slice(0, 10)}
             {so.expectedShipBy ? ` · they said they'd ship by ${so.expectedShipBy}` : ""}
           </p>
-          {share && !share.ok && <p className="text-sm font-semibold text-[#b8215a]">Customer details: {share.reason} Don&apos;t send them this customer&apos;s name or address until that&apos;s fixed.</p>}
+          {share && !share.ok && <p className="text-sm font-semibold text-[#a3174f]">Customer details: {share.reason} Don&apos;t send them this customer&apos;s name or address until that&apos;s fixed.</p>}
           {so.updates.length > 1 && (
             <ul className="text-xs text-ink-soft">
               {so.updates.slice(1).map((u, i) => (
@@ -144,7 +144,7 @@ export function SupplierPackagePanel({ order, group, suppliers, suggested }: { o
                 <label className="flex items-start gap-2 text-sm text-ink">
                   <input type="checkbox" name="confirm" className="mt-0.5 size-5" /> The supplier order was canceled (they canceled, or I canceled it with them)
                 </label>
-                <button className="justify-self-start text-sm font-semibold text-[#b8215a] underline">Record supplier cancellation</button>
+                <button className="justify-self-start text-sm font-semibold text-[#a3174f] underline">Record supplier cancellation</button>
               </form>
             </div>
           )}

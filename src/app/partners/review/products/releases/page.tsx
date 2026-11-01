@@ -10,7 +10,7 @@ import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav, OwnerSubNav, PRODUCT_TABS } from "@/components/owner/OwnerNav";
 import { Check } from "@/components/owner/Fields";
 import { Empty, Flash, OwnerShell, PageTitle, Pill, card, dateTime, one, secondary } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 import { rollbackAction } from "../actions";
 
 export const metadata: Metadata = { title: "Website catalog", robots: { index: false, follow: false } };

@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -10,10 +9,11 @@ import { RETURN_CAUSES, getOrder, orderAttention, packageAmounts, refundedSoFar 
 import { packageLabel } from "@/commerce/orders/notify";
 import { signatureRecommended, SIGNATURE_POLICY } from "@/commerce/signature";
 import { formatMoney } from "@/commerce/availability";
-import { Container } from "@/components/ui/Primitives";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { ArrowLeftIcon } from "@/components/icons/Icons";
 import { OwnerNav } from "@/components/owner/OwnerNav";
+import { Callout, Empty, Flash, OwnerShell, Pill, button, card, danger, input as field, label as labelCls, one, panel, primary, secondary, small, type PillTone } from "@/components/owner/OwnerUi";
+import { cn } from "@/components/owner/cn";
 import { SupplierPackagePanel } from "@/components/owner/SupplierPackagePanel";
 import { ownerDataStore } from "@/lib/owner/data";
 import { listSuppliers } from "@/commerce/suppliers/supplier";
@@ -40,20 +40,21 @@ export const instant = false;
 export default function OrderPage({ params, searchParams }: PageProps<"/partners/review/orders/[session]">) {
   if (!reviewConfig()) notFound();
   return (
-    <section className="min-h-screen bg-ice-50 pb-24 pt-28 sm:pt-32">
-      <Container className="max-w-4xl">
-        <Suspense fallback={<p className="text-ink-soft">Loading…</p>}>
-          <Detail params={params} searchParams={searchParams} />
-        </Suspense>
-      </Container>
-    </section>
+    <OwnerShell>
+      <Detail params={params} searchParams={searchParams} />
+    </OwnerShell>
   );
 }
 
 const usd = (cents: number) => formatMoney({ amount: cents, currency: "USD" });
 const fmt = (iso: string) => new Date(iso).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "America/New_York" });
-const box = "rounded-[2rem] bg-white p-6 ring-1 ring-inset ring-sky-200";
-const input = "min-h-11 rounded-xl bg-ice-50 px-3 text-ink ring-2 ring-inset ring-sky-200";
+const box = card;
+const input = field;
+const lbl = labelCls;
+const h2 = "font-display text-lg font-bold leading-snug text-ink sm:text-xl";
+const words = (s: string) => s.replaceAll("_", " ");
+const ORDER_TONE: Record<string, PillTone> = { open: "info", awaiting_payment: "warn", partially_fulfilled: "warn", fulfilled: "good", canceled: "plain" };
+const PKG_TONE: Record<string, PillTone> = { shipped: "good", delivered: "good", canceled: "plain", lost: "alert", returned: "alert", awaiting_supplier: "warn", unfulfilled: "info" };
 const saved: Record<string, string> = {
   shipped: "Marked shipped — tracking email handled.",
   refund: "Refund sent to Stripe.",
@@ -77,11 +78,18 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
   if (!ctx) return <ReviewLogin />;
   const { session } = await params;
   const sp = await searchParams;
-  const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
   const mode = activeMode();
   const deps = mode ? await orderDeps(mode) : null;
   const order = deps ? await getOrder(deps.store, session) : null;
-  if (!order) return <p className={box}>Order not found. <Link href="/partners/review/orders" className="font-semibold text-royal underline">Back to orders</Link></p>;
+  if (!order)
+    return (
+      <div>
+        <OwnerNav current="/partners/review/orders" />
+        <Empty title="Order not found" action={<Link href="/partners/review/orders" className={cn(secondary, small)}>Back to orders</Link>}>
+          It may belong to the other Stripe mode, or the link is incomplete.
+        </Empty>
+      </div>
+    );
 
   const remaining = order.amounts.total - refundedSoFar(order);
   const a = order.shippingAddress;
@@ -97,68 +105,46 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
   };
 
   return (
-    <div className="space-y-6">
+    <div>
       <OwnerNav current="/partners/review/orders" />
-      <Link href="/partners/review/orders" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 font-display font-semibold text-ink ring-1 ring-inset ring-sky-200">
+      <Link href="/partners/review/orders" className={cn("-ml-1 mb-3 inline-flex min-h-11 items-center gap-2 rounded-full px-2 text-sm font-semibold text-royal hover:underline", "focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-royal")}>
         <ArrowLeftIcon className="size-4" /> All orders
       </Link>
-      {one(sp.saved) && <p role="status" className="rounded-2xl bg-mint-soft px-4 py-3 font-semibold text-ink">{saved[one(sp.saved)!] ?? "Saved."}</p>}
-      {one(sp.error) && <p role="alert" className="rounded-2xl bg-berry-soft px-4 py-3 font-semibold text-ink">{one(sp.error)}</p>}
+      <Flash ok={one(sp.saved) ? (saved[one(sp.saved)!] ?? "Saved.") : null} error={one(sp.error)} />
 
-      <header className={box}>
-        <p className="font-display text-sm font-semibold uppercase tracking-[0.12em] text-royal">{order.mode === "live" ? "Live order" : "TEST order"}</p>
-        <h1 className="mt-1 font-display text-3xl font-bold text-ink">{order.id}</h1>
-        <p className="mt-1 text-ink-soft">
-          {fmt(order.createdAt)} · {order.status.replace("_", " ")} · payment {order.paymentStatus.replace("_", " ")}
-        </p>
-        {attention.length > 0 && (
-          <ul className="mt-3 space-y-1" aria-label="Needs your attention">
-            {attention.map((x, i) => (
-              <li key={i} className="rounded-xl bg-berry-soft px-3 py-2 text-sm font-semibold text-ink">{x.label}</li>
-            ))}
-          </ul>
-        )}
-        <p className="mt-2 text-sm text-ink-soft">Policies shown at checkout: {order.policyVersions ?? "not recorded (order placed before versions were recorded)"}</p>
-        {signatureRecommended(order.amounts.total) && order.status !== "canceled" && (
-          <p className="mt-2 rounded-xl bg-lemon-soft px-3 py-2 text-sm text-ink">
-            Order is {usd(SIGNATURE_POLICY.recommendAtOrAboveCents)} or more: consider adding signature confirmation when you buy the label. It&apos;s your cost — never charge the customer for it.
-          </p>
-        )}
+      <header className="mb-6">
+        <p className="mb-1 font-display text-xs font-semibold uppercase tracking-[0.14em] text-royal">{order.mode === "live" ? "Live order" : "TEST order"}</p>
+        <h1 className="font-display text-[1.85rem] font-bold leading-tight text-ink sm:text-[2.25rem]">{order.id}</h1>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-ink-soft">
+          <Pill tone={ORDER_TONE[order.status] ?? "plain"}>{words(order.status)}</Pill>
+          <Pill tone={order.paymentStatus === "paid" ? "good" : "warn"}>payment {words(order.paymentStatus)}</Pill>
+          <span className="ml-1">{fmt(order.createdAt)}</span>
+        </div>
       </header>
 
-      <section aria-labelledby="items" className={box}>
-        <h2 id="items" className="font-display text-xl font-bold text-ink">Items and payment</h2>
-        <ul className="mt-3 divide-y divide-sky-100">
-          {order.lineItems.map((l) => (
-            <li key={l.variantId} className="flex justify-between gap-4 py-2 text-ink">
-              <span>{l.name} × {l.quantity} <span className="text-sm text-ink-soft">({l.sku}{l.fulfillmentSource === "supplier" ? ", supplier-shipped" : ""})</span></span>
-              <span className="font-semibold">{usd(l.amountTotal)}</span>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-3 text-ink-soft">
-          Subtotal {usd(order.amounts.subtotal)} · shipping {usd(order.amounts.shipping)} · tax {usd(order.amounts.tax)} · <strong className="text-ink">total {usd(order.amounts.total)}</strong>
-          {refundedSoFar(order) ? ` · refunded ${usd(refundedSoFar(order))}` : ""}
-        </p>
-      </section>
-
-      <section aria-labelledby="customer" className={box}>
-        <h2 id="customer" className="font-display text-xl font-bold text-ink">Customer</h2>
-        <p className="mt-2 whitespace-pre-line text-ink">
-          {[order.customer.name, order.customer.email, order.customer.phone].filter(Boolean).join("\n")}
-        </p>
-        {a && <p className="mt-2 whitespace-pre-line text-ink">{[a.name, a.line1, a.line2, `${a.city ?? ""}, ${a.state ?? ""} ${a.postalCode ?? ""}`, a.country].filter(Boolean).join("\n")}</p>}
-        <p className="mt-2 text-sm text-ink-soft">
-          Emails: confirmation {n?.customer?.status ?? "not sent"}{n?.customer?.code ? ` (${n.customer.code})` : ""} · owner alert {n?.owner?.status ?? "not sent"}
-        </p>
-        <form action={resendEmailsAction} className="mt-2">
-          <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
-          <button type="submit" className="rounded-full bg-white px-4 py-2 font-display text-sm font-semibold text-ink ring-1 ring-inset ring-sky-200 hover:bg-ice">Retry failed emails</button>
-        </form>
-      </section>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+      <div className="space-y-5">
+      {(attention.length > 0 || (signatureRecommended(order.amounts.total) && order.status !== "canceled")) && (
+        <div className="space-y-3">
+          {attention.length > 0 && (
+            <Callout tone="alert" title="Needs your attention">
+              <ul className="list-disc space-y-0.5 pl-4">
+                {attention.map((x, i) => (
+                  <li key={i}>{x.label}</li>
+                ))}
+              </ul>
+            </Callout>
+          )}
+          {signatureRecommended(order.amounts.total) && order.status !== "canceled" && (
+            <Callout tone="warn">
+              Order is {usd(SIGNATURE_POLICY.recommendAtOrAboveCents)} or more: consider adding signature confirmation when you buy the label. It&apos;s your cost — never charge the customer for it.
+            </Callout>
+          )}
+        </div>
+      )}
 
       <section aria-labelledby="ship" className={box}>
-        <h2 id="ship" className="font-display text-xl font-bold text-ink">Packages</h2>
+        <h2 id="ship" className={h2}>Packages</h2>
         <p className="mt-1 text-sm text-ink-soft">Each package has its own ship-by date, tracking and email. The customer paid {usd(order.amounts.shipping)} shipping in total at checkout.</p>
         <div className="mt-3 space-y-4">
           {order.fulfillments.map((f) => {
@@ -166,10 +152,11 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
             const items = order.lineItems.filter((l) => f.variantIds.includes(l.variantId));
             const open = order.status !== "canceled";
             return (
-            <div key={f.id} id={`pkg-${f.id}`} className="scroll-mt-28 rounded-2xl bg-ice-50 p-4">
-              <p className="font-semibold text-ink">
-                {packageLabel(order, f.id)} · <span className="uppercase tracking-wide">{f.status.replace("_", " ")}</span>
-                {f.trackingNumber ? ` · ${f.carrier} ${f.trackingNumber}` : ""}
+            <div key={f.id} id={`pkg-${f.id}`} className={cn(panel, "scroll-mt-2")}>
+              <p className="flex flex-wrap items-center gap-2 font-display font-semibold text-ink">
+                {packageLabel(order, f.id)}
+                <Pill tone={PKG_TONE[f.status] ?? "plain"}>{words(f.status)}</Pill>
+                {f.trackingNumber ? <span className="font-sans text-sm font-normal text-ink-soft">{f.carrier} <span className="font-mono">{f.trackingNumber}</span></span> : null}
               </p>
               <p className="mt-1 text-sm text-ink-soft">
                 {items.map((l) => `${l.name} × ${l.quantity}`).join(", ")}
@@ -196,20 +183,20 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
                 <form action={setShipByAction} className="mt-2 flex flex-wrap items-end gap-2">
                   <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
                   <input type="hidden" name="group" value={f.id} />
-                  <label className="grid gap-1 text-sm font-semibold text-ink">Ship-by date (from the product&apos;s stated processing time)<input name="shipBy" type="date" required className={input} /></label>
-                  <button type="submit" className="min-h-11 rounded-full bg-white px-4 font-display text-sm font-semibold text-ink ring-1 ring-inset ring-sky-200">Save</button>
+                  <label className={lbl}>Ship-by date (from the product&apos;s stated processing time)<input name="shipBy" type="date" required className={input} /></label>
+                  <button type="submit" className={cn(secondary, small)}>Save</button>
                 </form>
               )}
               {!f.shippedAt && open && notShipped(f.status) && f.shipBy && (
                 <details className="mt-2">
-                  <summary className="cursor-pointer text-sm font-semibold text-royal">Can&apos;t ship by {f.shipBy}? Send a delay notice</summary>
-                  <form action={delayNoticeAction} className="mt-2 grid gap-2 rounded-xl bg-white p-3">
+                  <summary className="inline-flex min-h-11 cursor-pointer items-center text-sm font-semibold text-royal">Can&apos;t ship by {f.shipBy}? Send a delay notice</summary>
+                  <form action={delayNoticeAction} className="mt-2 grid gap-2 rounded-xl bg-white p-3 ring-1 ring-inset ring-sky-100">
                     <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
                     <input type="hidden" name="group" value={f.id} />
                     <p className="text-sm text-ink-soft">Send it <strong>before</strong> the ship-by date. The email offers a free cancel-and-refund for this package. Over 30 days late, no date, or a second delay: the customer must say yes, or you cancel and refund.</p>
-                    <label className="grid gap-1 text-sm font-semibold text-ink">New ship-by date<input name="newShipBy" type="date" className={input} /></label>
-                    <label className="flex items-center gap-2 text-sm text-ink"><input type="checkbox" name="unknown" value="yes" /> We can&apos;t give a date yet</label>
-                    <button type="submit" className="justify-self-start rounded-full bg-royal px-4 py-2 font-display text-sm font-semibold text-white">Email delay notice</button>
+                    <label className={lbl}>New ship-by date<input name="newShipBy" type="date" className={input} /></label>
+                    <label className="flex items-center gap-2 text-sm text-ink"><input type="checkbox" className="size-4 accent-royal" name="unknown" value="yes" /> We can&apos;t give a date yet</label>
+                    <button type="submit" className={cn(primary, small, "justify-self-start")}>Email delay notice</button>
                   </form>
                 </details>
               )}
@@ -217,24 +204,24 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
                 <form action={markShippedAction} className="mt-3 grid gap-2 sm:grid-cols-[8rem_1fr_1fr_auto] sm:items-end">
                   <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
                   <input type="hidden" name="group" value={f.id} />
-                  <label className="grid gap-1 text-sm font-semibold text-ink">Carrier<input name="carrier" required defaultValue={f.carrier ?? "USPS"} className={input} /></label>
-                  <label className="grid gap-1 text-sm font-semibold text-ink">Tracking number<input name="tracking" required defaultValue={f.trackingNumber ?? ""} className={input} /></label>
-                  <label className="grid gap-1 text-sm font-semibold text-ink">Tracking link (optional)<input name="trackingUrl" type="url" defaultValue={f.trackingUrl ?? ""} placeholder="https://" className={input} /></label>
-                  <button type="submit" className="min-h-11 rounded-full bg-royal px-4 font-display text-sm font-semibold text-white">{f.shippedAt ? "Update" : "Mark shipped"}</button>
+                  <label className={lbl}>Carrier<input name="carrier" required defaultValue={f.carrier ?? "USPS"} className={input} /></label>
+                  <label className={lbl}>Tracking number<input name="tracking" required defaultValue={f.trackingNumber ?? ""} className={input} /></label>
+                  <label className={lbl}>Tracking link (optional)<input name="trackingUrl" type="url" defaultValue={f.trackingUrl ?? ""} placeholder="https://" className={input} /></label>
+                  <button type="submit" className={primary}>{f.shippedAt ? "Update" : "Mark shipped"}</button>
                 </form>
               )}
               {open && notShipped(f.status) && money && order.fulfillments.length > 1 && (
                 <details className="mt-3">
-                  <summary className="cursor-pointer text-sm font-semibold text-[#b8215a]">Cancel just this package (refund {usd(money.refundable)})</summary>
-                  <form action={cancelPackageAction} className="mt-2 grid gap-2 rounded-xl bg-white p-3">
+                  <summary className="inline-flex min-h-11 cursor-pointer items-center text-sm font-semibold text-[#a3174f]">Cancel just this package (refund {usd(money.refundable)})</summary>
+                  <form action={cancelPackageAction} className="mt-2 grid gap-2 rounded-xl bg-white p-3 ring-1 ring-inset ring-sky-100">
                     <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
                     <input type="hidden" name="group" value={f.id} />
                     <p className="text-sm text-ink-soft">Refunds this package&apos;s items, its shipping and tax, and puts its stock back. The other packages carry on.</p>
                     {f.status === "sent_to_supplier" && (
-                      <label className="flex items-center gap-2 text-sm text-ink"><input type="checkbox" name="supplierCanceled" value="yes" /> I&apos;ve canceled it with the supplier</label>
+                      <label className="flex items-center gap-2 text-sm text-ink"><input type="checkbox" className="size-4 accent-royal" name="supplierCanceled" value="yes" /> I&apos;ve canceled it with the supplier</label>
                     )}
-                    <label className="grid gap-1 text-sm font-semibold text-ink">Order number<input name="confirm" autoComplete="off" required placeholder={order.id} className={`${input} font-mono`} /></label>
-                    <button type="submit" className="justify-self-start rounded-full bg-white px-4 py-2 font-display text-sm font-semibold text-[#b8215a] ring-2 ring-inset ring-[#b8215a]">Cancel package</button>
+                    <label className={lbl}>Order number<input name="confirm" autoComplete="off" required placeholder={order.id} className={cn(input, "font-mono")} /></label>
+                    <button type="submit" className={cn(danger, small, "justify-self-start")}>Cancel package</button>
                   </form>
                 </details>
               )}
@@ -243,24 +230,24 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
                   <form action={markLostAction}>
                     <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
                     <input type="hidden" name="group" value={f.id} />
-                    <button type="submit" className="min-h-11 rounded-full bg-white px-4 font-display text-sm font-semibold text-ink ring-1 ring-inset ring-sky-200">Carrier confirmed it lost</button>
+                    <button type="submit" className={cn(secondary, small)}>Carrier confirmed it lost</button>
                   </form>
                   <form action={markReturnedAction} className="flex flex-wrap items-end gap-2">
                     <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
                     <input type="hidden" name="group" value={f.id} />
-                    <label className="grid gap-1 text-sm font-semibold text-ink">
+                    <label className={lbl}>
                       It came back to us because…
                       <select name="cause" required className={input} defaultValue="">
                         <option value="" disabled>Choose</option>
                         {Object.entries(RETURN_CAUSES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                       </select>
                     </label>
-                    <button type="submit" className="min-h-11 rounded-full bg-white px-4 font-display text-sm font-semibold text-ink ring-1 ring-inset ring-sky-200">Record return</button>
+                    <button type="submit" className={cn(secondary, small)}>Record return</button>
                   </form>
                 </div>
               )}
               {(f.status === "lost" || f.status === "returned") && !f.resolution && (
-                <div className="mt-3 grid gap-2 rounded-xl bg-white p-3">
+                <div className="mt-3 grid gap-2 rounded-xl bg-white p-3 ring-1 ring-inset ring-sky-100">
                   <p className="text-sm text-ink">
                     {f.status === "lost" ? "Lost in transit:" : "Came back undeliverable:"} send a free replacement, or refund this package in full.
                     {f.status === "returned" && f.returnCause === "address" && " The address was wrong at checkout — a refund is the default; reship only if the customer gives a corrected address."}
@@ -268,14 +255,14 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
                   <form action={reshipAction}>
                     <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
                     <input type="hidden" name="group" value={f.id} />
-                    <button type="submit" className="min-h-11 rounded-full bg-royal px-4 font-display text-sm font-semibold text-white">Send a free replacement</button>
+                    <button type="submit" className={primary}>Send a free replacement</button>
                   </form>
                   {money && money.refundable > 0 && (
                     <form action={refundPackageAction} className="flex flex-wrap items-end gap-2">
                       <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
                       <input type="hidden" name="group" value={f.id} />
-                      <label className="grid gap-1 text-sm font-semibold text-ink">Order number<input name="confirm" autoComplete="off" required placeholder={order.id} className={`${input} font-mono`} /></label>
-                      <button type="submit" className="min-h-11 rounded-full bg-[#b8215a] px-4 font-display text-sm font-semibold text-white">Refund package ({usd(money.refundable)})</button>
+                      <label className={lbl}>Order number<input name="confirm" autoComplete="off" required placeholder={order.id} className={cn(input, "font-mono")} /></label>
+                      <button type="submit" className={cn(button, "bg-[#a3174f] text-white hover:brightness-110")}>Refund package ({usd(money.refundable)})</button>
                     </form>
                   )}
                 </div>
@@ -288,39 +275,39 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
 
       {(order.disputes?.length ?? 0) > 0 && (
         <section aria-labelledby="disputes" className={box}>
-          <h2 id="disputes" className="font-display text-xl font-bold text-ink">Card disputes</h2>
+          <h2 id="disputes" className={h2}>Card disputes</h2>
           <p className="mt-1 text-sm text-ink-soft">Respond in the Stripe Dashboard before the deadline with the order, delivery tracking and your messages with the customer (see docs/COMPLIANCE-LAUNCH-GATES.md, chargeback evidence).</p>
-          <ul className="mt-2 space-y-1 text-ink">
+          <ul className="mt-3 space-y-2 text-sm text-ink">
             {order.disputes!.map((d) => (
-              <li key={d.stripeDisputeId}>{d.stripeDisputeId}: {usd(d.amount)} · {d.reason ?? "no reason"} · <strong>{d.status.replaceAll("_", " ")}</strong>{d.evidenceDueBy ? ` · evidence due ${fmt(d.evidenceDueBy)}` : ""}{d.needsCheck ? " · Stripe sent conflicting updates: check this dispute in Stripe" : ""}</li>
+              <li key={d.stripeDisputeId} className={panel}>{d.stripeDisputeId}: {usd(d.amount)} · {d.reason ?? "no reason"} · <strong>{d.status.replaceAll("_", " ")}</strong>{d.evidenceDueBy ? ` · evidence due ${fmt(d.evidenceDueBy)}` : ""}{d.needsCheck ? " · Stripe sent conflicting updates: check this dispute in Stripe" : ""}</li>
             ))}
           </ul>
         </section>
       )}
 
       {remaining > 0 && order.paymentStatus !== "processing" && (
-        <section aria-labelledby="money" className="rounded-[2rem] bg-white p-6 ring-2 ring-inset ring-berry/40">
-          <h2 id="money" className="font-display text-xl font-bold text-ink">Refund or cancel</h2>
+        <section aria-labelledby="money" className={cn(box, "ring-2 ring-[#f2b9cd]")}>
+          <h2 id="money" className={h2}>Refund or cancel</h2>
           <p className="mt-1 text-sm text-ink-soft">Refunds go back to the customer&apos;s card through Stripe. Type the order number to confirm. Up to {usd(remaining)} can still be refunded.</p>
           <form action={refundAction} className="mt-3 flex flex-wrap items-end gap-3">
             <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
-            <label className="grid gap-1 text-sm font-semibold text-ink">Amount (USD)<input name="amount" inputMode="decimal" required placeholder={(remaining / 100).toFixed(2)} className={input} /></label>
-            <label className="grid gap-1 text-sm font-semibold text-ink">Order number<input name="confirm" autoComplete="off" required placeholder={order.id} className={`${input} font-mono`} /></label>
-            <button type="submit" className="min-h-11 rounded-full bg-[#b8215a] px-5 font-display font-semibold text-white">Refund</button>
+            <label className={lbl}>Amount (USD)<input name="amount" inputMode="decimal" required placeholder={(remaining / 100).toFixed(2)} className={input} /></label>
+            <label className={lbl}>Order number<input name="confirm" autoComplete="off" required placeholder={order.id} className={cn(input, "font-mono")} /></label>
+            <button type="submit" className={cn(button, "bg-[#a3174f] text-white hover:brightness-110")}>Refund</button>
           </form>
           {!shipped && order.status !== "canceled" && (
-            <form action={cancelAction} className="mt-4 flex flex-wrap items-end gap-3">
+            <form action={cancelAction} className="mt-4 flex flex-wrap items-end gap-3 border-t border-sky-100 pt-4">
               <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
-              <label className="grid gap-1 text-sm font-semibold text-ink">Order number<input name="confirm" autoComplete="off" required placeholder={order.id} className={`${input} font-mono`} /></label>
-              <button type="submit" className="min-h-11 rounded-full bg-white px-5 font-display font-semibold text-[#b8215a] ring-2 ring-inset ring-[#b8215a]">Cancel order (refund all, return stock)</button>
+              <label className={lbl}>Order number<input name="confirm" autoComplete="off" required placeholder={order.id} className={cn(input, "font-mono")} /></label>
+              <button type="submit" className={danger}>Cancel order (refund all, return stock)</button>
             </form>
           )}
         </section>
       )}
 
       <details className={box}>
-        <summary className="cursor-pointer font-semibold text-royal">History</summary>
-        <ul className="mt-2 space-y-1 text-sm text-ink-soft">
+        <summary className="cursor-pointer font-display font-semibold text-ink">History</summary>
+        <ul className="mt-3 space-y-1.5 border-t border-sky-100 pt-3 text-sm text-ink-soft">
           {order.history.map((h, i) => (
             <li key={i}>{fmt(h.at)}: {h.type} ({h.source})</li>
           ))}
@@ -329,6 +316,52 @@ async function Detail({ params, searchParams }: { params: PageProps<"/partners/r
           ))}
         </ul>
       </details>
+      </div>
+      <aside aria-label="Order summary" className="space-y-5 lg:sticky lg:top-24 lg:order-last">
+      <section aria-labelledby="items" className={box}>
+        <h2 id="items" className={h2}>Items and payment</h2>
+        <ul className="mt-3 divide-y divide-sky-100 text-sm">
+          {order.lineItems.map((l) => (
+            <li key={l.variantId} className="flex justify-between gap-4 py-2.5 text-ink">
+              <span className="min-w-0">
+                <span className="block font-semibold">{l.name} × {l.quantity}</span>
+                <span className="block text-xs text-ink-soft">{l.sku}{l.fulfillmentSource === "supplier" ? " · supplier-shipped" : ""}</span>
+              </span>
+              <span className="font-semibold tabular-nums">{usd(l.amountTotal)}</span>
+            </li>
+          ))}
+        </ul>
+        <dl className="mt-2 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 border-t border-sky-100 pt-3 text-sm text-ink-soft">
+          <dt>Subtotal</dt><dd className="text-right tabular-nums">{usd(order.amounts.subtotal)}</dd>
+          <dt>Shipping</dt><dd className="text-right tabular-nums">{usd(order.amounts.shipping)}</dd>
+          <dt>Tax</dt><dd className="text-right tabular-nums">{usd(order.amounts.tax)}</dd>
+          <dt className="font-bold text-ink">Total</dt><dd className="text-right font-bold text-ink tabular-nums">{usd(order.amounts.total)}</dd>
+          {refundedSoFar(order) ? (
+            <>
+              <dt className="text-[#a3174f]">Refunded</dt><dd className="text-right font-semibold text-[#a3174f] tabular-nums">{usd(refundedSoFar(order))}</dd>
+            </>
+          ) : null}
+        </dl>
+      </section>
+
+      <section aria-labelledby="customer" className={box}>
+        <h2 id="customer" className={h2}>Customer</h2>
+        <p className="mt-2 whitespace-pre-line break-words text-sm text-ink">
+          {[order.customer.name, order.customer.email, order.customer.phone].filter(Boolean).join("\n")}
+        </p>
+        {a && <p className="mt-3 whitespace-pre-line border-t border-sky-100 pt-3 text-sm text-ink"><span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink-soft">Ship to</span>{[a.name, a.line1, a.line2, `${a.city ?? ""}, ${a.state ?? ""} ${a.postalCode ?? ""}`, a.country].filter(Boolean).join("\n")}</p>}
+        <p className="mt-3 border-t border-sky-100 pt-3 text-sm text-ink-soft">
+          Emails: confirmation {n?.customer?.status ?? "not sent"}{n?.customer?.code ? ` (${n.customer.code})` : ""} · owner alert {n?.owner?.status ?? "not sent"}
+        </p>
+        <form action={resendEmailsAction} className="mt-3">
+          <input type="hidden" name="session" value={order.stripeCheckoutSessionId} />
+          <button type="submit" className={cn(secondary, small)}>Retry failed emails</button>
+        </form>
+        <p className="mt-3 text-xs text-ink-soft">Policies shown at checkout: {order.policyVersions ?? "not recorded (order placed before versions were recorded)"}</p>
+      </section>
+
+      </aside>
+      </div>
     </div>
   );
 }

@@ -19,9 +19,9 @@ import { SHIPPING_ORIGINS, originProblem } from "@/commerce/origins";
 import { getSupplierStock, lastTikTokReconcile, supplierStockStale } from "@/commerce/orders/reconcile";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav } from "@/components/owner/OwnerNav";
-import { OwnerShell, PageTitle, Stat, card, dateTime } from "@/components/owner/OwnerUi";
+import { Callout, Empty, Notices, OwnerShell, PageTitle, Pill, Section, Stat, StatGroup, button, card, dateTime, input, panel, primary, quiet, secondary } from "@/components/owner/OwnerUi";
 import { SearchIcon } from "@/components/icons/Icons";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
 
 export const metadata: Metadata = { title: "Overview", robots: { index: false, follow: false } };
 
@@ -119,11 +119,16 @@ async function Overview() {
   if (audit === null) warnings.push({ text: "The dashboard's activity log couldn't be read just now. Reload; if it keeps happening, check Netlify Blobs status." });
   for (const w of extras?.warnings ?? []) warnings.push(w);
 
+  const extraTiles = extras?.tiles ?? [];
+  const shipRows = toShip.slice(0, 12);
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       <OwnerNav current="overview" />
       <PageTitle
+        eyebrow="Owner dashboard"
         title="Overview"
+        meta={test ? undefined : <Pill tone="good">Live data</Pill>}
         lead={
           <>
             {ctx.label} Updated {dateTime(now.toISOString())}.
@@ -132,207 +137,181 @@ async function Overview() {
       />
 
       {test && (
-        <p role="note" className="rounded-2xl bg-lemon-soft px-4 py-3 text-sm font-semibold text-ink">
-          Test mode: these orders came from Stripe&apos;s sandbox with made-up cards. They are not real sales and no real money moved.
-        </p>
+        <Callout tone="warn" title="These are test orders">
+          They came from Stripe&apos;s sandbox with made-up cards. They are not real sales and no real money moved.
+        </Callout>
       )}
 
-      <section aria-label="Key numbers" className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      {/* Quick actions: the two things done most during a TikTok LIVE. */}
+      <form action="/partners/review/inventory" className={cn(card, "flex flex-col gap-3 sm:flex-row sm:items-end")}>
+        <label className="grid min-w-0 flex-1 gap-1.5" htmlFor="tq">
+          <span className="font-display text-base font-bold text-ink">Record a TikTok sale</span>
+          <span className="relative">
+            <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-ink-soft" />
+            <input id="tq" name="q" type="search" placeholder="Item name or SKU" className={cn(input, "min-h-12 rounded-full pl-11 text-lg")} />
+          </span>
+        </label>
+        <div className="flex gap-2">
+          <button type="submit" className={cn(primary, "min-h-12 flex-1 sm:flex-none")}>Find item</button>
+          <Link href="/partners/review/inventory/live" className={cn(live ? cn(button, "min-h-12 bg-berry text-ink") : cn(secondary, "min-h-12"), "flex-1 sm:flex-none")}>
+            {live ? "LIVE running →" : "Start a LIVE"}
+          </Link>
+        </div>
+      </form>
+
+      <StatGroup id="g-orders" title="Orders & shipping">
         <Stat label={test ? "Test orders" : "Orders"} value={orders.length} note="All recorded orders" href="/partners/review/orders" />
         <Stat label="Waiting to ship" value={toShip.length} note={`Packages · ${late.length} late`} href="/partners/review/fulfillment" tone={late.length ? "alert" : toShip.length ? "warn" : "plain"} />
         <Stat label="Need attention" value={attention.length} note="Order problems to fix" href="/partners/review/orders" tone={attention.length ? "alert" : "plain"} />
         <Stat label="Payment pending" value={pending} note="Delayed payment methods" href="/partners/review/orders" />
+      </StatGroup>
+
+      <StatGroup id="g-money" title="Money · last 30 days" cols={3}>
         <Stat
-          label={test ? "Test sales, 30 days" : "Sales, 30 days"}
+          label={test ? "Test sales" : "Sales"}
           value={recentPaid.length ? usd(gross30) : "—"}
           note={recentPaid.length ? `${recentPaid.length} paid order(s), incl. shipping & tax` : "No paid orders yet"}
         />
-        <Stat label="Refunded, 30 days" value={refunds.length ? usd(refunded30) : "—"} note={`${refunds.length} refund(s)`} />
+        <Stat label="Refunded" value={refunds.length ? usd(refunded30) : "—"} note={`${refunds.length} refund(s)`} />
         <Stat label="Open card disputes" value={disputes.length} note="Need a response in Stripe" tone={disputes.length ? "alert" : "plain"} />
+      </StatGroup>
+
+      <StatGroup id="g-catalog" title="Catalog, stock & suppliers" cols={3}>
         <Stat label="Stock warnings" value={stock.length} note={`${rows.length} variant(s) tracked`} href="/partners/review/inventory" tone={stock.length ? "warn" : "plain"} />
-      </section>
+        {extraTiles.map((t) => (
+          <Stat key={t.label} {...t} />
+        ))}
+      </StatGroup>
 
-      {extras && extras.tiles.length > 0 && (
-        <section aria-label="Products and suppliers" className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {extras.tiles.map((t) => (
-            <Stat key={t.label} {...t} />
-          ))}
-        </section>
-      )}
-
-      <form action="/partners/review/inventory" className={cn(card, "flex flex-wrap items-end gap-2")}>
-        <label className="grid w-full gap-1 font-display font-semibold text-ink sm:w-auto sm:min-w-0 sm:flex-1" htmlFor="tq">
-          Record a TikTok sale
-          <span className="relative">
-            <SearchIcon className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-ink-soft" />
-            <input id="tq" name="q" type="search" placeholder="Item name or SKU" className="min-h-12 w-full rounded-full bg-ice-50 pl-11 pr-4 text-lg font-normal ring-2 ring-inset ring-sky-200 focus:outline-none focus:ring-royal" />
-          </span>
-        </label>
-        <button type="submit" className="min-h-12 rounded-full bg-ink px-5 font-display font-semibold text-white">Find</button>
-        <Link href="/partners/review/inventory/live" className={cn("inline-flex min-h-12 items-center rounded-full px-5 font-display font-semibold", live ? "bg-berry text-white" : "bg-white text-ink ring-1 ring-inset ring-sky-200")}>
-          {live ? "LIVE running" : "Start a LIVE"}
-        </Link>
-      </form>
-
-      {warnings.length > 0 && (
-        <section aria-labelledby="ops" className={cn(card, "ring-2 ring-lemon")}>
-          <h2 id="ops" className="font-display text-xl font-bold text-ink">Set-up and warnings ({warnings.length})</h2>
-          <ul className="mt-2 space-y-1.5 text-sm text-ink">
-            {warnings.map((w, i) => (
-              <li key={i} className="rounded-xl bg-lemon-soft/60 px-3 py-2">
-                {w.href ? (
-                  <Link href={w.href} className="underline decoration-2 underline-offset-2">
-                    {w.text}
-                  </Link>
-                ) : (
-                  w.text
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {attention.length > 0 && (
-        <section aria-labelledby="att" className={cn(card, "ring-2 ring-[#d62f6d]")}>
-          <h2 id="att" className="font-display text-xl font-bold text-ink">Orders that need you ({attention.length})</h2>
-          <ul className="mt-2 space-y-1.5">
-            {attention.slice(0, 12).map(({ o, a }, i) => (
-              <li key={i}>
-                <Link href={orderHref(o)} className="block rounded-xl bg-berry-soft px-3 py-2 text-sm text-ink hover:ring-2 hover:ring-royal">
-                  <strong>{o.id}</strong> — {a.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
+      {(warnings.length > 0 || attention.length > 0) && (
+        <div className="grid items-start gap-5 lg:grid-cols-2">
+          {attention.length > 0 && (
+            <Section id="att" title="Orders that need you" count={attention.length} tone="alert" className={warnings.length ? "" : "lg:col-span-2"}>
+              <Notices tone="alert" items={attention.slice(0, 12).map(({ o, a }) => ({ text: <><strong>{o.id}</strong> — {a.label}</>, href: orderHref(o) }))} />
+            </Section>
+          )}
+          {warnings.length > 0 && (
+            <Section id="ops" title="Set-up and warnings" count={warnings.length} tone="warn" description="Things to sort out before (or while) selling." className={attention.length ? "" : "lg:col-span-2"}>
+              <Notices items={warnings} />
+            </Section>
+          )}
+        </div>
       )}
 
       {extras?.sections}
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <section aria-labelledby="ship" className={card}>
-          <h2 id="ship" className="font-display text-xl font-bold text-ink">Shipping deadlines ({toShip.length})</h2>
+      <div className="grid items-start gap-5 lg:grid-cols-2">
+        <Section id="ship" title="Shipping deadlines" count={toShip.length} actions={toShip.length ? <Link href="/partners/review/fulfillment" className={quiet}>All packages →</Link> : undefined}>
           {toShip.length === 0 ? (
-            <p className="mt-1 text-sm text-ink-soft">No packages waiting to ship.</p>
+            <Empty compact>No packages waiting to ship.</Empty>
           ) : (
-            <ul className="mt-2 divide-y divide-sky-100">
-              {toShip.slice(0, 12).map(({ o, g }) => {
+            <ul className="divide-y divide-sky-100">
+              {shipRows.map(({ o, g }) => {
                 const state = g.shipBy ? shipByState(g.shipBy, now) : null;
                 return (
                   <li key={`${o.id}-${g.id}`}>
-                    <Link href={orderHref(o)} className="flex flex-wrap items-center justify-between gap-2 py-2 text-ink">
-                      <span className="min-w-0">
-                        <strong>{o.id}</strong> · {packageLabel(o, g.id)}
-                        {g.status === "awaiting_supplier" && <span className="text-sm text-ink-soft"> · place with supplier</span>}
+                    <Link href={orderHref(o)} className="-mx-2 flex flex-wrap items-center justify-between gap-2 rounded-xl px-2 py-2.5 text-ink hover:bg-ice-50">
+                      <span className="min-w-0 text-sm">
+                        <strong className="font-display">{o.id}</strong> <span className="text-ink-soft">· {packageLabel(o, g.id)}</span>
+                        {g.status === "awaiting_supplier" && <span className="text-ink-soft"> · place with supplier</span>}
                       </span>
-                      <span className={cn("rounded-full px-2.5 py-1 text-xs font-bold", state === "overdue" ? "bg-[#b8215a] text-white" : state === "due-today" ? "bg-lemon-soft text-ink" : "bg-ice text-ink")}>
+                      <Pill tone={state === "overdue" ? "alert" : state === "due-today" ? "warn" : "plain"}>
                         {g.shipBy ? `${state === "overdue" ? "Late — was due" : state === "due-today" ? "Due today" : "Ship by"} ${day(g.shipBy)}` : "No ship-by date"}
-                      </span>
+                      </Pill>
                     </Link>
                   </li>
                 );
               })}
             </ul>
           )}
-        </section>
+        </Section>
 
-        <section aria-labelledby="stock" className={card}>
-          <h2 id="stock" className="font-display text-xl font-bold text-ink">Stock to check ({stock.length})</h2>
+        <Section
+          id="stock"
+          title="Stock to check"
+          count={stock.length}
+          tone={stock.length ? "plain" : "plain"}
+          actions={paused.length > 0 ? <Link href="/partners/review/inventory?f=paused" className={quiet}>{paused.length} paused →</Link> : undefined}
+        >
           {stock.length === 0 ? (
-            <p className="mt-1 text-sm text-ink-soft">{rows.length ? "No stock warnings." : "No stock is tracked here yet."}</p>
+            <Empty compact>{rows.length ? "No stock warnings." : "No stock is tracked here yet."}</Empty>
           ) : (
-            <ul className="mt-2 space-y-1.5">
+            <ul className="divide-y divide-sky-100">
               {stock.slice(0, 10).map((r) => (
                 <li key={r.variantId}>
-                  <Link href={`/partners/review/inventory?q=${encodeURIComponent(r.sku)}#v-${encodeURIComponent(r.variantId)}`} className="block rounded-xl bg-ice-50 px-3 py-2 text-sm text-ink hover:ring-2 hover:ring-royal">
-                    <strong>
-                      {r.productName} · {r.variantName}
-                    </strong>{" "}
-                    ({r.free} free) — {r.warnings.filter((w) => ACTION_WARNINGS.has(w.code)).map((w) => w.text).join(" ")}
+                  <Link href={`/partners/review/inventory?q=${encodeURIComponent(r.sku)}#v-${encodeURIComponent(r.variantId)}`} className="-mx-2 flex items-start justify-between gap-3 rounded-xl px-2 py-2.5 text-sm text-ink hover:bg-ice-50">
+                    <span className="min-w-0">
+                      <span className="block font-semibold">
+                        {r.productName} <span className="font-normal text-ink-soft">· {r.variantName}</span>
+                      </span>
+                      <span className="block text-xs text-ink-soft">{r.warnings.filter((w) => ACTION_WARNINGS.has(w.code)).map((w) => w.text).join(" ")}</span>
+                    </span>
+                    <Pill tone={r.free === 0 ? "alert" : "warn"}>{r.free} free</Pill>
                   </Link>
                 </li>
               ))}
             </ul>
           )}
-          {paused.length > 0 && (
-            <p className="mt-3 text-sm text-ink">
-              Paused on the website: {paused.length}.{" "}
-              <Link href="/partners/review/inventory?f=paused" className="font-semibold text-royal underline">
-                Review paused items
-              </Link>
-            </p>
-          )}
-        </section>
+        </Section>
 
-        <section aria-labelledby="money" className={card}>
-          <h2 id="money" className="font-display text-xl font-bold text-ink">Refunds &amp; card disputes</h2>
+        <Section id="money" title="Refunds & card disputes">
           {disputes.length > 0 ? (
-            <ul className="mt-2 space-y-1 text-sm">
-              {disputes.map(({ o, d }) => (
-                <li key={d.stripeDisputeId} className="font-semibold text-[#b8215a]">
-                  <Link href={orderHref(o)} className="underline">
-                    {o.id}
-                  </Link>
-                  : {usd(d.amount)} — {disputeAttentionLabel(d)}
-                </li>
-              ))}
-            </ul>
+            <Notices
+              tone="alert"
+              items={disputes.map(({ o, d }) => ({ text: <><strong>{o.id}</strong>: {usd(d.amount)} — {disputeAttentionLabel(d)}</>, href: orderHref(o) }))}
+            />
           ) : (
-            <p className="mt-1 text-sm text-ink-soft">No open card disputes.</p>
+            <Empty compact>No open card disputes.</Empty>
           )}
-          <p className="mt-2 text-sm text-ink">
-            Refunds in the last 30 days: {refunds.length} · {usd(refunded30)}
-            {refunds.length > 0 && ` (${[...new Set(refunds.map((x) => x.o.id))].slice(0, 5).join(", ")})`}
-          </p>
-          <p className="mt-1 text-sm text-ink-soft">Orders with any refund: {orders.filter((o) => refundedSoFar(o) > 0).length}</p>
-        </section>
+          <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+            <div className={panel}>
+              <dt className="text-xs font-semibold text-ink-soft">Refunds, last 30 days</dt>
+              <dd className="mt-1 font-display text-lg font-bold tabular-nums text-ink">
+                {refunds.length} · {usd(refunded30)}
+              </dd>
+              {refunds.length > 0 && <dd className="mt-0.5 truncate text-xs text-ink-soft">{[...new Set(refunds.map((x) => x.o.id))].slice(0, 5).join(", ")}</dd>}
+            </div>
+            <div className={panel}>
+              <dt className="text-xs font-semibold text-ink-soft">Orders with any refund</dt>
+              <dd className="mt-1 font-display text-lg font-bold tabular-nums text-ink">{orders.filter((o) => refundedSoFar(o) > 0).length}</dd>
+            </div>
+          </dl>
+        </Section>
 
-        <section aria-labelledby="mail" className={card}>
-          <h2 id="mail" className="font-display text-xl font-bold text-ink">Emails that didn&apos;t send ({emails.length})</h2>
+        <Section id="mail" title="Emails that didn't send" count={emails.length} tone={emails.length ? "alert" : "plain"}>
           {emails.length === 0 ? (
-            <p className="mt-1 text-sm text-ink-soft">No failed order emails.</p>
+            <Empty compact>No failed order emails.</Empty>
           ) : (
-            <ul className="mt-2 space-y-1 text-sm">
-              {emails.map(({ o, failed }) => (
-                <li key={o.id}>
-                  <Link href={orderHref(o)} className="text-ink underline">
-                    {o.id}
-                  </Link>
-                  : {failed.join(", ")} — open the order and press &ldquo;Retry failed emails&rdquo;.
-                </li>
-              ))}
-            </ul>
+            <Notices
+              tone="alert"
+              items={emails.map(({ o, failed }) => ({ text: <><strong>{o.id}</strong>: {failed.join(", ")} — open the order and press &ldquo;Retry failed emails&rdquo;.</>, href: orderHref(o) }))}
+            />
           )}
-        </section>
+        </Section>
       </div>
 
-      <section aria-labelledby="act" className={card}>
-        <h2 id="act" className="font-display text-xl font-bold text-ink">Recent activity (7 days)</h2>
+      <Section id="act" title="Recent activity" description="The last 7 days of changes in the dashboard and stock." actions={<Link href="/partners/review/settings/activity" className={quiet}>Full activity log →</Link>}>
         {activity.length === 0 ? (
-          <p className="mt-1 text-sm text-ink-soft">Nothing recorded in the last 7 days.</p>
+          <Empty compact>Nothing recorded in the last 7 days.</Empty>
         ) : (
-          <ol className="mt-2 divide-y divide-sky-100 text-sm">
+          <ol className="divide-y divide-sky-100 text-sm">
             {activity.map((a, i) => (
-              <li key={i} className="flex flex-wrap justify-between gap-x-3 py-1.5">
+              <li key={i} className="flex flex-col gap-0.5 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                 {a.href ? (
-                  <Link href={a.href} className="min-w-0 text-ink underline decoration-sky-300 underline-offset-2">
+                  <Link href={a.href} className="min-w-0 text-ink hover:text-royal hover:underline">
                     {a.text}
                   </Link>
                 ) : (
                   <span className="min-w-0 text-ink">{a.text}</span>
                 )}
-                <time dateTime={a.at} className="shrink-0 text-ink-soft">
+                <time dateTime={a.at} className="shrink-0 text-xs text-ink-soft sm:text-sm">
                   {dateTime(a.at)}
                 </time>
               </li>
             ))}
           </ol>
         )}
-        <Link href="/partners/review/settings/activity" className="mt-2 inline-block text-sm font-semibold text-royal underline">
-          Full activity log
-        </Link>
-      </section>
+      </Section>
     </div>
   );
 }

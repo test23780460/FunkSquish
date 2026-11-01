@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -8,10 +7,10 @@ import { requireReviewer } from "@/lib/partners/review-auth";
 import { activeMode, orderDeps } from "@/commerce/checkout/service";
 import { listOrders, orderAttention, refundedSoFar } from "@/commerce/orders/admin";
 import { formatMoney } from "@/commerce/availability";
-import { Container } from "@/components/ui/Primitives";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { OwnerNav } from "@/components/owner/OwnerNav";
-import { cn } from "@/lib/cn";
+import { cn } from "@/components/owner/cn";
+import { Chips, Empty, Flash, OwnerShell, PageTitle, Pill, SearchBar, card, dateTime, one, secondary, small, type PillTone } from "@/components/owner/OwnerUi";
 import { checkKeyPermissionsAction, reconcileAction } from "./actions";
 import { REQUIRED_KEY_PERMISSIONS } from "@/commerce/checkout/key-permissions";
 import { SHIPPING_ORIGINS } from "@/commerce/origins";
@@ -23,31 +22,27 @@ export const metadata: Metadata = { title: "Orders", robots: { index: false, fol
 export default function OrdersPage({ searchParams }: PageProps<"/partners/review/orders">) {
   if (!reviewConfig()) notFound();
   return (
-    <section className="min-h-screen bg-ice-50 pb-24 pt-28 sm:pt-32">
-      <Container>
-        <Suspense fallback={<p className="text-ink-soft">Loading…</p>}>
-          <Orders searchParams={searchParams} />
-        </Suspense>
-      </Container>
-    </section>
+    <OwnerShell>
+      <Orders searchParams={searchParams} />
+    </OwnerShell>
   );
 }
 
 const usd = (cents: number) => formatMoney({ amount: cents, currency: "USD" });
-const statusTone: Record<string, string> = {
-  open: "bg-royal text-white",
-  awaiting_payment: "bg-lemon-soft text-ink",
-  partially_fulfilled: "bg-peach-soft text-ink",
-  fulfilled: "bg-mint-soft text-ink",
-  canceled: "bg-white text-ink-soft ring-1 ring-inset ring-sky-200",
+const STATUS: Record<string, { label: string; tone: PillTone }> = {
+  open: { label: "Paid · to fulfill", tone: "info" },
+  awaiting_payment: { label: "Awaiting payment", tone: "warn" },
+  partially_fulfilled: { label: "Partly fulfilled", tone: "warn" },
+  fulfilled: { label: "Fulfilled", tone: "good" },
+  canceled: { label: "Canceled", tone: "plain" },
 };
+const words = (code: string) => code.replaceAll("_", " ").replaceAll("-", " ");
 
 async function Orders({ searchParams }: { searchParams: PageProps<"/partners/review/orders">["searchParams"] }) {
   await connection();
   const ctx = await requireReviewer();
   if (!ctx) return <ReviewLogin />;
   const sp = await searchParams;
-  const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
   const mode = activeMode();
   const deps = mode ? await orderDeps(mode) : null;
   const orders = deps ? await listOrders(deps.store) : [];
@@ -70,74 +65,108 @@ async function Orders({ searchParams }: { searchParams: PageProps<"/partners/rev
       .filter(Boolean)
       .some((v) => String(v).toLowerCase().includes(q));
   const shown = orders.filter((o) => FILTERS[filter].test(o) && matches(o));
+  const error = one(sp.error);
 
   return (
-    <div className="space-y-6">
+    <div>
       <OwnerNav current="/partners/review/orders" />
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-3xl font-bold text-ink sm:text-4xl">Orders</h1>
-          <p className="text-ink-soft">
-            {mode === "live" ? "LIVE orders — real money." : mode === "test" ? "Stripe TEST mode — no real money." : "Checkout isn't switched on here."}
-          </p>
-        </div>
-        {deps && (
-          <form action={reconcileAction}>
-            <button type="submit" className="rounded-full bg-white px-4 py-2 font-display text-sm font-semibold text-ink ring-1 ring-inset ring-sky-200 hover:bg-ice">
-              Check Stripe for missed orders (last 3 days)
-            </button>
-          </form>
-        )}
-      </div>
-      {reconciled && (
-        <p role="status" className="rounded-2xl bg-mint-soft px-4 py-3 font-semibold text-ink">
-          Checked {reconciled[0]} paid checkout(s) in Stripe; {reconciled[1]} missing order(s) recorded.
-        </p>
-      )}
-      {one(sp.error) && <p role="alert" className="rounded-2xl bg-berry-soft px-4 py-3 font-semibold text-ink">{one(sp.error) === "closed" ? "Checkout isn't switched on here." : one(sp.error)}</p>}
+      <PageTitle
+        title="Orders"
+        meta={mode === "live" ? <Pill tone="alert">LIVE · real money</Pill> : mode === "test" ? <Pill tone="info">Stripe TEST mode · no real money</Pill> : <Pill>Checkout switched off here</Pill>}
+        lead={mode ? "Every paid checkout, newest first. Open an order to ship it, add tracking, refund or answer a dispute." : "Checkout isn't switched on here, so there are no orders to show."}
+        actions={
+          <>
+            <Link href="/partners/review/orders/emails" className={cn(secondary, small)}>
+              Customer email previews
+            </Link>
+            {deps && (
+              <form action={reconcileAction}>
+                <button type="submit" className={cn(secondary, small)} title="Looks for paid checkouts from the last 3 days that never reached this list">
+                  Check Stripe for missed orders (last 3 days)
+                </button>
+              </form>
+            )}
+          </>
+        }
+      />
+      <Flash
+        ok={reconciled ? `Checked ${reconciled[0]} paid checkout(s) in Stripe; ${reconciled[1]} missing order(s) recorded.` : null}
+        error={error ? (error === "closed" ? "Checkout isn't switched on here." : error) : null}
+      />
       <KeyPermissionsCheck result={one(sp.keys)} />
       {mode !== "test" && <LiveShippingApproval />}
+
       {orders.length > 0 && (
-        <div className="space-y-3">
-          <form action="/partners/review/orders" className="flex flex-wrap gap-2">
-            {filter !== "all" && <input type="hidden" name="f" value={filter} />}
-            <input name="q" defaultValue={q} placeholder="Order number, customer, SKU, tracking or supplier ref" aria-label="Search orders" className="min-h-11 w-full max-w-md rounded-full bg-white px-4 ring-2 ring-inset ring-sky-200 focus:outline-none focus:ring-royal" />
-            <button type="submit" className="min-h-11 rounded-full bg-ink px-5 font-display font-semibold text-white">Search</button>
-          </form>
-          <nav aria-label="Filter orders" className="flex flex-wrap gap-2">
-            {Object.entries(FILTERS).map(([k, v]) => (
-              <Link key={k} href={`/partners/review/orders?${new URLSearchParams({ ...(k !== "all" ? { f: k } : {}), ...(q ? { q } : {}) })}`} aria-current={filter === k ? "page" : undefined} className={cn("inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold", filter === k ? "bg-ink text-white" : "bg-white text-ink ring-1 ring-inset ring-sky-200")}>
-                {v.label} ({orders.filter(v.test).length})
-              </Link>
-            ))}
-            <Link href="/partners/review/orders/emails" className="inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold text-royal underline">Customer email previews</Link>
-          </nav>
+        <div className="mb-4 space-y-3">
+          <SearchBar action="/partners/review/orders" value={q} label="Search orders" placeholder="Order number, customer, SKU, tracking or supplier ref" hidden={filter !== "all" ? { f: filter } : undefined} />
+          <Chips
+            label="Filter orders"
+            items={Object.entries(FILTERS).map(([k, v]) => ({
+              href: `/partners/review/orders?${new URLSearchParams({ ...(k !== "all" ? { f: k } : {}), ...(q ? { q } : {}) })}`,
+              label: v.label,
+              count: orders.filter(v.test).length,
+              active: filter === k,
+            }))}
+          />
         </div>
       )}
 
       {shown.length === 0 ? (
-        <p className="rounded-[2rem] bg-white p-8 text-center text-ink-soft ring-1 ring-inset ring-sky-200">{orders.length ? "No orders match." : "No orders yet."}</p>
+        orders.length ? (
+          <Empty title="No orders match" action={<Link href="/partners/review/orders" className={cn(secondary, small)}>Clear search and filters</Link>}>
+            Try a different order number, email, SKU or tracking number.
+          </Empty>
+        ) : (
+          <Empty title="No orders yet">
+            {mode ? "Paid checkouts show up here automatically. If you think one is missing, use “Check Stripe for missed orders”." : "Orders appear here once checkout is switched on for this site."}
+          </Empty>
+        )
       ) : (
-        <ul className="grid gap-3">
-          {shown.map((o) => (
-            <li key={o.stripeCheckoutSessionId}>
-              <Link href={`/partners/review/orders/${o.stripeCheckoutSessionId}`} className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[1.5rem] bg-white p-4 ring-1 ring-inset ring-sky-200 hover:ring-royal">
-                <span className={cn("rounded-full px-3 py-1 font-display text-xs font-bold", statusTone[o.status] ?? "bg-ice text-ink")}>{o.status.replace("_", " ")}</span>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-display text-lg font-bold text-ink">{o.id}</span>
-                  <span className="block text-sm text-ink-soft">
-                    {o.lineItems.reduce((n, l) => n + l.quantity, 0)} item(s) · {usd(o.amounts.total)}
-                    {refundedSoFar(o) ? ` · refunded ${usd(refundedSoFar(o))}` : ""}
+        <ul className={cn(card, "divide-y divide-sky-100 p-0 sm:p-0")} aria-label={`${shown.length} order${shown.length === 1 ? "" : "s"}`}>
+          {shown.map((o) => {
+            const st = STATUS[o.status] ?? { label: words(o.status), tone: "plain" as PillTone };
+            const items = o.lineItems.reduce((n, l) => n + l.quantity, 0);
+            const refunded = refundedSoFar(o);
+            const flags = orderAttention(o);
+            return (
+              <li key={o.stripeCheckoutSessionId}>
+                <Link
+                  href={`/partners/review/orders/${o.stripeCheckoutSessionId}`}
+                  className="group grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 px-4 py-4 hover:bg-ice-50 focus-visible:bg-ice-50 focus-visible:outline focus-visible:outline-[3px] focus-visible:-outline-offset-[3px] focus-visible:outline-royal sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center sm:px-6 first:rounded-t-3xl last:rounded-b-3xl"
+                >
+                  <span className="col-span-2 min-w-0 sm:col-span-1">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="font-display text-lg font-bold text-ink">{o.id}</span>
+                      <Pill tone={st.tone}>{st.label}</Pill>
+                    </span>
+                    <span className="mt-0.5 block truncate text-sm text-ink-soft">
+                      {o.customer.name || o.shippingAddress?.name || o.customer.email || "Customer"} · {items} item{items === 1 ? "" : "s"}
+                    </span>
+                    {(flags.length > 0 || o.fulfillments.some((g) => g.status === "awaiting_supplier")) && (
+                      <span className="mt-2 flex flex-wrap gap-1.5">
+                        {flags.map((x, i) => (
+                          <Pill key={i} tone="alert">
+                            {words(x.code)}
+                          </Pill>
+                        ))}
+                        {o.fulfillments.some((g) => g.status === "awaiting_supplier") && <Pill tone="warn">place with supplier</Pill>}
+                      </span>
+                    )}
                   </span>
-                </span>
-                <span className="text-sm text-ink-soft">{new Date(o.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "America/New_York" })}</span>
-                {orderAttention(o).map((x, i) => (
-                  <span key={i} className="rounded-full bg-berry-soft px-2.5 py-1 text-xs font-bold text-ink">{x.code.replaceAll("_", " ").replaceAll("-", " ")}</span>
-                ))}
-                {o.fulfillments.some((f) => f.status === "awaiting_supplier") && <span className="rounded-full bg-lemon-soft px-2.5 py-1 text-xs font-bold text-ink">place with supplier</span>}
-              </Link>
-            </li>
-          ))}
+                  <span className="text-sm sm:text-right">
+                    <span className="block font-display text-lg font-bold text-ink tabular-nums">{usd(o.amounts.total)}</span>
+                    {refunded > 0 && <span className="block text-xs font-semibold text-[#a3174f]">refunded {usd(refunded)}</span>}
+                  </span>
+                  <span className="flex items-center justify-between gap-3 text-sm text-ink-soft sm:justify-end">
+                    <time dateTime={o.createdAt}>{dateTime(o.createdAt)}</time>
+                    <span aria-hidden="true" className="text-ink-soft/60 group-hover:text-royal">
+                      →
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
@@ -167,14 +196,14 @@ function KeyPermissionsCheck({ result }: { result?: string }) {
                 ? "Couldn't reach Stripe. Try again in a minute."
                 : null;
   return (
-    <div className="rounded-[2rem] bg-white p-4 ring-1 ring-inset ring-sky-200">
+    <div className={cn(card, "mb-5 py-4 sm:py-4")}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-ink">
           <span className="font-display font-semibold">Stripe key permissions.</span> Live checkout stays closed until Stripe confirms the live key has{" "}
           <strong>{needed}</strong>.
         </p>
         <form action={checkKeyPermissionsAction}>
-          <button type="submit" className="rounded-full bg-white px-4 py-2 font-display text-sm font-semibold text-ink ring-1 ring-inset ring-sky-200 hover:bg-ice">
+          <button type="submit" className={cn(secondary, small)}>
             Check key permissions
           </button>
         </form>
@@ -192,11 +221,15 @@ function KeyPermissionsCheck({ result }: { result?: string }) {
 function LiveShippingApproval() {
   const st = shippingApprovalStatus(SHIPPING_ORIGINS);
   return (
-    <details className="rounded-[2rem] bg-white p-4 ring-1 ring-inset ring-sky-200">
-      <summary className="cursor-pointer font-display font-semibold text-ink">
-        Shipping rates for live checkout: {st.problem ? "not ready" : "approved"}
+    <details className={cn(card, "mb-5 py-4 sm:py-4")}>
+      <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 font-display font-semibold text-ink [&::-webkit-details-marker]:hidden">
+        <span>Shipping rates for live checkout</span>
+        <span className="flex items-center gap-2">
+          <Pill tone={st.problem ? "warn" : "good"}>{st.problem ? "not ready" : "approved"}</Pill>
+          <span aria-hidden="true" className="text-ink-soft">▾</span>
+        </span>
       </summary>
-      <div className="mt-2 space-y-2 text-sm text-ink">
+      <div className="mt-3 space-y-2 border-t border-sky-100 pt-3 text-sm leading-relaxed text-ink">
         <p>
           Places with verified, current rates: <strong>{st.verifiedOrigins}</strong> of {SHIPPING_ORIGINS.length}.{" "}
           {st.problem ? SHIPPING_LOCK_TEXT[st.problem] : "Live checkout may use this table."}

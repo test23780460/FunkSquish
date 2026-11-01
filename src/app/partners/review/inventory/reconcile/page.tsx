@@ -13,8 +13,8 @@ import { formatMoney } from "@/commerce/availability";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
 import { INVENTORY_TABS, OwnerNav, OwnerSubNav } from "@/components/owner/OwnerNav";
 import { Select, Text } from "@/components/owner/Fields";
-import { Flash, OwnerShell, PageTitle, Pill, card, dateTime, label, one, primary, secondary } from "@/components/owner/OwnerUi";
-import { cn } from "@/lib/cn";
+import { Flash, OwnerShell, PageTitle, Pill, card, dateTime, fileInput, label, one, panel, primary, secondary } from "@/components/owner/OwnerUi";
+import { cn } from "@/components/owner/cn";
 import { importCountsAction, importTikTokAction, restockAction, supplierStockAction } from "../actions";
 
 export const metadata: Metadata = { title: "Reconcile stock", robots: { index: false, follow: false } };
@@ -64,7 +64,7 @@ async function Reconcile({ searchParams }: { searchParams: PageProps<"/partners/
       <Flash ok={one(sp.ok)} error={one(sp.error)} />
 
       <section className={cn(card, "mb-5")} aria-labelledby="how">
-        <h2 id="how" className="font-display text-xl font-bold text-ink">How stock stays in one place</h2>
+        <h2 id="how" className="font-display text-lg font-bold text-ink sm:text-xl">How stock stays in one place</h2>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink">
           <li>
             <strong>This site&apos;s count is the only real count.</strong> Website orders take units automatically. TikTok Shop sales only count here once you record them — one by one on the Stock page, during a LIVE, or by uploading TikTok&apos;s order export below.
@@ -78,16 +78,16 @@ async function Reconcile({ searchParams }: { searchParams: PageProps<"/partners/
       </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <section id="tiktok" className={cn(card, "scroll-mt-28")} aria-labelledby="tt">
-          <h2 id="tt" className="font-display text-xl font-bold text-ink">Upload TikTok Shop orders</h2>
-          <p className={cn("mt-1 text-sm", lastDays !== null && lastDays <= 2 ? "text-ink-soft" : "font-semibold text-[#b8215a]")}>
+        <section id="tiktok" className={cn(card, "scroll-mt-2")} aria-labelledby="tt">
+          <h2 id="tt" className="font-display text-lg font-bold text-ink sm:text-xl">Upload TikTok Shop orders</h2>
+          <p className={cn("mt-1 text-sm", lastDays !== null && lastDays <= 2 ? "text-ink-soft" : "font-semibold text-[#a3174f]")}>
             {last ? `Last upload ${dateTime(last.at)} (${lastDays} day${lastDays === 1 ? "" : "s"} ago): ${last.applied} change(s), ${last.held} held.` : "Never uploaded."}
             {lastDays !== null && lastDays > 2 && " Stock may be out of date — upload the latest export."}
           </p>
           <form action={importTikTokAction} className="mt-3 grid gap-2">
             <label className={label}>
               Order export (.csv) from TikTok Seller Center
-              <input name="file" type="file" accept=".csv,text/csv" required className="text-sm" />
+              <input name="file" type="file" accept=".csv,text/csv" required className={fileInput} />
             </label>
             <p className="text-xs text-ink-soft">
               Needs columns for {TIKTOK_COLUMNS.orderId[0]}, {TIKTOK_COLUMNS.sku[0]} and {TIKTOK_COLUMNS.quantity[0]} ({TIKTOK_COLUMNS.status[0]} optional). Your TikTok seller SKUs must match the SKUs here. Canceled lines put stock back once. Checked against TikTok&apos;s documented export, not yet a real file from your account — press &ldquo;Check only&rdquo; first.
@@ -99,16 +99,16 @@ async function Reconcile({ searchParams }: { searchParams: PageProps<"/partners/
           </form>
         </section>
 
-        <section id="counts" className={cn(card, "scroll-mt-28")} aria-labelledby="ct">
-          <h2 id="ct" className="font-display text-xl font-bold text-ink">Upload shelf counts</h2>
+        <section id="counts" className={cn(card, "scroll-mt-2")} aria-labelledby="ct">
+          <h2 id="ct" className="font-display text-lg font-bold text-ink sm:text-xl">Upload shelf counts</h2>
           <p className="mt-1 text-sm text-ink-soft">A spreadsheet with columns <span className="font-mono">sku,count</span> (and optional <span className="font-mono">note</span>) sets each count. Counts lower than what website orders need are refused unless you tick the box.</p>
           <form action={importCountsAction} className="mt-3 grid gap-2">
             <label className={label}>
               Counts (.csv)
-              <input name="file" type="file" accept=".csv,text/csv" required className="text-sm" />
+              <input name="file" type="file" accept=".csv,text/csv" required className={fileInput} />
             </label>
             <label className="flex items-center gap-2 text-sm text-ink">
-              <input type="checkbox" name="force" className="size-5" /> I counted the shelf; set it even if website orders need more
+              <input type="checkbox" name="force" className="size-5 accent-royal" /> I counted the shelf; set it even if website orders need more
             </label>
             <div className="flex flex-wrap gap-2">
               <button name="intent" value="check" className={secondary}>Check only</button>
@@ -120,8 +120,8 @@ async function Reconcile({ searchParams }: { searchParams: PageProps<"/partners/
           </a>
         </section>
 
-        <section id="restock" className={cn(card, "scroll-mt-28")} aria-labelledby="rs">
-          <h2 id="rs" className="font-display text-xl font-bold text-ink">Record a delivery (restock)</h2>
+        <section id="restock" className={cn(card, "scroll-mt-2")} aria-labelledby="rs">
+          <h2 id="rs" className="font-display text-lg font-bold text-ink sm:text-xl">Record a delivery (restock)</h2>
           <form action={restockAction} className="mt-3 grid gap-2 sm:grid-cols-2">
             <input type="hidden" name="requestId" value={randomUUID()} />
             <Select name="variant" title="Item" value="" options={[{ value: "", label: "Choose" }, ...ctx.items.filter((i) => !i.supplier).map((i) => ({ value: i.variantId, label: `${i.productName} · ${i.variantName} (${i.sku})` }))]} className="sm:col-span-2" />
@@ -150,15 +150,15 @@ async function Reconcile({ searchParams }: { searchParams: PageProps<"/partners/
           )}
         </section>
 
-        <section id="supplier-stock" className={cn(card, "scroll-mt-28")} aria-labelledby="ss">
-          <h2 id="ss" className="font-display text-xl font-bold text-ink">Supplier stock</h2>
+        <section id="supplier-stock" className={cn(card, "scroll-mt-2")} aria-labelledby="ss">
+          <h2 id="ss" className="font-display text-lg font-bold text-ink sm:text-xl">Supplier stock</h2>
           <p className="mt-1 text-sm text-ink-soft">For items a supplier ships: what they last told you. &ldquo;Out&rdquo; or &ldquo;discontinued&rdquo; pauses the item on the website. Older than 7 days is shown as stale.</p>
           {supplierItems.length === 0 ? (
             <p className="mt-2 text-sm text-ink-soft">No supplier-shipped items here.</p>
           ) : (
             <ul className="mt-3 grid gap-3">
               {supplierStock.map(({ i, s }) => (
-                <li key={i.variantId} className="rounded-2xl bg-ice-50 p-3">
+                <li key={i.variantId} className={panel}>
                   <p className="text-sm font-semibold text-ink">
                     {i.productName} · {i.variantName} <span className="font-mono text-ink-soft">{i.sku}</span>{" "}
                     {s ? <Pill tone={s.state === "in-stock" ? "good" : s.state === "low" ? "warn" : s.state === "unknown" ? "plain" : "alert"}>{SUPPLIER_STOCK[s.state]}</Pill> : <Pill>never checked</Pill>}{" "}

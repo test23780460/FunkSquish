@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { cn } from "@/lib/cn";
+import { cn } from "./cn";
 
 /**
  * Private owner area navigation: the ten dashboard sections. Big touch
@@ -34,28 +34,32 @@ const LEGACY: Record<string, OwnerSection> = {
   security: "settings",
 };
 
+const focus = "focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-royal";
+
 export function OwnerNav({ current }: { current: OwnerSection | keyof typeof LEGACY }) {
   const active: OwnerSection = (LEGACY[current] ?? current) as OwnerSection;
   return (
-    <nav aria-label="Owner dashboard" className="-mx-4 mb-6 overflow-x-auto px-4 pb-1 [scrollbar-width:thin]">
-      <ul className="flex min-w-max gap-2">
+    <nav aria-label="Owner dashboard" className="-mx-4 mb-7 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:px-0">
+      <ul className="flex w-max gap-1 rounded-2xl bg-white p-1.5 shadow-[0_1px_2px_rgba(19,53,122,0.05),0_8px_24px_-16px_rgba(19,53,122,0.3)] ring-1 ring-sky-100 lg:w-full lg:justify-between">
         {OWNER_SECTIONS.map((l) => (
-          <li key={l.id}>
+          // On phones the current section is shown first, so it's always in view without scrolling.
+          <li key={l.id} className={cn(active === l.id && "order-first lg:order-none")}>
             {!l.ready ? (
-              <span aria-disabled="true" title="Not built yet" className="inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-4 font-display font-semibold text-ink-soft ring-1 ring-inset ring-sky-100">
+              <span aria-disabled="true" title="Not built yet" className="inline-flex min-h-10 items-center whitespace-nowrap rounded-xl px-3.5 font-display text-[0.92rem] font-semibold text-ink-soft">
                 {l.label}
               </span>
             ) : (
-            <Link
-              href={l.href}
-              aria-current={active === l.id ? "page" : undefined}
-              className={cn(
-                "inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-4 font-display font-semibold ring-1 ring-inset",
-                active === l.id ? "bg-royal text-white ring-royal" : "bg-white text-ink ring-sky-200 hover:bg-ice",
-              )}
-            >
-              {l.label}
-            </Link>
+              <Link
+                href={l.href}
+                aria-current={active === l.id ? "page" : undefined}
+                className={cn(
+                  "inline-flex min-h-10 items-center whitespace-nowrap rounded-xl px-3.5 font-display text-[0.92rem] font-semibold transition-colors motion-reduce:transition-none",
+                  active === l.id ? "bg-royal text-white shadow-[0_2px_0_var(--color-navy)]" : "text-ink hover:bg-ice-50 hover:text-royal",
+                  focus,
+                )}
+              >
+                {l.label}
+              </Link>
             )}
           </li>
         ))}
@@ -64,23 +68,27 @@ export function OwnerNav({ current }: { current: OwnerSection | keyof typeof LEG
   );
 }
 
-/** Second-level tabs inside a section (e.g. Suppliers → Partner applications). */
+/** Second-level tabs inside a section (e.g. Suppliers → Partner applications). Underlined, so they read as a different level from the main bar. */
 export function OwnerSubNav({ label, items, current }: { label: string; items: { href: string; label: string }[]; current: string }) {
   return (
-    <nav aria-label={label} className="mb-5 flex flex-wrap gap-2">
-      {items.map((i) => (
-        <Link
-          key={i.href}
-          href={i.href}
-          aria-current={current === i.href ? "page" : undefined}
-          className={cn(
-            "inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold",
-            current === i.href ? "bg-ink text-white" : "bg-white text-ink ring-1 ring-inset ring-sky-200 hover:bg-ice",
-          )}
-        >
-          {i.label}
-        </Link>
-      ))}
+    <nav aria-label={label} className="-mx-4 mb-6 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0">
+      <ul className="flex w-max min-w-full gap-1 border-b border-sky-200">
+        {items.map((i) => (
+          <li key={i.href}>
+            <Link
+              href={i.href}
+              aria-current={current === i.href ? "page" : undefined}
+              className={cn(
+                "-mb-px inline-flex min-h-11 items-center whitespace-nowrap border-b-[3px] px-3 text-sm font-semibold transition-colors motion-reduce:transition-none",
+                current === i.href ? "border-royal text-ink" : "border-transparent text-ink-soft hover:border-sky-300 hover:text-ink",
+                focus,
+              )}
+            >
+              {i.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </nav>
   );
 }
