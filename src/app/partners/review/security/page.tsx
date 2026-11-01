@@ -7,7 +7,7 @@ import { ENROLL_MINUTES, ownerAuth, pendingSecret } from "@/lib/owner/auth";
 import { base32Encode, groupKey, otpauthUri } from "@/lib/owner/totp";
 import { Container } from "@/components/ui/Primitives";
 import { ReviewLogin } from "@/components/partners/ReviewLogin";
-import { OwnerNav } from "@/components/owner/OwnerNav";
+import { OwnerNav, OwnerSubNav, SETTINGS_TABS } from "@/components/owner/OwnerNav";
 import { DisableMfaForm, EnrollPanel, RegenerateCodesForm } from "@/components/owner/SecurityForms";
 import { buttonClasses } from "@/components/ui/Button";
 import { signOutEverywhereAction, startEnrollmentAction } from "./actions";
@@ -53,7 +53,12 @@ async function Security({ searchParams }: { searchParams: PageProps<"/partners/r
 
   return (
     <div className="space-y-5">
-      {auth.status === "full" && <OwnerNav current="security" />}
+      {auth.status === "full" && (
+        <>
+          <OwnerNav current="security" />
+          <OwnerSubNav label="Settings pages" items={SETTINGS_TABS} current="/partners/review/security" />
+        </>
+      )}
       <div>
         <h1 className="font-display text-3xl font-bold text-ink sm:text-4xl">Security</h1>
         <p className="text-ink-soft">Two-step sign-in for the owner area: your passphrase plus a code from an authenticator app on your phone.</p>
